@@ -1,45 +1,29 @@
 # DocuCheck AI
 
-**DocuCheck AI — Hệ thống số hóa và kiểm tra hóa đơn/biên lai tiếng Việt có dẫn chứng từ tài liệu gốc.**
+DocuCheck AI nghiên cứu cách trích xuất và rà soát thông tin trên ảnh hóa đơn, biên lai bán lẻ tiếng Việt. Hệ thống hướng tới tạo bản ghi có cấu trúc, chỉ rõ vùng ảnh làm bằng chứng cho từng giá trị và để người dùng kiểm tra, xác nhận kết quả.
 
-> **Trạng thái:** Khởi tạo dự án cho AIO Conquer. Đây là giai đoạn làm rõ ý tưởng và dữ liệu, chưa có mô hình hoặc ứng dụng triển khai.
+## Trạng thái
 
-## Ý tưởng
+Dự án đang ở giai đoạn chuẩn bị dữ liệu và nghiên cứu. Định hướng sản phẩm mới là đề xuất; OCR, trích xuất thông tin, kiểm tra và ứng dụng cho người dùng chưa được xem là tính năng đã triển khai.
 
-Ứng dụng dự kiến cho phép người dùng tải ảnh biên lai một trang, tự đề xuất các trường như tên nơi bán, địa chỉ, ngày/giờ và tổng tiền, đồng thời hiển thị vùng ảnh nguồn để người dùng đối chiếu và xác nhận. Với biên lai có đủ cấu phần được nhận diện, hệ thống hướng tới cảnh báo trường thiếu hoặc số tiền không nhất quán.
+## Phạm vi ban đầu
 
-**Giá trị cốt lõi:** Trích xuất có bằng chứng · Kiểm tra có điều kiện · Người dùng xác nhận.
+Nghiên cứu tập trung vào biên lai bán lẻ một trang, ưu tiên tiếng Việt. Các trường dự kiến gồm tên nơi bán, địa chỉ, ngày/giờ giao dịch và tổng tiền. Chỉ kiểm tra số học khi có đủ thành phần và quy tắc phù hợp; sai lệch là lý do để rà soát, không phải bằng chứng gian lận.
 
-## Tài liệu
+Xem [product brief](docs/idea.md) để biết giả định về người dùng, nguyên tắc sản phẩm, nhãn dataset dự kiến và các quyết định còn mở.
 
-- [Ý tưởng sản phẩm, người dùng và phạm vi đề xuất](docs/idea.md)
-- [Phân tích dataset: MC-OCR, CORD-v2, SROIE và nguồn tiếng Việt](docs/datasets.md)
-
-## Cấu trúc
+## Cấu trúc repository
 
 ```text
-DocuCheck-AI/
-├── README.md
-├── .gitignore
-├── docs/
-│   ├── idea.md
-│   └── datasets.md
-├── src/
-│   └── .gitkeep
-├── data/
-│   └── .gitkeep
-├── notebooks/
-│   └── .gitkeep
-└── tests/
-    └── .gitkeep
+docs/       Tài liệu dự án
+data/       Dataset cục bộ (không commit)
+notebooks/  Phân tích dữ liệu tương tác
+src/        Mã nguồn dùng lại
+scripts/    Quy trình chạy qua dòng lệnh
+tests/      Kiểm thử tự động
+outputs/    Kết quả sinh cục bộ (không commit)
 ```
 
-Các thư mục `src/`, `data/`, `notebooks/`, `tests/` đang để trống có chủ đích và sẽ được dùng khi team bắt đầu triển khai.
+## Dữ liệu và quyền riêng tư
 
-## An toàn và quyền sử dụng dữ liệu
-
-Không commit ảnh hóa đơn thật, thông tin cá nhân, tài liệu nhạy cảm, API key, checkpoint lớn hoặc dữ liệu không có quyền phân phối lên repo công khai. Mọi đánh giá và cảnh báo dự kiến của AI chỉ mang tính hỗ trợ rà soát, không phải kết luận pháp lý về tính thật/giả của hóa đơn.
-
-## Bước tiếp theo
-
-Team đọc và thống nhất [ý tưởng](docs/idea.md) cùng [nguồn dữ liệu](docs/datasets.md) trước khi xác định scope và kế hoạch kỹ thuật.
+Không commit ảnh biên lai thật, nội dung biên lai, thông tin cá nhân, dữ liệu bị giới hạn phân phối, model checkpoint hoặc bí mật truy cập. Kiểm tra điều khoản dataset trước khi sử dụng hoặc phân phối lại. Mọi cảnh báo trong tương lai chỉ hỗ trợ rà soát, không thay thế xác minh pháp lý hay kết luận gian lận.
