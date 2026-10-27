@@ -31,6 +31,21 @@ uv run pytest
 
 Execute notebooks 01 through 04 from the repository root after generating their required manifests and predictions. All data, model files, plots, images, and per-image evaluation artifacts remain local and ignored.
 
+Exact notebook execution commands used during final validation:
+
+```bash
+uv run python -m jupyter nbconvert --to notebook --execute --inplace notebooks/01_dataset_audit.ipynb
+uv run python -m jupyter nbconvert --to notebook --execute --inplace notebooks/02_exploratory_data_analysis.ipynb
+uv run python -m jupyter nbconvert --to notebook --execute --inplace notebooks/03_preprocessing_validation.ipynb
+uv run python -m jupyter nbconvert --to notebook --execute --inplace notebooks/04_ocr_baseline_evaluation.ipynb
+```
+
+Final validation also ran `uv run pytest -q` (24 passed), all four script `--help` commands, Python imports through the test suite, and negative CLI checks for missing input files. Each notebook executed against the available local data; its outputs and execution metadata were then stripped and the saved notebook structure was validated.
+
+## Blockers and Week 2 readiness
+
+Week 2 can import normalized records, split assignments, OCR predictions and reusable metrics directly from the documented Python modules/JSONL files; no notebook execution is required. The main evaluation limitation is the mismatch between word-level predictions and coarser GT regions, which makes CER/WER alignment-sensitive and detection F1 unavailable. KIE training and field extraction remain intentionally unimplemented. MC-OCR redistribution terms were not available in the local project files; no dataset assets are included, and the terms must be confirmed before redistribution.
+
 ## Phase commits
 
 | Phase | Status | Commit |
@@ -42,4 +57,4 @@ Execute notebooks 01 through 04 from the repository root after generating their 
 | 4 | PASS | `24e6250f693741ee60210b2e9ada084e12b2dcd0` |
 | 5 | PASS | `bca1ad000d0d0ef1f2006c899e45b543145155a8` |
 | 6 | PASS | `ef7e2cf4e7979ced7ace53e9989823763c4cbf7d` |
-| 7 | PASS | This report and handoff commit (see `git log`) |
+| 7 | PASS | `c04cfa497d4baf4b903650f3c6c2c5e8dd7283b2` |
