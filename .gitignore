@@ -30,3 +30,6 @@ Thumbs.db
 *.onnx
 logs/
 outputs/
+
+#
+/playbook
