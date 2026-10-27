@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+*.egg-info/
 .env
 .env.*
 !.env.example
@@ -28,8 +29,9 @@ Thumbs.db
 *.ckpt
 *.safetensors
 *.onnx
+*.pdparams
+*.pdopt
+*.pdmodel
 logs/
 outputs/
-
-#
 /playbook

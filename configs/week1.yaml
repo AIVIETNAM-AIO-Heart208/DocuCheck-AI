@@ -1,0 +1,14 @@
+dataset_root: data/mcocr
+seed: 42
+internal_validation_fraction: 0.2
+
+field_mapping:
+  SELLER: seller_name
+  ADDRESS: seller_address
+  TIMESTAMP: transaction_datetime
+  TOTAL_COST: total_amount
+
+ocr:
+  engine: paddleocr
+  package_version: 3.7.0
+  device: cpu

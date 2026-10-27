@@ -24,6 +24,19 @@ tests/      Kiểm thử tự động
 outputs/    Kết quả sinh cục bộ (không commit)
 ```
 
+## Môi trường phát triển
+
+Yêu cầu Python 3.12. Tạo môi trường và cài các dependency đã khóa trong `uv.lock`:
+
+```bash
+uv sync --all-extras
+source .venv/bin/activate
+python -m pytest
+jupyter lab
+```
+
+Dataset mặc định nằm ở `data/mcocr`; khi đặt ở vị trí khác, truyền `--dataset-root` cho CLI hoặc đặt biến `MC_OCR_ROOT`. Giá trị trong `configs/week1.yaml` chỉ là đường dẫn tương đối trong workspace.
+
 ## Dữ liệu và quyền riêng tư
 
 Không commit ảnh biên lai thật, nội dung biên lai, thông tin cá nhân, dữ liệu bị giới hạn phân phối, model checkpoint hoặc bí mật truy cập. Kiểm tra điều khoản dataset trước khi sử dụng hoặc phân phối lại. Mọi cảnh báo trong tương lai chỉ hỗ trợ rà soát, không thay thế xác minh pháp lý hay kết luận gian lận.
