@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Editors / operating systems
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Private/local datasets (keep folder only)
+/data/*
+!/data/.gitkeep
+
+# Local secrets, databases, models, experiments
+*.sqlite
+*.sqlite3
+*.db
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+logs/
+outputs/
