@@ -10,7 +10,7 @@ Dự án đang ở giai đoạn chuẩn bị dữ liệu và nghiên cứu. Đ�
 
 Nghiên cứu tập trung vào biên lai bán lẻ một trang, ưu tiên tiếng Việt. Các trường dự kiến gồm tên nơi bán, địa chỉ, ngày/giờ giao dịch và tổng tiền. Chỉ kiểm tra số học khi có đủ thành phần và quy tắc phù hợp; sai lệch là lý do để rà soát, không phải bằng chứng gian lận.
 
-Xem [product brief](docs/idea.md) để biết giả định về người dùng, nguyên tắc sản phẩm, nhãn dataset dự kiến và các quyết định còn mở.
+Xem [product brief](docs/idea.md) để biết giả định về người dùng và nguyên tắc sản phẩm. Kết quả thực tế của Week 1 nằm trong [báo cáo](docs/WEEK1_REPORT.md), [schema dữ liệu](docs/DATA_SCHEMA.md) và [bàn giao Week 2](docs/WEEK2_HANDOFF.md).
 
 ## Cấu trúc repository
 
@@ -31,14 +31,14 @@ Yêu cầu Python 3.12 và Tesseract 5. Cài Tesseract bằng trình quản lý 
 ```bash
 uv sync --all-extras
 source .venv/bin/activate
-python -m pytest
+uv run pytest
 jupyter lab
 ```
 
 Tải model tiếng Việt đã pin revision/checksum vào thư mục local bị ignore:
 
 ```bash
-python scripts/download_ocr_model.py
+uv run python scripts/download_ocr_model.py
 ```
 
 Dataset mặc định nằm ở `data/mcocr`; khi đặt ở vị trí khác, truyền `--dataset-root` cho CLI hoặc đặt biến `MC_OCR_ROOT`. Giá trị trong `configs/week1.yaml` chỉ là đường dẫn tương đối trong workspace.
@@ -46,7 +46,7 @@ Dataset mặc định nằm ở `data/mcocr`; khi đặt ở vị trí khác, tr
 Tạo manifest chuẩn hóa cục bộ và các split phát triển tái lập bằng:
 
 ```bash
-python scripts/prepare_dataset.py \
+uv run python scripts/prepare_dataset.py \
   --dataset-root data/mcocr \
   --output-dir data/processed \
   --seed 42 \
@@ -58,11 +58,12 @@ Manifest chứa `internal_train`/`internal_dev` do team tạo theo SHA-256 ảnh
 Chạy OCR mẫu trên ba ảnh phát triển trước, rồi mới chạy toàn bộ split nội bộ:
 
 ```bash
-python scripts/run_ocr.py --split internal_dev --limit 3 --output-dir outputs/ocr/smoke
-python scripts/run_ocr.py --split internal_dev --output-dir outputs/ocr/internal_dev
+uv run python scripts/run_ocr.py --split internal_dev --limit 3 --output-dir outputs/ocr/smoke
+uv run python scripts/run_ocr.py --split internal_dev --output-dir outputs/ocr/tesseract_internal_dev
+uv run python scripts/evaluate_ocr.py --split internal_dev --output-dir outputs/ocr/evaluation
 ```
 
-Baseline dùng Tesseract LSTM tiếng Việt (`vie`) với word boxes TSV. Predictions và transcript chỉ được ghi vào `outputs/ocr/`; không chạy benchmark trên official validation/test khi thiếu ground truth phù hợp.
+Baseline dùng Tesseract LSTM tiếng Việt (`vie`) với word boxes TSV. Predictions, metrics theo từng ảnh/vùng và transcript chỉ được ghi vào `outputs/ocr/`; không chạy benchmark trên official validation/test khi thiếu ground truth phù hợp. Mở bốn notebook trong `notebooks/` để audit, EDA, xác nhận xử lý và phân tích lỗi bằng ảnh local.
 
 ## Dữ liệu và quyền riêng tư
 
