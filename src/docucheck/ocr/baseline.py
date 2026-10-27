@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import csv
 import hashlib
 import shutil
 import subprocess
@@ -21,17 +20,24 @@ TSV_CONFIG = Path(__file__).resolve().parents[3] / "configs" / "tesseract_tsv.co
 def parse_tesseract_tsv(tsv_text: str) -> list[dict[str, Any]]:
     """Parse word-level TSV into recognized text, axis-aligned polygons, and scores."""
     predictions = []
-    for row in csv.DictReader(tsv_text.splitlines(), delimiter="\t"):
-        text = (row.get("text") or "").strip()
+    for line in tsv_text.splitlines()[1:]:
+        # Tesseract can emit literal tabs/newlines inside recognized text. Parse
+        # the fixed numeric prefix and treat the remainder of each physical row
+        # as text so malformed continuation fragments cannot become giant tokens.
+        columns = line.split("\t", 11)
+        if len(columns) != 12:
+            continue
+        _, _, _, _, _, _, left_raw, top_raw, width_raw, height_raw, confidence_raw, text = columns
+        text = text.strip()
         if not text:
             continue
         try:
-            left = float(row["left"])
-            top = float(row["top"])
-            width = float(row["width"])
-            height = float(row["height"])
-            raw_confidence = float(row["conf"])
-        except (KeyError, TypeError, ValueError):
+            left = float(left_raw)
+            top = float(top_raw)
+            width = float(width_raw)
+            height = float(height_raw)
+            raw_confidence = float(confidence_raw)
+        except ValueError:
             continue
         if width <= 0 or height <= 0:
             continue
