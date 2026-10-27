@@ -26,13 +26,19 @@ outputs/    Kết quả sinh cục bộ (không commit)
 
 ## Môi trường phát triển
 
-Yêu cầu Python 3.12. Tạo môi trường và cài các dependency đã khóa trong `uv.lock`:
+Yêu cầu Python 3.12 và Tesseract 5. Cài Tesseract bằng trình quản lý gói của hệ điều hành (ví dụ `sudo apt install tesseract-ocr`). Tạo môi trường Python và cài các dependency đã khóa trong `uv.lock`:
 
 ```bash
 uv sync --all-extras
 source .venv/bin/activate
 python -m pytest
 jupyter lab
+```
+
+Tải model tiếng Việt đã pin revision/checksum vào thư mục local bị ignore:
+
+```bash
+python scripts/download_ocr_model.py
 ```
 
 Dataset mặc định nằm ở `data/mcocr`; khi đặt ở vị trí khác, truyền `--dataset-root` cho CLI hoặc đặt biến `MC_OCR_ROOT`. Giá trị trong `configs/week1.yaml` chỉ là đường dẫn tương đối trong workspace.
@@ -48,6 +54,15 @@ python scripts/prepare_dataset.py \
 ```
 
 Manifest chứa `internal_train`/`internal_dev` do team tạo theo SHA-256 ảnh và seed cố định, cùng `official_validation_inventory` để giữ nguyên nguồn chính thức. Ảnh train trùng chính xác với validation chính thức được cách ly khỏi hai split nội bộ. Ảnh validation hiện không có nhãn KIE trong export cục bộ; OCR ground truth đầy đủ chỉ có ở một phần ảnh train. Manifest và nội dung nhận dạng nằm trong `data/processed/` và không được commit.
+
+Chạy OCR mẫu trên ba ảnh phát triển trước, rồi mới chạy toàn bộ split nội bộ:
+
+```bash
+python scripts/run_ocr.py --split internal_dev --limit 3 --output-dir outputs/ocr/smoke
+python scripts/run_ocr.py --split internal_dev --output-dir outputs/ocr/internal_dev
+```
+
+Baseline dùng Tesseract LSTM tiếng Việt (`vie`) với word boxes TSV. Predictions và transcript chỉ được ghi vào `outputs/ocr/`; không chạy benchmark trên official validation/test khi thiếu ground truth phù hợp.
 
 ## Dữ liệu và quyền riêng tư
 

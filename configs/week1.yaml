@@ -9,6 +9,10 @@ field_mapping:
   TOTAL_COST: total_amount
 
 ocr:
-  engine: paddleocr
-  package_version: 3.7.0
-  device: cpu
+  engine: tesseract
+  engine_version: 5.3.4
+  language: vie
+  page_segmentation_mode: 6
+  ocr_engine_mode: 1
+  model_repository: tesseract-ocr/tessdata_fast
+  model_revision: 87416418657359cb625c412a48b6e1d6d41c29bd

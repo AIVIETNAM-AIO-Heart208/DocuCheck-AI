@@ -1,0 +1,1 @@
+"""Pretrained OCR inference adapters."""
