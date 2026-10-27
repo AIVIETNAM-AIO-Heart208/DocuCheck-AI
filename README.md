@@ -43,6 +43,17 @@ uv run python scripts/download_ocr_model.py
 
 Dataset mặc định nằm ở `data/mcocr`; khi đặt ở vị trí khác, truyền `--dataset-root` cho CLI hoặc đặt biến `MC_OCR_ROOT`. Giá trị trong `configs/week1.yaml` chỉ là đường dẫn tương đối trong workspace.
 
+Để tải MC-OCR từ Kaggle, cài Kaggle CLI và cấu hình thông tin xác thực Kaggle (`~/.kaggle/kaggle.json` hoặc `KAGGLE_API_TOKEN`), sau đó chạy từ thư mục gốc repository:
+
+```bash
+uv tool install kaggle
+kaggle datasets download \
+  -d domixi1989/vietnamese-receipts-mc-ocr-2021 \
+  -p data/mcocr --unzip
+```
+
+Dataset được giải nén vào `data/mcocr`, thư mục local bị Git ignore. Kiểm tra điều khoản dataset trên Kaggle trước khi sử dụng hoặc phân phối lại.
+
 Tạo manifest chuẩn hóa cục bộ và các split phát triển tái lập bằng:
 
 ```bash
