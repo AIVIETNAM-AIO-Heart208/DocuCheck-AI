@@ -235,9 +235,15 @@ def load_text_recognition_pairs(
     with manifest.open(encoding="utf-8-sig") as stream:
         for line_number, line in enumerate(stream, 1):
             image_ref, separator, text = line.rstrip("\r\n").partition("\t")
+            candidate = root / image_ref
+            if not candidate.is_file():
+                crop_candidate = root / "text_recognition_mcocr_data" / "text_recognition_mcocr_data" / Path(image_ref).name
+                if crop_candidate.is_file():
+                    candidate = crop_candidate
             pairs.append(
                 {
-                    "image_path": root / image_ref,
+                    "image_path": candidate,
+                    "source_image_ref": image_ref,
                     "text_raw": text if separator else None,
                     "source_split": split,
                     "source_line": line_number,

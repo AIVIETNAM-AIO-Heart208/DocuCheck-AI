@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
 from typing import Any
+
+from docucheck.data.splitting import find_cross_split_duplicate_groups
 
 
 def validate_polygon(
@@ -42,3 +45,31 @@ def validate_record_regions(record: dict[str, Any], width: int, height: int) -> 
         issues = validate_polygon(region.get("polygon"), width, height)
         results.append({"index": index, "valid": not issues, "issues": issues})
     return results
+
+
+def validate_manifest(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Check standardized record identities, relative paths, and split leakage."""
+    issues: Counter[str] = Counter()
+    ids = [record.get("image_id") for record in records]
+    issues["duplicate_image_ids"] = len(ids) - len(set(ids))
+    for record in records:
+        path = record.get("image_path")
+        if not isinstance(path, str) or not path or path.startswith("/"):
+            issues["invalid_or_absolute_image_paths"] += 1
+        if record.get("image_status") == "valid" and (
+            not record.get("image_width") or not record.get("image_height")
+        ):
+            issues["valid_image_missing_dimensions"] += 1
+        for region in record.get("regions", []) + record.get("ocr_regions", []):
+            if region.get("text_status") not in {"present", "missing_in_source"}:
+                issues["unrecognized_text_status"] += 1
+            if region.get("bbox_xyxy") is not None and region.get("validation_issues"):
+                issues["invalid_geometry_has_derived_bbox"] += 1
+    cross_split = find_cross_split_duplicate_groups(records)
+    issues["cross_split_exact_duplicate_groups"] = len(cross_split)
+    return {
+        "record_count": len(records),
+        "issue_counts": {key: count for key, count in sorted(issues.items()) if count},
+        "cross_split_duplicate_groups": cross_split,
+        "valid": not any(issues.values()),
+    }
