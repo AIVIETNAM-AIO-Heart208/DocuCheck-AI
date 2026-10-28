@@ -16,7 +16,6 @@ jobs:
     timeout-minutes: 10
     env:
       UV_LOCKED: "true"
-      MC_OCR_ROOT: ${{ runner.temp }}/mcocr-not-present
 
     steps:
       - name: Checkout repository
@@ -40,6 +39,7 @@ jobs:
 
       - name: Run unit tests
         env:
+          MC_OCR_ROOT: ${{ runner.temp }}/mcocr-not-present
           # Use the environment already synced from uv.lock, including pytest.
           UV_NO_SYNC: "true"
         run: uv run python -m pytest -q -p no:cacheprovider
