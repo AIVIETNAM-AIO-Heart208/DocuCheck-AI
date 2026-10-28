@@ -164,6 +164,33 @@ Các API tái lập thống kê đã có sẵn: `load_kie_records`, `collect_ima
 
 The preparation CLI produces 1,546 receipt records and 6,585 **separate text-recognition crop/transcript records** (5,285 source train and 1,300 source validation). The latter are loaded from the official recognition text files, not cropped from KIE polygons. The fact that KIE also has 6,585 annotated regions does not establish a parent/field relationship. Internal receipt split counts are 904 train and 231 development records; 20 exact duplicates of official validation are quarantined. Duplicate-aware splitting leaves no exact duplicate groups crossing active splits. Repeated preparation runs produced identical manifest hashes. Notebook 03 visually compares source and normalized annotations and checks split integrity.
 
+### Goal 2 hardening verification — 2026-10-28
+
+Baseline HEAD: `698ddcc03e192d90781ac7e74ceea5883eb5016a`. The working tree initially contained only existing edits to notebooks 01/02; those were preserved. Baseline: **60 tests passed**. The default uv cache was not writable in the sandbox, so verification used a workspace-local `UV_CACHE_DIR`; dependencies and the CI workflow were unchanged.
+
+Confirmed defects were reproduced before fixes: CLI `fail` reported the internal `report` policy; failed preparation could overwrite the successful validation report or leave partially replaced artifacts; structural validation accepted incorrect label/split/geometry/bbox metadata and rejected legacy schema 1.0 blank-text states; `skip` left duplicate/quarantine totals describing removed source records. These were corrected in `preprocessing.py`, `validation.py` and `scripts/prepare_dataset.py`, without changing source annotations, schema versions, the splitting algorithm or assignments. Source/output statistics now have separate scopes. Unknown labels remain unmapped, and properly documented invalid polygons with null bboxes remain structurally valid.
+
+All four artifacts are staged, serialized and verified before replacement. Existing artifacts are backed up for ordinary replacement-error rollback, and the success report is published last. A policy/structural rejection writes a separate `validation_failure_report.json`; it preserves all four previous success files. `--verify-only` checks payload SHA-256 hashes, strict JSON, structural/leakage validation, split summary and output statistics. Details and process/power-loss/concurrency limitations are documented in `DATA_SCHEMA.md` and `WEEK2_HANDOFF.md`.
+
+Final synthetic suite: `uv run python -m pytest -q -p no:cacheprovider` → **104 passed, 0 failed**. The 44 added cases cover policy acceptance/rejection, complete diagnostics and requested policy, source/output counts, unknown labels, geometry/bbox/aggregate issues, KIE/OCR/recognition/inventory separation, schema 1.0 compatibility, source preservation, recognition exact-duplicate quarantine, deterministic four-file output, nonfinite geometry serialization, corrupted/mixed artifacts, serialization failure, replacement failure at each of the four publication steps, and rollback without an existing bundle. Existing splitting tests also pass for empty input, a single group, missing checksums, invalid fractions and seed/input-order determinism. CI continues to use synthetic fixtures without MC-OCR.
+
+Real MC-OCR preparation was run twice into separate private directories `outputs/audit/goal2_hardening_20261028/run_a` and `run_b`, with seed 42, validation fraction 0.2 and policy `report`. All four artifacts are byte-identical between runs:
+
+| Artifact | SHA-256 in both runs |
+|---|---|
+| `manifest.jsonl` | `bfc183cebe9595cba03e54209b18b2f3fddfc5223675ebbacc70b6dd3010d56c` |
+| `recognition_manifest.jsonl` | `159f17911783b6465f9b5ffd37de97d4a086722446aac05baf38e3997f8abf87` |
+| `validation_report.json` | `1e6ffa876096befd1212a16146e809b75fcec526bde77e15b111eeb262d83fbb` |
+| `split_summary.json` | `b3d1e3062e17a81c2979316aa99967aa621149f0b7cb3b321f7b6955a7e12406` |
+
+The two manifests are also byte-identical to the existing `data/processed/` manifests: every ID, annotation, provenance field and split assignment is preserved. The split summary has identical parsed JSON, but its checksum changes because the old Windows file had 15 CRLF line endings and the new writer uses LF. The validation report checksum changes legitimately because it now includes source/output statistics and artifact hashes and also uses LF. No experimental output was written to `data/processed/`.
+
+Real-data checks: **1,546 receipts**, **6,585 recognition records**, **904 internal_train / 231 internal_dev / 20 quarantined / 391 official inventory**. `validate_manifest()` passes all **8,131 records** with no structural issues or cross-active-split exact duplicates. Direct source comparison preserves all **6,585 KIE regions**, **40,868 full-page OCR regions** (including raw lines/parse diagnostics), and **6,585 crop transcripts/references/line numbers**. The 115 receipt records with source-quality errors remain reported, not cleaned; recognition has zero invalid records.
+
+Real `skip` removes exactly those **115 receipts**, retains all **6,585 crops** and all **391 official inventory rows**, and produces **813 train / 208 dev / 19 quarantine / 391 inventory = 1,431 receipts**. Retained records are identical to their `report` counterparts. Output exact-duplicate groups are **28**, versus **31** in source statistics. Real `fail` returns **exit code 2**, reports requested policy `fail` and **115 receipt / 0 recognition errors**, and preserves all four existing output checksums. Both success bundles and the skip bundle pass `--verify-only`. Private evidence and the source-comparison script are in `outputs/audit/goal2_hardening_20261028/verification.json` and `verify_real_data.py`.
+
+**Goal 2: PASS for the requested hardening.** No confirmed serious in-scope bug remains. Documented limits remain: publication is not atomic across all four files under process/power loss or persistent rollback I/O failures; concurrent writers are unsupported; missing checksums cannot establish identity; source annotation errors, unadjudicated near-duplicates and the absent crop-to-receipt relationship remain. No annotation review, near-duplicate adjudication, model work, dependency change, commit or push was performed.
+
 ## Goal 3 — OCR baseline and error analysis
 
 The measurements below are the previously reported baseline, not rerun during the 2026-10-28 Goal 1/2 audit. OCR code, model, predictions and benchmark are unchanged. New geometry findings in that audit concern KIE polygons; the 425 OCR out-of-bounds regions remain unchanged.

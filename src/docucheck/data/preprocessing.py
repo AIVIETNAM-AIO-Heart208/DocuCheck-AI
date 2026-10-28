@@ -308,6 +308,7 @@ def prepare_records(
         if record["image_status"] != "valid" or record["validation_issues"] or
         set(record.get("annotation_issues", [])) - {"no_kie_row", "source_annotation_arrays_empty", "unmapped_label"}
     ]
+    source_receipts = all_records
     report["invalid_record_count"] = len(invalid_records)
     if invalid_policy == "fail" and invalid_records:
         raise ValueError(f"Found {len(invalid_records)} invalid records; see validation report")
@@ -375,6 +376,7 @@ def prepare_records(
     invalid_recognition = [r for r in recognition_records
                            if r["image_status"] != "valid" or r["text_status"] != "present" or r["annotation_issues"]]
     report["invalid_recognition_record_count"] = len(invalid_recognition)
+    source_recognition = recognition_records
     if invalid_policy == "fail" and invalid_recognition:
         raise ValueError(f"Found {len(invalid_recognition)} invalid recognition records")
     if invalid_policy == "skip":
@@ -382,7 +384,46 @@ def prepare_records(
         recognition_records = [r for r in recognition_records if r["image_id"] not in invalid_ids]
     report["recognition_records_by_split"] = dict(Counter(r["split"] for r in recognition_records))
     report["skipped_recognition_record_count"] = len(invalid_recognition) if invalid_policy == "skip" else 0
+    report["source_statistics"] = _manifest_statistics(source_receipts, source_recognition)
+    report["output_statistics"] = _manifest_statistics(all_records, recognition_records)
+    for key in ("exact_duplicate_groups", "records_in_exact_duplicate_groups",
+                "cross_split_duplicate_group_count", "cross_split_duplicate_groups",
+                "official_validation_duplicate_quarantine_count", "official_validation_duplicate_quarantine_groups",
+                "recognition_validation_duplicate_quarantine_count"):
+        report[key] = report["output_statistics"][key]
     return all_records, recognition_records, report
+
+
+def _manifest_statistics(receipts: list[dict[str, Any]], recognition: list[dict[str, Any]]) -> dict[str, Any]:
+    """Use the same counting scope before and after explicit policy filtering."""
+    duplicate_counts = Counter(r["image_group_id"] for r in receipts
+                               if r["source_subset"] == "kie_train" and r["image_group_id"])
+    quarantine = [r for r in receipts if r["split"] == "excluded_duplicate_of_official_validation"]
+    cross_split = find_cross_split_duplicate_groups(receipts + recognition)
+    return {
+        "receipt_record_count": len(receipts),
+        "recognition_record_count": len(recognition),
+        "records_by_split": dict(Counter(r["split"] for r in receipts)),
+        "recognition_records_by_split": dict(Counter(r["split"] for r in recognition)),
+        "receipt_image_status_counts": dict(Counter(r["image_status"] for r in receipts)),
+        "recognition_image_status_counts": dict(Counter(r["image_status"] for r in recognition)),
+        "annotation_issue_counts": dict(Counter(issue for r in receipts for issue in r.get("annotation_issues", []))),
+        "geometry_issue_counts": dict(Counter(
+            issue for r in receipts for region in r["regions"] + r["ocr_regions"] for issue in region["validation_issues"]
+        )),
+        "kie_region_count": sum(len(r["regions"]) for r in receipts),
+        "ocr_region_count": sum(len(r["ocr_regions"]) for r in receipts),
+        "recognition_text_status_counts": dict(Counter(r["text_status"] for r in recognition)),
+        "exact_duplicate_groups": sum(count > 1 for count in duplicate_counts.values()),
+        "records_in_exact_duplicate_groups": sum(count for count in duplicate_counts.values() if count > 1),
+        "cross_split_duplicate_group_count": len(cross_split),
+        "cross_split_duplicate_groups": cross_split,
+        "official_validation_duplicate_quarantine_count": len(quarantine),
+        "official_validation_duplicate_quarantine_groups": len({r["image_group_id"] for r in quarantine}),
+        "recognition_validation_duplicate_quarantine_count": sum(
+            r["split"] == "excluded_duplicate_of_official_val" for r in recognition
+        ),
+    }
 
 
 def write_jsonl(path: str | Path, records: list[dict[str, Any]]) -> None:

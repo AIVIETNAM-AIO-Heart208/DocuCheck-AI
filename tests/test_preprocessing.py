@@ -59,6 +59,16 @@ def test_prepare_records_retains_provenance_unicode_and_quarantines_duplicates(t
     assert validate_manifest(records)["valid"]
 
 
+def test_skip_duplicate_and_quarantine_counts_describe_retained_output(tmp_path):
+    _write_dataset(tmp_path, invalid_geometry=True)
+    records, _, report = prepare_records(tmp_path, invalid_policy="skip")
+    assert len(records) == 2  # unannotated train image and official inventory
+    assert report["exact_duplicate_groups"] == 0
+    assert report["official_validation_duplicate_quarantine_count"] == 0
+    assert report["source_statistics"]["exact_duplicate_groups"] == 1
+    assert report["source_statistics"]["official_validation_duplicate_quarantine_count"] == 2
+
+
 def test_invalid_geometry_is_reported_or_skipped_explicitly(tmp_path):
     _write_dataset(tmp_path, invalid_geometry=True, include_duplicate_validation=False)
     records, _, report = prepare_records(tmp_path, invalid_policy="report")
@@ -186,3 +196,61 @@ def test_jsonl_nonfinite_source_geometry_is_strict_json(tmp_path):
         raise AssertionError(f"Non-standard JSON: {value}")
     result = json.loads(path.read_text(encoding="utf-8"), parse_constant=reject)
     assert result["polygon"] == [["inf", "nan"]]
+
+
+def test_skip_statistics_distinguish_source_from_output_and_keep_allowed_anomalies(tmp_path):
+    _write_dataset(tmp_path, include_duplicate_validation=False)
+    _rewrite_csv(tmp_path, lambda rows: [dict(rows[0], anno_labels="TOTAL_TOTAL_COST"), rows[1]])
+    (tmp_path / "train_images/train_images/receipt_b.jpg").write_bytes(b"corrupt image")
+    (tmp_path / "text_recognition_train_data.txt").write_text(
+        "missing.jpg\tmissing crop\ntrain_images/train_images/other.jpg\t\n", encoding="utf-8")
+    source, source_crops, source_report = prepare_records(tmp_path, invalid_policy="report")
+    receipts, crops, report = prepare_records(tmp_path, invalid_policy="skip")
+    assert len(source) == 3 and len(source_crops) == 2
+    assert len(receipts) == 2 and crops == []
+    assert report["source_statistics"] == source_report["source_statistics"]
+    assert report["source_statistics"]["receipt_record_count"] == 3
+    assert report["source_statistics"]["recognition_record_count"] == 2
+    assert report["output_statistics"]["receipt_record_count"] == 2
+    assert report["output_statistics"]["recognition_record_count"] == 0
+    assert report["skipped_record_count"] == 1
+    assert report["skipped_recognition_record_count"] == 2
+    assert {r["source_image_name"] for r in receipts} == {"receipt_a.jpg", "other.jpg"}
+    assert receipts == [r for r in source if r["image_status"] == "valid"]
+    assert validate_manifest(receipts)["valid"]
+
+
+def test_recognition_exact_validation_duplicates_are_quarantined_with_provenance(tmp_path):
+    _write_dataset(tmp_path)
+    for split in ("train", "val"):
+        (tmp_path / f"text_recognition_{split}_data.txt").write_text(
+            "train_images/train_images/receipt_a.jpg\tNguyên văn\n", encoding="utf-8")
+    _, crops, report = prepare_records(tmp_path)
+    assert [r["split"] for r in crops] == ["excluded_duplicate_of_official_val", "official_val"]
+    assert report["recognition_validation_duplicate_quarantine_count"] == 1
+    assert find_cross_split_duplicate_groups(crops) == {}
+    assert all(r["text_raw"] == "Nguyên văn" and r["source_line"] == 1 for r in crops)
+    assert validate_manifest(crops)["valid"]
+
+
+def test_source_arrays_region_geometry_and_ocr_lines_survive_normalization(tmp_path):
+    from docucheck.data.loader import load_kie_records, load_full_page_text_records
+
+    _write_dataset(tmp_path, invalid_geometry=True)
+    directory = tmp_path / "kie_data/kie_data/boxes_and_transcripts"
+    directory.mkdir(parents=True)
+    raw = "0,1,2,20,2,20,12,1,12,,Tổng tiền, đã thanh toán"
+    (directory / "receipt_a.tsv").write_text(raw + "\nmalformed row\n", encoding="utf-8")
+    source = load_kie_records(tmp_path)[0]
+    records, _, _ = prepare_records(tmp_path)
+    result = next(r for r in records if r["source_image_name"] == source["image_id"])
+    assert result["source_annotations"] == source["source_annotations"]
+    assert result["source_line"] == source["source_line"]
+    for original, normalized in zip(source["regions"], result["regions"], strict=True):
+        for key in ("text_raw", "label_raw", "polygon", "canonical_field"):
+            assert normalized[key] == original[key]
+        assert normalized["source_geometry"] == original["source_annotation"]
+    for original, normalized in zip(load_full_page_text_records(tmp_path)[0]["regions"], result["ocr_regions"], strict=True):
+        for key in ("text_raw", "polygon", "source_raw", "source_line", "source_issue"):
+            assert normalized[key] == original[key]
+    assert validate_manifest(records)["valid"]
