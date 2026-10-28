@@ -1,0 +1,39 @@
+{
+  "date_local": "2026-10-28",
+  "timezone": "Asia/Saigon",
+  "commit": "4ee27760ee0cb81f3467a2a20ac484bad7efda5e",
+  "branch": "main",
+  "git_log": [
+    "4ee27760ee0cb81f3467a2a20ac484bad7efda5e 2026-10-28 21:21:49 +0700 fix(ocr): guard incomplete evaluation and document Goal 3",
+    "90f4249210b37313d8791a979ba5aa8973326567 2026-10-28 17:42:54 +0700 fix(data): harden Goal 2 validation and reproducible preprocessing",
+    "698ddcc03e192d90781ac7e74ceea5883eb5016a 2026-10-28 16:39:58 +0700 fix(ci): move runner context to test step environment",
+    "b16973124f6565b6c1ff6508688b48b953d54757 2026-10-28 16:35:18 +0700 ci: add Python 3.12 unit tests with uv",
+    "476a2888305fa03b5f3435f0c491ea28f7c9fe63 2026-10-28 16:21:32 +0700 docs: finalize Week 1 Goal 1 EDA and annotation audit",
+    "1de55b60ecfc5158ef187b4f5e0ee1f44b94a910 2026-10-28 13:10:58 +0700 fix(data): strengthen Week 1 validation and reproducible audits",
+    "2955a891a31fec18ee8a6633855ef984bdb020f3 2026-10-27 23:08:08 +0700 docs: add kaggle cli setup and data download instruction",
+    "6ac4805a566ed67a41f9fb8b305a04a991cec9d0 2026-10-27 23:03:28 +0700 docs: complete week1 validation evidence"
+  ],
+  "preexisting_modified_notebooks": [
+    "notebooks/01_dataset_audit.ipynb",
+    "notebooks/02_exploratory_data_analysis.ipynb",
+    "notebooks/03_preprocessing_validation.ipynb",
+    "notebooks/04_ocr_baseline_evaluation.ipynb"
+  ],
+  "project_files_modified_by_report_task": false,
+  "test_command": ".venv/Scripts/python.exe -m pytest -q -p no:cacheprovider --basetemp=reports/submission1_week1/qa/pytest-tmp",
+  "test_environment": {
+    "python": "3.12.16",
+    "platform": "Windows 11",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "test_result": "106 passed in 1.90s",
+  "new_experiments": {
+    "ocr_inference": false,
+    "dataset_preparation": false,
+    "notebook_execution": false,
+    "phash_recompute": false,
+    "pixel_annotation_review": false,
+    "eda_recompute": true,
+    "evaluation_recompute_from_saved_predictions": true
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "date_local": "2026-10-28",
+  "review_scope": "Final acceptance audit of report, evidence and submission readiness",
+  "commit": "4ee27760ee0cb81f3467a2a20ac484bad7efda5e",
+  "source_artifacts_hashes_unchanged": 79,
+  "incoming_report_manifest_files_verified": 21,
+  "pdf_and_tex_match_recorded_qa_hashes": true,
+  "unresolved_placeholders": 0,
+  "cover_identity_verified": true,
+  "referenced_figure_files": [
+    "figures/eda_distributions.pdf",
+    "figures/ocr_error_distribution.pdf"
+  ],
+  "duplicate_latex_labels": 0,
+  "missing_reference_targets": 0,
+  "missing_bibliography_keys": 0,
+  "structural_validation": {
+    "record_count": 8131,
+    "issue_counts": {},
+    "cross_split_duplicate_groups": {},
+    "valid": true
+  },
+  "receipt_splits": {
+    "internal_dev": 231,
+    "internal_train": 904,
+    "excluded_duplicate_of_official_validation": 20,
+    "official_validation_inventory": 391
+  },
+  "ocr_prediction_records": 231,
+  "ocr_word_boxes": 26859,
+  "ocr_arithmetic_and_previous_recomputation_match": true,
+  "project_test_log": "evidence/pytest.txt (106 passed in 1.90s; original run retained)",
+  "new_ocr_inference": false,
+  "new_preparation": false,
+  "new_test_suite_execution": false,
+  "pdf_ready_as_week1_report": true,
+  "submission_evidence_attachment_status": "Local detailed artifacts and notebook workspace snapshot identified; not copied/published in report directory.",
+  "visual_review_status": "All 19 current pages re-rendered and inspected; no material visual defect found",
+  "all_fonts_embedded": true,
+  "embedded_font_count": 16,
+  "physical_pages": 19,
+  "substantive_pages": 13,
+  "pdf_sha256": "cd9f667ab6b7c7f5ee852142b19dc902d54cbe9a886938e20c3a9b0e6623dbff",
+  "tex_sha256": "60cc7d37fcf9c8e66c45c3980734adea9c49f11853915f6a953bee13ee852baa",
+  "new_pdf_compilation": true,
+  "pdf_content_changed": true,
+  "report_supporting_status_documents_clarified": true,
+  "remaining_submission_action": "Attach the identified source/notebook snapshot and local detailed evidence through the permitted submission channel.",
+  "confirmed_institution": "AI-VIETNAM",
+  "confirmed_course": "AIO2026",
+  "latest_revision": "Institution corrected to AI-VIETNAM; course unchanged; compiled and cover inspected."
+}

@@ -1,0 +1,56 @@
+{
+  "date_local": "2026-10-28",
+  "commit": "4ee27760ee0cb81f3467a2a20ac484bad7efda5e",
+  "source_artifact_hashes_verified": 79,
+  "all_source_artifact_hashes_unchanged": true,
+  "structural_validation": {
+    "record_count": 8131,
+    "issue_counts": {},
+    "cross_split_duplicate_groups": {},
+    "valid": true
+  },
+  "receipt_splits": {
+    "internal_dev": 231,
+    "internal_train": 904,
+    "excluded_duplicate_of_official_validation": 20,
+    "official_validation_inventory": 391
+  },
+  "review_correctness": {
+    "incorrect": 32,
+    "uncertain": 2,
+    "correct": 6
+  },
+  "ocr_evaluation_recomputed_from_saved_predictions": {
+    "split": "internal_dev",
+    "metric_status": "available",
+    "images_with_full_page_ground_truth": 231,
+    "images_with_ground_truth_and_predictions": 231,
+    "evaluated_ground_truth_regions": 8304,
+    "excluded_invalid_geometry_regions": 104,
+    "excluded_empty_transcription_regions": 0,
+    "cer": 1.872454448017149,
+    "character_errors": 92591,
+    "ground_truth_characters": 49449,
+    "wer": 2.1448461448461447,
+    "word_errors": 18332,
+    "ground_truth_words": 8547,
+    "unmatched_ground_truth_regions": 1886,
+    "unassigned_prediction_word_boxes": 10488,
+    "text_normalization_policy": "Unicode NFKC, casefold, collapse whitespace; preserve Vietnamese diacritics and punctuation",
+    "wer_tokenization_policy": "Whitespace-separated tokens (Vietnamese syllables, not linguistic word segmentation)",
+    "recognition_alignment": "Assign each Tesseract word box to the smallest valid full-page GT polygon containing its center; sort assigned words by y then x and compare to the GT region transcript.",
+    "detection_metrics": {
+      "status": "N/A — incompatible region granularity",
+      "iou_threshold": 0.5,
+      "reason": "MC-OCR full-page GT polygons annotate text lines/regions while Tesseract emits word-level boxes; one-to-one detection F1 would conflate segmentation with detection."
+    }
+  },
+  "ocr_detail_artifacts_match": true,
+  "skip_artifact_records": 1431,
+  "skip_retained_records_match_default": true,
+  "fail_diagnostic_policy_and_invalid_count_match": true,
+  "new_ocr_inference": false,
+  "new_preparation": false,
+  "new_pixel_review": false,
+  "new_test_suite_execution": false
+}

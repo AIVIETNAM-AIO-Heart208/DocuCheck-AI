@@ -1,0 +1,10 @@
+{
+  "repository": "AIVIETNAM-AIO-Heart208/DocuCheck-AI",
+  "commit": "4ee27760ee0cb81f3467a2a20ac484bad7efda5e",
+  "queried_date_local": "2026-10-28",
+  "tool": "GitHub connector get_commit_combined_status",
+  "response_structuredContent": {
+    "statuses": []
+  },
+  "interpretation": "No commit status entries returned. This does not establish GitHub Actions check-run success; CI execution status unverified."
+}

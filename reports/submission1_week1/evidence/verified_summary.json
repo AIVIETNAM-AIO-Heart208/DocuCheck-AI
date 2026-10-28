@@ -1,0 +1,331 @@
+{
+  "active_cross_split_exact_duplicate_groups": 0,
+  "bundle_verification": {
+    "data/processed": {
+      "exit_code": 2,
+      "result": "Missing artifact checksums; regenerate this output bundle"
+    },
+    "outputs/audit/goal2_hardening_20261028/run_a": {
+      "exit_code": 0,
+      "result": "verified"
+    },
+    "outputs/audit/goal2_hardening_20261028/run_b": {
+      "exit_code": 0,
+      "result": "verified"
+    }
+  },
+  "commit": "4ee27760ee0cb81f3467a2a20ac484bad7efda5e",
+  "existing_repeat_bundles": {
+    "manifest.jsonl": {
+      "bytes_equal": true,
+      "sha256_a": "bfc183cebe9595cba03e54209b18b2f3fddfc5223675ebbacc70b6dd3010d56c",
+      "sha256_b": "bfc183cebe9595cba03e54209b18b2f3fddfc5223675ebbacc70b6dd3010d56c"
+    },
+    "recognition_manifest.jsonl": {
+      "bytes_equal": true,
+      "sha256_a": "159f17911783b6465f9b5ffd37de97d4a086722446aac05baf38e3997f8abf87",
+      "sha256_b": "159f17911783b6465f9b5ffd37de97d4a086722446aac05baf38e3997f8abf87"
+    },
+    "split_summary.json": {
+      "bytes_equal": true,
+      "sha256_a": "b3d1e3062e17a81c2979316aa99967aa621149f0b7cb3b321f7b6955a7e12406",
+      "sha256_b": "b3d1e3062e17a81c2979316aa99967aa621149f0b7cb3b321f7b6955a7e12406"
+    },
+    "validation_report.json": {
+      "bytes_equal": true,
+      "sha256_a": "1e6ffa876096befd1212a16146e809b75fcec526bde77e15b111eeb262d83fbb",
+      "sha256_b": "1e6ffa876096befd1212a16146e809b75fcec526bde77e15b111eeb262d83fbb"
+    }
+  },
+  "field_missingness": {
+    "seller_address": {
+      "confirmed_field_absent": null,
+      "ground_truth_unavailable": 391,
+      "records": 1546,
+      "with_invalid_geometry": 3,
+      "with_label": 1077,
+      "with_missing_or_empty_text": 0,
+      "without_label_annotation": 78
+    },
+    "seller_name": {
+      "confirmed_field_absent": null,
+      "ground_truth_unavailable": 391,
+      "records": 1546,
+      "with_invalid_geometry": 3,
+      "with_label": 1071,
+      "with_missing_or_empty_text": 0,
+      "without_label_annotation": 84
+    },
+    "total_amount": {
+      "confirmed_field_absent": null,
+      "ground_truth_unavailable": 391,
+      "records": 1546,
+      "with_invalid_geometry": 0,
+      "with_label": 1081,
+      "with_missing_or_empty_text": 0,
+      "without_label_annotation": 74
+    },
+    "transaction_datetime": {
+      "confirmed_field_absent": null,
+      "ground_truth_unavailable": 391,
+      "records": 1546,
+      "with_invalid_geometry": 0,
+      "with_label": 1088,
+      "with_missing_or_empty_text": 0,
+      "without_label_annotation": 67
+    }
+  },
+  "geometry": {
+    "ocr_regions": {
+      "images": 109,
+      "issue_counts": {
+        "out_of_image_bounds": 425
+      },
+      "regions": 425
+    },
+    "regions": {
+      "images": 6,
+      "issue_counts": {
+        "repeated_vertices": 4,
+        "self_intersection": 6
+      },
+      "regions": 6
+    }
+  },
+  "image_statistics_train": {
+    "aspect_ratio": {
+      "max": 1.7777777777777777,
+      "median": 0.75,
+      "min": 0.24755244755244754
+    },
+    "brightness_mean": {
+      "max": 224.61974278815146,
+      "median": 133.03707377115884,
+      "min": 69.3266914783337
+    },
+    "contrast_std": {
+      "max": 85.97941315086742,
+      "median": 39.517066294439566,
+      "min": 14.036969109427732
+    },
+    "height": {
+      "max": 2860.0,
+      "median": 1024.0,
+      "min": 480.0
+    },
+    "laplacian_variance": {
+      "max": 4827.230210428411,
+      "median": 918.3986694797329,
+      "min": 22.93472334491349
+    },
+    "width": {
+      "max": 1024.0,
+      "median": 768.0,
+      "min": 352.0
+    }
+  },
+  "images": {
+    "decoded_and_hash_matched": 8131
+  },
+  "kie_regions": 6585,
+  "kie_regions_per_image": {
+    "max": 29,
+    "mean": 5.701298701298701,
+    "median": 5.0,
+    "min": 0,
+    "q1": 5.0,
+    "q3": 7.0
+  },
+  "kie_source_regions_preserved": 6585,
+  "label_regions": {
+    "ADDRESS": 1952,
+    "SELLER": 1171,
+    "TIMESTAMP": 1347,
+    "TOTAL_COST": 2114,
+    "TOTAL_TOTAL_COST": 1
+  },
+  "near_duplicate_artifact_counts_match": true,
+  "near_duplicate_phash_recomputed": false,
+  "near_duplicate_summary": {
+    "candidate_count": 36,
+    "candidates_by_split_pair": {
+      "internal_dev / internal_train": 10,
+      "internal_dev / official_validation_inventory": 4,
+      "internal_train / official_validation_inventory": 22
+    },
+    "comparisons_by_split_pair": {
+      "internal_dev / internal_train": 208824,
+      "internal_dev / official_validation_inventory": 90321,
+      "internal_train / official_validation_inventory": 353464
+    },
+    "exact_matches_by_split_pair": {},
+    "failed_images": 0,
+    "hashed_images": 1526,
+    "interpretation": "Candidates only; layout similarity is not transaction identity. No split changes.",
+    "method": "grayscale 32x32 DCT, 8x8 low frequencies, 63 AC median bits",
+    "threshold": 6
+  },
+  "notebooks": {
+    "notebooks/01_dataset_audit.ipynb": {
+      "cells_with_execution_count": 7,
+      "code_cells": 7,
+      "error_outputs": 0,
+      "executed_during_report_task": false
+    },
+    "notebooks/02_exploratory_data_analysis.ipynb": {
+      "cells_with_execution_count": 7,
+      "code_cells": 7,
+      "error_outputs": 0,
+      "executed_during_report_task": false
+    },
+    "notebooks/03_preprocessing_validation.ipynb": {
+      "cells_with_execution_count": 4,
+      "code_cells": 4,
+      "error_outputs": 0,
+      "executed_during_report_task": false
+    },
+    "notebooks/04_ocr_baseline_evaluation.ipynb": {
+      "cells_with_execution_count": 3,
+      "code_cells": 3,
+      "error_outputs": 0,
+      "executed_during_report_task": false
+    }
+  },
+  "ocr_detail_artifacts_match": true,
+  "ocr_gt_status": {
+    "available": 1151,
+    "unavailable_sidecar": 4
+  },
+  "ocr_inference_rerun": false,
+  "ocr_metrics_recomputed": {
+    "cer": 1.872454448017149,
+    "character_errors": 92591,
+    "detection_metrics": {
+      "iou_threshold": 0.5,
+      "reason": "MC-OCR full-page GT polygons annotate text lines/regions while Tesseract emits word-level boxes; one-to-one detection F1 would conflate segmentation with detection.",
+      "status": "N/A — incompatible region granularity"
+    },
+    "evaluated_ground_truth_regions": 8304,
+    "excluded_empty_transcription_regions": 0,
+    "excluded_invalid_geometry_regions": 104,
+    "ground_truth_characters": 49449,
+    "ground_truth_words": 8547,
+    "images_with_full_page_ground_truth": 231,
+    "images_with_ground_truth_and_predictions": 231,
+    "metric_status": "available",
+    "recognition_alignment": "Assign each Tesseract word box to the smallest valid full-page GT polygon containing its center; sort assigned words by y then x and compare to the GT region transcript.",
+    "split": "internal_dev",
+    "text_normalization_policy": "Unicode NFKC, casefold, collapse whitespace; preserve Vietnamese diacritics and punctuation",
+    "unassigned_prediction_word_boxes": 10488,
+    "unmatched_ground_truth_regions": 1886,
+    "wer": 2.1448461448461447,
+    "wer_tokenization_policy": "Whitespace-separated tokens (Vietnamese syllables, not linguistic word segmentation)",
+    "word_errors": 18332
+  },
+  "ocr_regions": 40868,
+  "ocr_runtime_recorded": {
+    "device": "cpu",
+    "engine": "Tesseract",
+    "engine_version": "tesseract v5.5.3.20260724",
+    "failure_file": "failures.jsonl",
+    "images_failed": 0,
+    "images_succeeded": 231,
+    "inference_elapsed_seconds": 86.41314140000031,
+    "language": "vie",
+    "manifest_record_count": 231,
+    "mean_successful_image_latency_seconds": 0.37366418311716604,
+    "model_load_seconds": 0.0,
+    "model_names": {
+      "recognition": "vie.traineddata"
+    },
+    "model_sha256": "79df64caf7bcfb2a27df5042ecb6121e196eada34da774956995747636d5bfa1",
+    "model_source": "tesseract-ocr/tessdata_fast@87416418657359cb625c412a48b6e1d6d41c29bd",
+    "prediction_file": "predictions.jsonl",
+    "preprocessing": {
+      "ocr_engine_mode": 1,
+      "output": "word-level TSV with axis-aligned polygons",
+      "page_segmentation_mode": 6
+    },
+    "python_version": "3.12.16",
+    "split": "internal_dev"
+  },
+  "ocr_word_boxes": 26859,
+  "orientation": {
+    "landscape": 56,
+    "portrait_or_square": 1099
+  },
+  "original_processed_comparison": {
+    "manifest.jsonl": {
+      "bytes_equal": true
+    },
+    "recognition_manifest.jsonl": {
+      "bytes_equal": true
+    },
+    "split_summary.json": {
+      "bytes_equal": false,
+      "json_equal": true
+    }
+  },
+  "platform": "Windows-11-10.0.26100-SP0",
+  "preparation_rerun": false,
+  "python": "3.12.16",
+  "receipt_records": 1546,
+  "recognition_records": 6585,
+  "recognition_records_by_split": {
+    "official_train": 5285,
+    "official_val": 1300
+  },
+  "records_by_split": {
+    "excluded_duplicate_of_official_validation": 20,
+    "internal_dev": 231,
+    "internal_train": 904,
+    "official_validation_inventory": 391
+  },
+  "review_correctness": {
+    "correct": 6,
+    "incorrect": 32,
+    "uncertain": 2
+  },
+  "review_flags": {
+    "missing_field_annotation": {
+      "no": 14,
+      "uncertain": 5,
+      "yes": 21
+    },
+    "uncertain": {
+      "no": 34,
+      "yes": 6
+    },
+    "unreadable_text": {
+      "no": 37,
+      "yes": 3
+    },
+    "wrong_geometry": {
+      "no": 34,
+      "yes": 6
+    },
+    "wrong_label": {
+      "no": 30,
+      "uncertain": 2,
+      "yes": 8
+    }
+  },
+  "review_status": {
+    "reviewed": 40
+  },
+  "sample_reconstruction_matches": true,
+  "structural_validation": {
+    "cross_split_duplicate_groups": {},
+    "issue_counts": {},
+    "record_count": 8131,
+    "valid": true
+  },
+  "timezone": "Asia/Saigon",
+  "train_exact_duplicate_groups": 31,
+  "train_images_with_all_four_fields": 947,
+  "train_records": 1155,
+  "train_records_in_exact_duplicate_groups": 64,
+  "unique_receipt_contents": 1491,
+  "unique_train_contents": 1122,
+  "verification_date_local": "2026-10-28"
+}
