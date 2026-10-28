@@ -22,7 +22,7 @@ def run_batch(
     *,
     dataset_root: str | Path | None = None,
     split: str = "internal_dev",
-    output_dir: str | Path = "outputs/ocr/paddle",
+    output_dir: str | Path = "outputs/ocr/tesseract",
     limit: int | None = None,
     engine: TesseractBaseline | None = None,
     tessdata_dir: str | Path = "outputs/ocr/tessdata_fast",

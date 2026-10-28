@@ -86,6 +86,8 @@ uv run python scripts/evaluate_ocr.py --split internal_dev --output-dir outputs/
 
 Baseline dùng Tesseract LSTM tiếng Việt (`vie`) với word boxes TSV. Predictions, metrics theo từng ảnh/vùng và transcript chỉ được ghi vào `outputs/ocr/`; không chạy benchmark trên official validation/test khi thiếu ground truth phù hợp. Mở bốn notebook trong `notebooks/` để audit, EDA, xác nhận xử lý và phân tích lỗi bằng ảnh local.
 
+Xem [luồng Goal 3](docs/GOAL3_OCR_BASELINE.md) để hiểu cách chạy baseline, ghép prediction với transcript và đọc các chỉ số lỗi.
+
 ## Dữ liệu và quyền riêng tư
 
 Không commit ảnh biên lai thật, nội dung biên lai, thông tin cá nhân, dữ liệu bị giới hạn phân phối, model checkpoint hoặc bí mật truy cập. Kiểm tra điều khoản dataset trước khi sử dụng hoặc phân phối lại. Mọi cảnh báo trong tương lai chỉ hỗ trợ rà soát, không thay thế xác minh pháp lý hay kết luận gian lận.

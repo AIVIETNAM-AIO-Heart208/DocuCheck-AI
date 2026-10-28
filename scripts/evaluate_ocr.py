@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import platform
 import sys
 from pathlib import Path
@@ -13,7 +14,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
 from docucheck.data.preprocessing import write_jsonl  # noqa: E402
-from docucheck.evaluation.metrics import evaluate_ocr_records, greedy_polygon_matching, detection_scores  # noqa: E402
+from docucheck.evaluation.metrics import evaluate_ocr_records  # noqa: E402
 from docucheck.ocr.inference import load_manifest  # noqa: E402
 
 
@@ -24,7 +25,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--runtime", default=None, help="Runtime metadata JSON used for latency context")
     parser.add_argument("--split", default="internal_dev")
     parser.add_argument("--output-dir", default="outputs/ocr/evaluation")
-    parser.add_argument("--iou-threshold", type=float, default=0.5)
+    parser.add_argument(
+        "--iou-threshold", type=float, default=0.5,
+        help="Recorded for future detection evaluation; current word/region pairing has no detection F1",
+    )
     return parser
 
 
@@ -44,9 +48,13 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     manifest = load_manifest(paths["manifest"])
     predictions = load_manifest(paths["predictions"])
-    summary, image_details, region_details = evaluate_ocr_records(
-        manifest, predictions, split=args.split, iou_threshold=args.iou_threshold
-    )
+    try:
+        summary, image_details, region_details = evaluate_ocr_records(
+            manifest, predictions, split=args.split, iou_threshold=args.iou_threshold
+        )
+    except ValueError as error:
+        print(f"OCR evaluation failed: {error}", file=sys.stderr)
+        return 2
     runtime = {}
     runtime_path = paths.get("runtime")
     if runtime_path is None:
@@ -61,7 +69,7 @@ def main(argv: list[str] | None = None) -> int:
         "inference_image_count": runtime.get("manifest_record_count"),
         "images_failed": runtime.get("images_failed"),
         "mean_successful_image_latency_seconds": runtime.get("mean_successful_image_latency_seconds"),
-        "cpu_count_logical": __import__("os").cpu_count(),
+        "cpu_count_logical": os.cpu_count(),
         "platform": platform.platform(),
     }
     output = paths["output_dir"]

@@ -182,13 +182,53 @@ def evaluate_ocr_records(
     split: str,
     iou_threshold: float = 0.5,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
-    """Evaluate text by center-in-GT-line grouping; detection score is gated separately."""
-    manifest_by_id = {record["image_id"]: record for record in manifest if record.get("split") == split}
-    predictions_by_id = {row["image_id"]: row for row in predictions if row.get("split") == split}
+    """Evaluate successful predictions against full-page transcripts on one split.
+
+    A missing prediction is an inference/coverage failure, not an empty OCR result.
+    Refuse incomplete inputs so a partial run cannot silently produce a CER/WER.
+    """
+    manifest_by_id = {
+        record["image_id"]: record
+        for record in manifest
+        if record.get("split") == split
+    }
+    predictions_by_id = {
+        row["image_id"]: row
+        for row in predictions
+        if row.get("split") == split
+    }
+    gt_image_ids = [
+        image_id for image_id, record in manifest_by_id.items()
+        if record.get("ocr_regions") and record.get("ocr_ground_truth_status") == "available"
+    ]
+    incomplete_ids = []
+    for image_id in gt_image_ids:
+        prediction_row = predictions_by_id.get(image_id)
+        if (
+            prediction_row is None
+            or prediction_row.get("status") != "ok"
+            or not isinstance(prediction_row.get("predictions"), list)
+        ):
+            incomplete_ids.append(image_id)
+    if incomplete_ids:
+        raise ValueError(
+            f"Missing or failed OCR predictions for {len(incomplete_ids)} images with ground truth "
+            f"in split {split!r}; first image_id: {sorted(incomplete_ids)[0]}. "
+            "Run OCR on the full split before evaluation."
+        )
+
     image_details, region_details = [], []
-    total_char_errors = total_gt_chars = total_word_errors = total_gt_words = 0
-    excluded_invalid_regions = excluded_empty_transcriptions = evaluated_regions = 0
-    unmatched_prediction_count = missing_region_count = images_with_gt = images_with_gt_predictions = 0
+    total_char_errors = 0
+    total_gt_chars = 0
+    total_word_errors = 0
+    total_gt_words = 0
+    excluded_invalid_regions = 0
+    excluded_empty_transcriptions = 0
+    evaluated_regions = 0
+    unmatched_prediction_count = 0
+    missing_region_count = 0
+    images_with_gt = 0
+    images_with_gt_predictions = 0
     for image_id in sorted(manifest_by_id):
         record = manifest_by_id[image_id]
         gt_regions = record.get("ocr_regions", [])
@@ -205,10 +245,10 @@ def evaluate_ocr_records(
                 excluded_empty_transcriptions += 1
             else:
                 valid_gt.append(region)
-        prediction_row = predictions_by_id.get(image_id)
-        predicted_regions = prediction_row.get("predictions", []) if prediction_row and prediction_row.get("status") == "ok" else []
+        predicted_regions = predictions_by_id[image_id]["predictions"]
         aligned, unmatched_predictions = align_word_predictions_to_lines(predicted_regions, valid_gt)
-        if valid_gt and predicted_regions:
+        # A successful OCR run may legitimately return zero word boxes.
+        if valid_gt:
             images_with_gt_predictions += 1
         unmatched_prediction_count += len(unmatched_predictions)
         image_char_errors = image_gt_chars = image_word_errors = image_gt_words = 0
@@ -225,8 +265,14 @@ def evaluate_ocr_records(
             image_gt_words += gt_words
             evaluated_regions += 1
             missing_region_count += not row["matched"]
-            region_details.append({"image_id": image_id, **row, "char_errors": char_errors, "gt_characters": gt_chars,
-                                   "word_errors": word_errors, "gt_words": gt_words})
+            region_details.append({
+                "image_id": image_id,
+                **row,
+                "char_errors": char_errors,
+                "gt_characters": gt_chars,
+                "word_errors": word_errors,
+                "gt_words": gt_words,
+            })
         image_details.append(
             {
                 "image_id": image_id,

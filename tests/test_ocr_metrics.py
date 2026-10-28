@@ -1,3 +1,5 @@
+import pytest
+
 from docucheck.evaluation.metrics import (
     align_word_predictions_to_lines,
     cer,
@@ -80,6 +82,37 @@ def test_evaluation_reports_unicode_cer_wer_and_n_a_detection():
     assert summary["detection_metrics"]["status"].startswith("N/A")
     assert images[0]["cer"] == 0
     assert regions[0]["text_pred"] == "CỬA HÀNG"
+
+
+def test_evaluation_rejects_missing_or_failed_predictions():
+    manifest = [{
+        "image_id": "receipt-1",
+        "split": "internal_dev",
+        "ocr_ground_truth_status": "available",
+        "ocr_regions": [_box(0, 0, 50, 15, text_raw="CỬA HÀNG", validation_issues=[])],
+    }]
+    with pytest.raises(ValueError, match="Missing or failed OCR predictions"):
+        evaluate_ocr_records(manifest, [], split="internal_dev")
+    failed = [{"image_id": "receipt-1", "split": "internal_dev", "status": "error"}]
+    with pytest.raises(ValueError, match="Missing or failed OCR predictions"):
+        evaluate_ocr_records(manifest, failed, split="internal_dev")
+    malformed = [{"image_id": "receipt-1", "split": "internal_dev", "status": "ok"}]
+    with pytest.raises(ValueError, match="Missing or failed OCR predictions"):
+        evaluate_ocr_records(manifest, malformed, split="internal_dev")
+
+
+def test_successful_zero_word_result_counts_as_evaluated_ocr():
+    manifest = [{
+        "image_id": "receipt-1",
+        "split": "internal_dev",
+        "ocr_ground_truth_status": "available",
+        "ocr_regions": [_box(0, 0, 50, 15, text_raw="CỬA HÀNG", validation_issues=[])],
+    }]
+    predictions = [{"image_id": "receipt-1", "split": "internal_dev", "status": "ok", "predictions": []}]
+    summary, images, _ = evaluate_ocr_records(manifest, predictions, split="internal_dev")
+    assert summary["images_with_ground_truth_and_predictions"] == 1
+    assert summary["unmatched_ground_truth_regions"] == 1
+    assert images[0]["cer"] == 1.0
 
 
 def test_tesseract_tsv_parser_skips_continuation_fragments_and_bounds_text():
