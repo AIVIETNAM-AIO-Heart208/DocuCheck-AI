@@ -66,6 +66,16 @@ uv run python scripts/prepare_dataset.py \
 
 Manifest chứa `internal_train`/`internal_dev` do team tạo theo SHA-256 ảnh và seed cố định, cùng `official_validation_inventory` để giữ nguyên nguồn chính thức. Ảnh train trùng chính xác với validation chính thức được cách ly khỏi hai split nội bộ. Ảnh validation hiện không có nhãn KIE trong export cục bộ; OCR ground truth đầy đủ chỉ có ở một phần ảnh train. Manifest và nội dung nhận dạng nằm trong `data/processed/` và không được commit.
 
+`recognition_manifest.jsonl` là các cặp crop/transcript từ task text-recognition riêng, không phải KIE field crops và chưa có liên kết parent receipt được xác minh. Schema 1.1 giữ raw annotations, provenance và các trạng thái thiếu/lỗi riêng biệt; xem [DATA_SCHEMA](docs/DATA_SCHEMA.md).
+
+Chạy audit gần trùng và tạo mẫu review annotation 40 ảnh (seed cố định):
+
+```bash
+uv run python scripts/audit_dataset.py --dataset-root data/mcocr --seed 42 --sample-size 40 --threshold 6 --output-dir outputs/audit/week1
+```
+
+Mở `outputs/audit/week1/annotations.html` và `near_duplicates.html` trên máy local. Làm theo [protocol review](docs/ANNOTATION_AUDIT.md), ghi kết quả vào worksheet; candidate gần trùng chưa phải duplicate được xác nhận. CLI không thay split và không ghi đè worksheet có sẵn. Chọn thư mục output mới khi chạy lại. Trên PowerShell có thể thay `uv run python` bằng `.venv\Scripts\python.exe` sau khi cài môi trường.
+
 Chạy OCR mẫu trên ba ảnh phát triển trước, rồi mới chạy toàn bộ split nội bộ:
 
 ```bash

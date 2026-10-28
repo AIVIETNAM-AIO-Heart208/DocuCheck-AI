@@ -11,6 +11,8 @@ from typing import Any
 
 from PIL import Image, UnidentifiedImageError
 
+from docucheck.data.validation import is_relative_dataset_path
+
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATASET_ROOT = REPOSITORY_ROOT / "data" / "mcocr"
 
@@ -71,7 +73,7 @@ def load_kie_records(dataset_root: str | Path | None = None) -> list[dict[str, A
 
     records = []
     with csv_path.open(encoding="utf-8-sig", newline="") as stream:
-        for row in csv.DictReader(stream):
+        for source_line, row in enumerate(csv.DictReader(stream), 2):
             texts = _split_cell(row.get("anno_texts"))
             labels = _split_cell(row.get("anno_labels"))
             polygon_parse_error = None
@@ -105,7 +107,11 @@ def load_kie_records(dataset_root: str | Path | None = None) -> list[dict[str, A
                     "source_annotations": {
                         "anno_num": row.get("anno_num"),
                         "anno_image_quality": row.get("anno_image_quality"),
+                        "anno_texts": row.get("anno_texts"),
+                        "anno_labels": row.get("anno_labels"),
+                        "anno_polygons": row.get("anno_polygons"),
                     },
+                    "source_line": source_line,
                     "regions": regions,
                     "source_region_counts": {
                         "texts": len(texts),
@@ -170,6 +176,7 @@ def inspect_image(path: str | Path) -> dict[str, Any]:
         with Image.open(path) as image:
             image.verify()
         with Image.open(path) as image:
+            image.load()
             return {
                 "valid": True,
                 "width": image.width,
@@ -210,6 +217,8 @@ def load_full_page_text_records(
                     "text_raw": text,
                     "polygon": polygon,
                     "source_issue": issue,
+                    "source_line": line_number,
+                    "source_raw": line,
                 }
             )
         records.append(
@@ -235,6 +244,8 @@ def load_text_recognition_pairs(
     with manifest.open(encoding="utf-8-sig") as stream:
         for line_number, line in enumerate(stream, 1):
             image_ref, separator, text = line.rstrip("\r\n").partition("\t")
+            if not is_relative_dataset_path(image_ref):
+                raise ValueError(f"Invalid recognition image path at {manifest.name}:{line_number}")
             candidate = root / image_ref
             if not candidate.is_file():
                 crop_candidate = root / "text_recognition_mcocr_data" / "text_recognition_mcocr_data" / Path(image_ref).name
@@ -327,9 +338,12 @@ def audit_dataset(dataset_root: str | Path | None = None) -> dict[str, Any]:
 
     val_csv = root / "mcocr_val_sample_df.csv"
     val_annotation_rows = 0
+    val_columns = []
     if val_csv.is_file():
         with val_csv.open(encoding="utf-8-sig", newline="") as stream:
-            val_annotation_rows = sum(1 for _ in csv.DictReader(stream))
+            reader = csv.DictReader(stream)
+            val_columns = reader.fieldnames or []
+            val_annotation_rows = sum(1 for _ in reader)
     return {
         "dataset_root": root,
         "source_files": {
@@ -353,7 +367,8 @@ def audit_dataset(dataset_root: str | Path | None = None) -> dict[str, Any]:
             "annotations_without_image": len(annotation_names - train_names),
             "validation_image_count": sum(1 for path in val_images.glob("*") if path.is_file()),
             "validation_sample_rows": val_annotation_rows,
-            "validation_has_kie_labels": False,
+            "validation_has_kie_labels": "anno_labels" in val_columns,
+            "validation_has_kie_polygons": "anno_polygons" in val_columns,
         },
         "image_integrity": dict(image_integrity),
         "image_dimensions": {f"{w}x{h}": n for (w, h), n in sorted(dimensions.items())},

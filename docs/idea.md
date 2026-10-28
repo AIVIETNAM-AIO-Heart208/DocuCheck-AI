@@ -25,11 +25,11 @@ Danh sách mặt hàng, chứng từ nhiều trang, kiểm toán thuế, xác mi
 | Trường sản phẩm | Nhãn MC-OCR dự kiến |
 |---|---|
 | `seller_name` | `SELLER` |
-| `seller_address` | `SELLER_ADDRESS` |
+| `seller_address` | `ADDRESS` |
 | `transaction_datetime` | `TIMESTAMP` |
 | `total_amount` | `TOTAL_COST` |
 
-Các ánh xạ nhãn này lấy từ ghi chú dự án và cần được xác minh với dataset đã tải trước khi sử dụng. Nhãn KIE không đồng nghĩa dataset có bản chép đầy đủ nội dung biên lai để đánh giá OCR. Chưa giả định dataset có nhãn cho tiền trước thuế, giảm giá, thuế, phí dịch vụ, mã biên lai hay danh sách mặt hàng.
+Các ánh xạ này đã được xác minh với nhãn trong export MC-OCR local; `TOTAL_TOTAL_COST` là một nhãn bất thường và được giữ nguyên, không tự động ánh xạ. Nhãn KIE không đồng nghĩa dataset có bản chép đầy đủ nội dung biên lai để đánh giá OCR. Chưa giả định dataset có nhãn cho tiền trước thuế, giảm giá, thuế, phí dịch vụ, mã biên lai hay danh sách mặt hàng.
 
 ## Nhóm người dùng cần tìm hiểu trước
 

@@ -14,8 +14,10 @@ def assign_internal_splits(
     if not 0 < validation_fraction < 1:
         raise ValueError("validation_fraction must be strictly between 0 and 1")
     grouped = defaultdict(list)
+    record_groups = []
     for index, record in enumerate(records):
         group_id = record.get("image_group_id") or f"invalid:{record.get('image_id', index)}"
+        record_groups.append(group_id)
         grouped[group_id].append(index)
     group_ids = sorted(grouped)
     if not group_ids:
@@ -28,9 +30,9 @@ def assign_internal_splits(
     )
     dev_groups = set(group_ids[:dev_group_count])
     result = []
-    for record in records:
+    for record, group_id in zip(records, record_groups):
         item = dict(record)
-        item["split"] = "internal_dev" if item["image_group_id"] in dev_groups else "internal_train"
+        item["split"] = "internal_dev" if group_id in dev_groups else "internal_train"
         item["split_provenance"] = f"team-created seed={seed} fraction={validation_fraction:g}"
         result.append(item)
     return result

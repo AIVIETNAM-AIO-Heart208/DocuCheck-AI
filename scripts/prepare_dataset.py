@@ -45,8 +45,11 @@ def main(argv: list[str] | None = None) -> int:
     report_path = output_dir / "validation_report.json"
     report["manifest_validation"] = validate_manifest(records + recognition)
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if args.invalid_policy == "fail" and report["invalid_record_count"]:
-        print(f"Found {report['invalid_record_count']} invalid records; report: {report_path}", file=sys.stderr)
+    if not report["manifest_validation"]["valid"]:
+        print(f"Manifest structure or leakage validation failed; report: {report_path}", file=sys.stderr)
+        return 2
+    if args.invalid_policy == "fail" and (report["invalid_record_count"] or report["invalid_recognition_record_count"]):
+        print(f"Found invalid receipt or recognition records; report: {report_path}", file=sys.stderr)
         return 2
 
     write_jsonl(output_dir / "manifest.jsonl", records)
