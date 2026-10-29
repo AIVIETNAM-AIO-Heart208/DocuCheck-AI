@@ -1,6 +1,6 @@
 # Kiểm tra báo cáo và bộ nộp tuần 1
 
-Cập nhật 29/10/2026 (Asia/Saigon). Bản hiện tại: 8 trang A4 gồm bìa. Chi tiết nghiệm thu tại evidence/pdf_qa.json và evidence/final_review.json.
+Cập nhật 29/10/2026 (Asia/Saigon). Bản hiện tại: 9 trang A4 gồm bìa. Chi tiết nghiệm thu tại evidence/pdf_qa.json và evidence/final_review.json.
 
 - [x] Bìa đúng AI-VIETNAM, AIO2026, nhóm và hai thành viên; không có mã học viên/giảng viên.
 - [x] Ba goal có phương pháp, kết quả, diễn giải và giới hạn; không nhận hoàn thành mô hình KIE hoặc ứng dụng.
@@ -8,6 +8,8 @@ Cập nhật 29/10/2026 (Asia/Saigon). Bản hiện tại: 8 trang A4 gồm bìa
 - [x] Ba tình huống lỗi dựa trên review đã hoàn tất; không sao chép ảnh, mã ảnh hoặc transcript nhạy cảm vào PDF.
 - [x] Giải thích chia theo nhóm trùng chính xác, trạng thái dữ liệu và giới hạn kiểm tra cấu trúc.
 - [x] Giải thích cách ghép/tính CER/WER và giới hạn chẩn đoán; không tự gán nguyên nhân OCR.
+- [x] Bảng tái lập có bốn thành phần giống hệt từng byte, đúng hai bộ đầu ra đã qua verifier; không suy rộng sang mọi môi trường hoặc độ đúng của nhãn.
+- [x] Công thức CER/WER tổng hợp theo vùng, có định nghĩa ký hiệu và thay số khớp kết quả đã lưu; phân biệt rõ dấu hàng nghìn và thập phân.
 - [x] PDF không có tên file, đường dẫn nội bộ, hàm/lớp, lệnh chạy, log hoặc checksum.
 - [x] Biên dịch XeLaTeX và kiểm tra bản render; tham chiếu, tiếng Việt, font, bảng và hình được xác minh trong QA.
 - [x] Hồ sơ CI đúng commit, run/job và log; giữ trạng thái cũ dưới nhãn lịch sử.

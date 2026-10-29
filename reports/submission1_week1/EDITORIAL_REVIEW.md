@@ -1,6 +1,12 @@
 # Rà soát và chỉnh sửa báo cáo
 
-## Hoàn thiện bản 8 trang dành cho người đọc — 29/10/2026
+## Bổ sung bảng tái lập và công thức — bản 9 trang, 29/10/2026
+
+Chỉ sửa hai nội dung theo yêu cầu: thay khẳng định tái lập bằng bảng bốn thành phần đối chiếu, và thay đoạn định nghĩa CER/WER bằng công thức tổng hợp theo vùng hợp lệ cùng phép thay số. Hai bộ A/B đã được kiểm tra lại bằng verifier chỉ đọc và so byte; các tử/mẫu khớp metrics đã lưu. Không chạy lại preparation, OCR hoặc evaluation.
+
+Giữ tên thành phần bằng ngôn ngữ dễ hiểu, không có tên file hoặc mã minh chứng trong PDF. Phần công thức nêu khoảng cách chỉnh sửa tối thiểu, cách tách token và cộng lỗi trước khi chia; dùng dấu cách mảnh cho hàng nghìn. Cách xử lý vùng lỗi, vùng không có dự đoán và dự đoán không được ghép vẫn giữ nguyên. Chỉnh ngắt trang để tiêu đề OCR và kết luận đi cùng nội dung. Bản cuối có 9 trang gồm bìa; QA và manifest báo cáo được cập nhật theo bản này.
+
+## Lịch sử: hoàn thiện bản 8 trang dành cho người đọc — 29/10/2026
 
 Bổ sung bảng phân bố bốn trường theo số vùng và số ảnh; diễn giải hình dạng, sáng/tương phản, chỉ báo độ nét và mật độ nhãn. Thêm ba tình huống lỗi đã có trong review: sai loại trường, vùng bao thiếu tên và sai giá trị chép chữ. Nội dung chỉ mô tả quan sát, tác động và cách xử lý; không sao chép dữ liệu biên lai hoặc mã ảnh.
 

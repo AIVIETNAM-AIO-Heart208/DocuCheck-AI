@@ -7,7 +7,7 @@ Bản báo cáo dành cho người xem là main.pdf; nội dung LaTeX nằm tron
 
 Tài liệu dùng font Times New Roman/Arial/Consolas nếu có font Windows; trên Linux dùng TeX Gyre Termes/Heros và DejaVu Sans Mono. Biên dịch PDF không cần dữ liệu gốc hay chạy lại OCR.
 
-Bản dành cho người đọc được hoàn thiện ngày 29/10/2026, gồm 8 trang A4 (bìa và 7 trang nội dung, gồm tài liệu tham khảo). evidence/pdf_qa.json và evidence/final_review.json ghi kết quả kiểm tra bản hiện tại. EVIDENCE_INDEX.md là hồ sơ hỗ trợ riêng; các số liệu và ngữ cảnh lịch sử được ghi rõ trong đó, không chèn vào PDF.
+Bản dành cho người đọc được cập nhật ngày 29/10/2026, gồm 9 trang A4 (bìa và 8 trang nội dung, gồm tài liệu tham khảo), sau khi bổ sung bảng kiểm chứng tái lập và công thức CER/WER. evidence/pdf_qa.json và evidence/final_review.json ghi kết quả kiểm tra bản hiện tại. EVIDENCE_INDEX.md là hồ sơ hỗ trợ riêng; các số liệu và ngữ cảnh lịch sử được ghi rõ trong đó, không chèn vào PDF.
 
 Để biên dịch và kiểm tra bố cục bằng công cụ có sẵn trên Windows:
 

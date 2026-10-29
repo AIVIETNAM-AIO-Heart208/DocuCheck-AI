@@ -1,13 +1,13 @@
 {
   "date_local": "2026-10-29",
   "timezone": "Asia/Saigon",
-  "scope": "Final eight-page reader-facing Week 1 report",
-  "workspace_base_commit": "cb04621065469cd0790aa05bb0b79a65a8bd8ba4",
+  "scope": "Final nine-page reader report: two requested improvements only",
+  "workspace_base_commit": "abc2f28afb1b37ca63374e477e6bcdd48ef27157",
   "report_changes_committed": false,
-  "physical_pages": 8,
-  "content_pages_including_abstract_and_references": 7,
-  "pdf_sha256": "7741d065e31331e52f26410a707c3f23172d9c7dd72639fabaa0496fbc5d6da4",
-  "tex_sha256": "7b7b5e17c54822d0c6ae8fdd0ed92d33d5fda966558102bb7927df0286c2e51c",
+  "physical_pages": 9,
+  "content_pages_including_abstract_and_references": 8,
+  "pdf_sha256": "af4100a580ea4a1388f0857095e6d0ca19514c27a809d397436de2a6e41a6856",
+  "tex_sha256": "cf8f28df46dbaa25d61b20104691e9159ac7949e522fdf02aa08ed13bf1d6546",
   "source_artifact_hashes_verified": 79,
   "source_artifacts_unchanged": true,
   "four_field_table_recounted_from_receipt_manifest": true,
@@ -18,8 +18,8 @@
   "labels_and_citations_valid": true,
   "latex_compilation": "XeLaTeX, three passes, no undefined references, missing glyphs or overflow warnings",
   "all_fonts_embedded": true,
-  "embedded_font_count": 10,
-  "visual_review_status": "All eight final rendered pages inspected, including full-size tables, charts and Vietnamese labels; no clipping, overlap or encoding defect remains.",
+  "embedded_font_count": 16,
+  "visual_review_status": "All nine final rendered pages inspected; reproducibility table and both equations inspected at full size. No clipping, overlap, missing glyph, unresolved reference or encoding defect found.",
   "ci_commit": "cb04621065469cd0790aa05bb0b79a65a8bd8ba4",
   "ci_run_id": 40857742742,
   "ci_original_job_log": "106 passed in 1.89s",
@@ -47,5 +47,29 @@
     "physical_pages": 19,
     "pdf_sha256": "cd9f667ab6b7c7f5ee852142b19dc902d54cbe9a886938e20c3a9b0e6623dbff",
     "status": "Superseded; does not describe current PDF"
+  },
+  "previous_report_revision": {
+    "physical_pages": 8,
+    "pdf_sha256": "7741d065e31331e52f26410a707c3f23172d9c7dd72639fabaa0496fbc5d6da4",
+    "tex_sha256": "7b7b5e17c54822d0c6ae8fdd0ed92d33d5fda966558102bb7927df0286c2e51c",
+    "status": "Eight-page revision before the reproducibility table and CER/WER equations."
+  },
+  "two_point_revision": {
+    "reproducibility_existing_bundles_verified_read_only": 2,
+    "output_components_compared_byte_for_byte": 4,
+    "all_four_components_byte_identical": true,
+    "cer_fraction": [
+      92591,
+      49449
+    ],
+    "wer_fraction": [
+      18332,
+      8547
+    ],
+    "rounded_cer": 1.8725,
+    "rounded_wer": 2.1448,
+    "equations_sum_over_valid_regions_before_division": true,
+    "numeric_grouping": "thin spaces for thousands, comma for decimal separator",
+    "new_preparation_inference_evaluation_or_training": false
   }
 }

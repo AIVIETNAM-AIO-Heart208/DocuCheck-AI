@@ -4,16 +4,16 @@
   "scope": "Reader-facing report: technical accuracy and independent readability across all three Week 1 goals",
   "compiler": "XeLaTeX / MiKTeX 25.12",
   "build_command": "powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -Render",
-  "physical_pages": 8,
-  "substantive_pages": 7,
+  "physical_pages": 9,
+  "substantive_pages": 8,
   "composition": {
     "cover": 1,
-    "content_including_abstract_and_references": 7,
+    "content_including_abstract_and_references": 8,
     "separate_contents_or_appendix": 0
   },
   "paper": "A4",
-  "pdf_sha256": "7741d065e31331e52f26410a707c3f23172d9c7dd72639fabaa0496fbc5d6da4",
-  "tex_sha256": "7b7b5e17c54822d0c6ae8fdd0ed92d33d5fda966558102bb7927df0286c2e51c",
+  "pdf_sha256": "af4100a580ea4a1388f0857095e6d0ca19514c27a809d397436de2a6e41a6856",
+  "tex_sha256": "cf8f28df46dbaa25d61b20104691e9159ac7949e522fdf02aa08ed13bf1d6546",
   "latex_log_has_warning_or_overflow_or_missing_glyph": false,
   "undefined_references_or_citations": false,
   "unexpected_empty_pages": false,
@@ -24,10 +24,10 @@
   "reader_report_has_no_internal_filenames_or_hashes": true,
   "cover_identity_verified": true,
   "new_test_suite_execution": false,
-  "visual_review_status": "All eight final rendered pages inspected, including full-size tables, charts and Vietnamese labels; no clipping, overlap or encoding defect remains.",
+  "visual_review_status": "All nine final rendered pages inspected; reproducibility table and both equations inspected at full size. No clipping, overlap, missing glyph, unresolved reference or encoding defect found.",
   "qa_note": "Programmatic checks do not substitute for inspecting rendered pages. MiKTeX update advisory is external to the LaTeX document log.",
   "all_fonts_embedded": true,
-  "embedded_font_count": 10,
+  "embedded_font_count": 16,
   "confirmed_institution": "AI-VIETNAM",
   "confirmed_course": "AIO2026",
   "new_ocr_inference": false,
@@ -35,5 +35,9 @@
   "new_evaluation_execution": false,
   "new_notebook_execution": false,
   "new_pixel_review": false,
-  "content_review": "Reader report covers methods, results, interpretations and limitations across three goals; four-field table and EDA, three reviewed annotation cases, normalization, reproducibility, OCR diagnostics, discussion and prioritized next steps."
+  "content_review": "Focused revision: four-component byte-identical reproducibility table; CER/WER region-summed definitions and numeric substitution, retaining alignment and interpretation limitations.",
+  "equation_labels_verified": [
+    "eq:ocr-rates",
+    "eq:ocr-values"
+  ]
 }

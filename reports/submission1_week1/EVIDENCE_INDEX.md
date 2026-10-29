@@ -1,10 +1,12 @@
 # Hồ sơ minh chứng riêng — Submission I, Week 1
 
-Cập nhật 29/10/2026, Asia/Saigon. PDF hiện tại có 8 trang, gồm bìa. Hồ sơ này phục vụ kiểm tra/nộp bài, không chèn vào PDF; người đọc báo cáo không cần mở repository.
+Cập nhật 29/10/2026, Asia/Saigon. PDF hiện tại có 9 trang, gồm bìa. Hồ sơ này phục vụ kiểm tra/nộp bài, không chèn vào PDF; người đọc báo cáo không cần mở repository.
 
 ## Phiên bản và phạm vi
 
-Bản 19 trang là lịch sử. Bản 5 trang ở commit `cb04621065469cd0790aa05bb0b79a65a8bd8ba4` đã được bổ sung qua bản 6 trang thành bản 8 trang hiện tại trong workspace. Chưa commit/push bản hoàn thiện.
+Bản 19 trang là lịch sử. Bản 5 trang ở commit `cb04621065469cd0790aa05bb0b79a65a8bd8ba4` được bổ sung thành bản 8 trang, đã có ở commit `abc2f28`. Lượt chỉnh hiện tại chỉ thêm bảng tái lập và công thức CER/WER, tạo bản 9 trang; chưa commit/push các thay đổi này.
+
+Hai bộ A/B được kiểm tra lại bằng verifier ở chế độ chỉ đọc; đối chiếu đủ bốn thành phần đều giống hệt từng byte. Tử số/mẫu số CER 92.591/49.449 và WER 18.332/8.547 khớp metrics đã lưu. Các công thức trong PDF tổng hợp theo vùng hợp lệ, dùng dấu cách mảnh cho hàng nghìn và dấu phẩy cho thập phân. Không chạy lại preparation hoặc evaluation để có các kết quả này.
 
 `evidence/verified_summary.json`, `goal_alignment_review.json` và `repository_context.json` giữ ngữ cảnh kiểm chứng thực nghiệm ngày 28/10. Chúng không xác định số trang hoặc trạng thái biên dịch hiện tại. `evidence/pdf_qa.json` và `final_review.json` áp dụng cho PDF hiện tại.
 
@@ -29,7 +31,7 @@ Các đường dẫn tính từ gốc repo, trừ `evidence/` và `figures/` tí
 | Biểu đồ OCR | Per-image metrics; `figures/ocr_error_distribution.pdf` | Vẽ lại từ 231 dòng đã lưu, cùng 25 bins, chỉ đổi nhãn trục sang tiếng Việt. Không tính lại metric hoặc inference. |
 | Tests local | `evidence/pytest.txt` | 106 passed in 1.90s, Python 3.12.16/Windows, lần chạy gốc; khác log CI. |
 | CI | `evidence/ci_status.json`; GitHub Actions | 106 passed in 1.89s tại commit cb04621; run 40857742742, job 123392875419. Không chứng minh annotation hoặc thí nghiệm dữ liệu thật đúng. |
-| PDF | `evidence/pdf_qa.json`, `final_review.json`, `latex-final.log` | 8 trang; kiểm tra tham chiếu, glyph, font, tràn, tọa độ chữ và xem bản render. PDF không chứa tên file/đường dẫn nội bộ. |
+| PDF | `evidence/pdf_qa.json`, `final_review.json`, `latex-final.log` | 9 trang; kiểm tra tham chiếu bảng/công thức, glyph, font, tràn, tọa độ chữ và xem bản render. PDF không chứa tên file/đường dẫn nội bộ. |
 
 ## Bộ minh chứng tối thiểu cho việc nộp
 

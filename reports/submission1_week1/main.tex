@@ -234,8 +234,24 @@ Tổng cộng & 1.546 & \\
 \subsection{Kiểm tra tính nhất quán và xử lý dữ liệu lỗi}
 Quy trình cho phép giữ lại bản ghi kèm cảnh báo, bỏ bản ghi lỗi hoặc dừng khi gặp lỗi. Các số liệu trên thuộc phương án giữ lại kèm cảnh báo, nên chưa phải bộ dữ liệu đã làm sạch toàn bộ nhãn. Nếu chọn bỏ lỗi, việc lọc diễn ra sau chia tập và giữ phân nhóm ban đầu của các ảnh còn lại; quy trình không tự cân bằng lại số lượng.
 
-Hai lần chuẩn bị dữ liệu với cùng đầu vào và cấu hình đã cho kết quả đầu ra giống hệt nhau. Phép kiểm đầu ra đối chiếu nội dung, số bản ghi và phân nhóm để phát hiện bộ kết quả bị thiếu, thay đổi hoặc trộn phiên bản. Kết quả kiểm thử tự động cục bộ cũng ghi nhận 106 trường hợp đạt. Những phép kiểm này hỗ trợ tính nhất quán của quy trình, nhưng không thay thế kiểm tra ngữ nghĩa: một bản ghi hợp lệ về cấu trúc vẫn có thể được gán sai nội dung.
+Với cùng dữ liệu đầu vào và cấu hình, kết quả đối chiếu hai lần chuẩn bị được trình bày trong Bảng~\ref{tab:reproducibility}. Cả hai bộ đầu ra đều vượt qua phép kiểm tra tính toàn vẹn và nhất quán về nội dung, số bản ghi và phân nhóm.
 
+\begin{table}[H]
+\caption{Đối chiếu các thành phần đầu ra giữa hai lần chuẩn bị dữ liệu.}\label{tab:reproducibility}
+\begin{tabularx}{\linewidth}{@{}YP{44mm}@{}}
+\toprule
+\textbf{Thành phần được đối chiếu} & \textbf{Kết quả} \\\midrule
+Danh mục biên lai đã chuẩn hóa & Giống hệt từng byte \\
+Danh mục ảnh cắt nhận dạng chữ & Giống hệt từng byte \\
+Tổng hợp phân chia tập & Giống hệt từng byte \\
+Báo cáo kiểm tra dữ liệu & Giống hệt từng byte \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Kết quả kiểm thử tự động cục bộ cũng ghi nhận 106 trường hợp đạt. Các phép kiểm hỗ trợ tính nhất quán trong điều kiện đã đối chiếu, không bảo đảm kết quả trong mọi môi trường hoặc nhãn hoàn toàn đúng: một bản ghi hợp lệ về cấu trúc vẫn có thể được gán sai nội dung.
+
+\Needspace{9\baselineskip}
 \section{Kết quả 3: OCR ban đầu và bài học rút ra}
 \subsection{Lựa chọn baseline và cấu hình đánh giá}
 Nhóm sử dụng Tesseract để nhận dạng chữ và vị trí trên ảnh (OCR) \cite{tesseract}. Công cụ có mô hình tiếng Việt sẵn, chạy được trên CPU và trả về vị trí cùng chữ nhận dạng, phù hợp để thiết lập mốc ban đầu mà chưa cần huấn luyện thêm. Lựa chọn này phục vụ khảo sát đường xử lý và phép đo; tuần 1 chưa có thí nghiệm so sánh để xác định engine tốt nhất cho dữ liệu này.
@@ -260,9 +276,22 @@ WER trên toàn tập (tỷ số) & 2,1448 & Sai khác token với transcript th
 \subsection{Cách tính và giới hạn của CER/WER}
 Để tính lỗi, nhóm gán mỗi vùng từ dự đoán vào vùng transcript hợp lệ nhỏ nhất chứa tâm của nó, rồi ghép chữ theo thứ tự từ trên xuống dưới, từ trái sang phải trong từng vùng. Phép đo dùng 8.304 vùng tham chiếu và loại 104 vùng sai hình học. Chữ được chuẩn hóa Unicode, chữ hoa/thường và khoảng trắng; dấu tiếng Việt và dấu câu vẫn được giữ.
 
-CER là tổng số phép chèn, xóa, thay thế ký tự chia cho tổng số ký tự tham chiếu; WER tính tương tự trên các token tách bằng khoảng trắng. Token tiếng Việt ở đây thường là âm tiết. Nhóm cộng số lỗi và độ dài tham chiếu của tất cả vùng rồi mới chia, thay vì lấy trung bình tỷ số từng ảnh. Cả hai tỷ số có thể lớn hơn 1 vì số lỗi, bao gồm lỗi chèn, có thể vượt độ dài tham chiếu.
+Gọi $\mathcal{R}$ là tập vùng tham chiếu hợp lệ, $G_r$ là chuỗi tham chiếu và $P_r$ là chuỗi dự đoán đã ghép tại vùng $r$. Hai tỷ số được tính theo Công thức~\eqref{eq:ocr-rates}:
+\begin{equation}\label{eq:ocr-rates}
+\mathrm{CER}=\frac{\sum_{r\in\mathcal{R}}d_{\mathrm{char}}(G_r,P_r)}{\sum_{r\in\mathcal{R}}|G_r|_{\mathrm{char}}},
+\qquad
+\mathrm{WER}=\frac{\sum_{r\in\mathcal{R}}d_{\mathrm{token}}(G_r,P_r)}{\sum_{r\in\mathcal{R}}|G_r|_{\mathrm{token}}}.
+\end{equation}
+Trong đó, $d$ là khoảng cách chỉnh sửa tối thiểu gồm chèn, xóa và thay thế; $|G_r|$ là độ dài chuỗi tham chiếu theo ký tự hoặc token. Token được tách bằng khoảng trắng, thường tương ứng âm tiết tiếng Việt. Nhóm cộng số lỗi và độ dài tham chiếu trước khi chia, không lấy trung bình tỷ số từng ảnh.
 
-Giá trị cao cho thấy sai khác lớn theo cách đo hiện tại. Sai khác có thể đến từ nhận dạng, transcript tham chiếu hoặc cách ghép vùng chữ; phân tích hiện tại chưa tách được mức đóng góp của từng nguyên nhân. Vì vậy, không thể dùng riêng CER/WER để kết luận Tesseract đọc sai bao nhiêu phần trăm chữ trên ảnh.
+Thay các tổng của lần đánh giá hiện tại vào Công thức~\eqref{eq:ocr-rates} cho kết quả trong Công thức~\eqref{eq:ocr-values}; dấu cách mảnh phân nhóm hàng nghìn, dấu phẩy biểu thị phần thập phân:
+\begin{equation}\label{eq:ocr-values}
+\mathrm{CER}=\frac{92\,591}{49\,449}\approx1{,}8725,
+\qquad
+\mathrm{WER}=\frac{18\,332}{8\,547}\approx2{,}1448.
+\end{equation}
+
+Hai tỷ số có thể lớn hơn 1 vì số lỗi, bao gồm lỗi chèn, có thể vượt độ dài tham chiếu. Sai khác có thể đến từ nhận dạng, transcript tham chiếu hoặc cách ghép vùng chữ; phân tích hiện tại chưa tách được mức đóng góp của từng nguyên nhân. Vì vậy, không thể dùng riêng CER/WER để kết luận Tesseract đọc sai bao nhiêu phần trăm chữ trên ảnh.
 
 \subsection{Quan sát và bài học từ kết quả}
 Hình~\ref{fig:ocrerror} cho thấy sai khác phân bố rộng giữa các ảnh. Một tỷ số chung vì thế không thay thế được việc xem các ca cụ thể. Khi rà soát tiếp, cần ưu tiên cả ảnh có sai khác cao lẫn các vùng không ghép được để xác định phép đo đang bỏ qua hoặc phạt những nội dung nào.
@@ -283,6 +312,7 @@ Tính tái lập giữ đầu vào và cách chia tập ổn định để đố
 
 Baseline cho phép đo sai khác theo quy tắc rõ ràng, nhưng chưa xác định đóng góp của từng nguyên nhân hoặc chất lượng KIE. Ưu tiên hiện tại là kiểm chứng phép đo và chuẩn bị nhãn đã phân xử để tránh biến sai sót dữ liệu thành kết luận về mô hình.
 
+\Needspace{12\baselineskip}
 \section{Kết luận và hướng tiếp theo}
 Tuần 1 đã hoàn thành khảo sát dữ liệu, quy trình chuẩn bị có thể lặp lại và một mốc OCR trên tập dev. Các giới hạn về nhãn, gần trùng và ghép vùng đã được xác định để định hướng bước phát triển tiếp theo.
 

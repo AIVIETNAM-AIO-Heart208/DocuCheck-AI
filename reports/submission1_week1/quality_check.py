@@ -47,7 +47,7 @@ def main():
     source = (HERE / "main.tex").read_text(encoding="utf-8")
     labels = re.findall(r"\\label\{([^}]+)\}", source)
     assert len(labels) == len(set(labels))
-    assert set(re.findall(r"\\(?:ref|pageref)\{([^}]+)\}", source)) <= set(labels)
+    assert set(re.findall(r"\\(?:ref|pageref|eqref)\{([^}]+)\}", source)) <= set(labels)
     bibliography = set(re.findall(r"\\bibitem\{([^}]+)\}", source))
     for citation in re.findall(r"\\cite\{([^}]+)\}", source):
         assert set(citation.split(",")) <= bibliography
