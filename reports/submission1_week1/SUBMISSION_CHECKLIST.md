@@ -15,7 +15,14 @@ Cập nhật 29/10/2026 (Asia/Saigon). Bản hiện tại: 9 trang A4 gồm bìa
 - [x] Hồ sơ CI đúng commit, run/job và log; giữ trạng thái cũ dưới nhãn lịch sử.
 - [x] EVIDENCE_INDEX.md xác định bộ minh chứng tối thiểu và các phần có thể cần cung cấp có kiểm soát.
 - [x] Tách hồ sơ thực nghiệm lịch sử khỏi QA hiện tại; không tuyên bố có thí nghiệm mới.
-- [ ] Chốt snapshot mã/notebook cho lần nộp; các notebook có thay đổi cục bộ từ trước vẫn được giữ nguyên.
-- [ ] Nếu quy định nộp yêu cầu kiểm chứng sâu: cung cấp đúng bộ artifact được chọn qua kênh được phép; chưa đóng gói hoặc đăng tải đầu ra riêng tư.
+- [x] Đã chốt mã nguồn và notebook trên GitHub tại commit `461f544ddb16bf5529c17a63e9a6fbd5bda87706`; xác nhận commit tồn tại trên GitHub. Các thay đổi notebook local vẫn được giữ nguyên.
+- [x] Đã chuẩn bị bộ minh chứng tổng hợp cho ba goal và ghi rõ những dữ liệu chi tiết có thể cung cấp có kiểm soát khi cần kiểm chứng sâu.
+- [x] Đã kèm bốn ảnh xuất từ output notebook đã lưu, ghi rõ nguồn và cách xuất; không thực thi lại notebook hoặc lấy gallery/transcript biên lai.
+- [x] Đã đối chiếu hash notebook local, output đã chọn và ảnh xuất qua hồ sơ provenance; làm rõ phạm vi đếm ảnh trùng và cách làm tròn CER/WER.
+- [x] PDF trong bộ nộp giống hệt PDF của commit đã chốt và bản đã qua QA, gồm 9 trang.
+- [x] Bộ nộp dùng link GitHub cho mã nguồn; ZIP final không kèm source.zip, notebook chứa output riêng tư hoặc dữ liệu biên lai gốc.
+- [x] Đã kèm checklist này, hướng dẫn đọc, danh mục minh chứng và manifest; kiểm tra hash từng tệp, nội dung ZIP và CRC thành công.
 
-PDF và phần biên tập đã hoàn tất. Các mục chưa đánh dấu thuộc thao tác chọn/gửi bộ nộp, không phải yêu cầu mở rộng Week 1 hoặc chạy mô hình mới.
+**Đã hoàn tất chuẩn bị bộ nộp Week 1.** ZIP final: `outputs/submission/DocuCheck_AI_Week1_FINAL.zip`. Mã nguồn: https://github.com/AIVIETNAM-AIO-Heart208/DocuCheck-AI/tree/461f544ddb16bf5529c17a63e9a6fbd5bda87706.
+
+Checklist xác nhận việc chuẩn bị và kiểm tra bộ nộp, không xác nhận đã upload hoặc được giảng viên nghiệm thu. Bước tiếp theo là người dùng upload ZIP final và cung cấp link GitHub. Minh chứng chi tiết chỉ được gửi bổ sung nếu có yêu cầu phù hợp.

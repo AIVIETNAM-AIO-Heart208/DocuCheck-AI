@@ -4,7 +4,9 @@ Cập nhật 29/10/2026, Asia/Saigon. PDF hiện tại có 9 trang, gồm bìa. 
 
 ## Phiên bản và phạm vi
 
-Bản 19 trang là lịch sử. Bản 5 trang ở commit `cb04621065469cd0790aa05bb0b79a65a8bd8ba4` được bổ sung thành bản 8 trang, đã có ở commit `abc2f28`. Lượt chỉnh hiện tại chỉ thêm bảng tái lập và công thức CER/WER, tạo bản 9 trang; chưa commit/push các thay đổi này.
+Bản 19 trang là lịch sử. Bản 5 trang ở commit `cb04621065469cd0790aa05bb0b79a65a8bd8ba4` được bổ sung thành bản 8 trang tại commit `abc2f28`, rồi thành bản 9 trang tại commit `461f544ddb16bf5529c17a63e9a6fbd5bda87706`. PDF bộ nộp đã được đối chiếu byte với PDF ở commit này; mã nguồn được cung cấp bằng link GitHub cố định.
+
+Bộ nộp final đã chuẩn bị tại `outputs/submission/DocuCheck_AI_Week1_FINAL.zip`, gồm PDF, tám tệp minh chứng tổng hợp, bốn ảnh xuất từ output notebook đã lưu kèm hồ sơ nguồn, checklist và hướng dẫn. Không kèm source.zip hoặc dữ liệu biên lai gốc. Danh sách tệp và hash nằm trong `SUBMISSION_MANIFEST.json` bên trong ZIP; việc upload do người dùng thực hiện.
 
 Hai bộ A/B được kiểm tra lại bằng verifier ở chế độ chỉ đọc; đối chiếu đủ bốn thành phần đều giống hệt từng byte. Tử số/mẫu số CER 92.591/49.449 và WER 18.332/8.547 khớp metrics đã lưu. Các công thức trong PDF tổng hợp theo vùng hợp lệ, dùng dấu cách mảnh cho hàng nghìn và dấu phẩy cho thập phân. Không chạy lại preparation hoặc evaluation để có các kết quả này.
 

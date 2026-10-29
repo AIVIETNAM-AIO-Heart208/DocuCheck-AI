@@ -3,7 +3,7 @@
   "timezone": "Asia/Saigon",
   "scope": "Final nine-page reader report: two requested improvements only",
   "workspace_base_commit": "abc2f28afb1b37ca63374e477e6bcdd48ef27157",
-  "report_changes_committed": false,
+  "report_changes_committed": true,
   "physical_pages": 9,
   "content_pages_including_abstract_and_references": 8,
   "pdf_sha256": "af4100a580ea4a1388f0857095e6d0ca19514c27a809d397436de2a6e41a6856",
@@ -33,8 +33,7 @@
   "minimum_submission_evidence_identified_in": "EVIDENCE_INDEX.md",
   "private_artifacts_copied_packaged_or_published": false,
   "remaining_submission_actions": [
-    "Select exact code/notebook snapshot for submission.",
-    "Provide detailed experimental outputs through an appropriate controlled channel only if required."
+    "User uploads DocuCheck_AI_Week1_FINAL.zip and supplies the pinned GitHub link; upload has not been performed."
   ],
   "experimental_limitations": [
     "36 near-duplicate candidates not adjudicated.",
@@ -71,5 +70,29 @@
     "equations_sum_over_valid_regions_before_division": true,
     "numeric_grouping": "thin spaces for thousands, comma for decimal separator",
     "new_preparation_inference_evaluation_or_training": false
+  },
+  "report_content_commit": "461f544ddb16bf5529c17a63e9a6fbd5bda87706",
+  "submission_preparation": {
+    "status": "complete; ready for user upload",
+    "date_local": "2026-10-29",
+    "code_snapshot": "461f544ddb16bf5529c17a63e9a6fbd5bda87706",
+    "commit_confirmed_on_github": true,
+    "report_matches_committed_pdf": true,
+    "all_preparation_checklist_items_checked": true,
+    "notebook_output_images": 4,
+    "local_notebook_and_selected_output_hashes_verified": true,
+    "historical_source_inventory_entries_compared": 79,
+    "historical_source_inventory_hashes_unchanged": 75,
+    "notebooks_differing_from_historical_inventory": [
+      "notebooks/01_dataset_audit.ipynb",
+      "notebooks/02_exploratory_data_analysis.ipynb",
+      "notebooks/03_preprocessing_validation.ipynb",
+      "notebooks/04_ocr_baseline_evaluation.ipynb"
+    ],
+    "notebook_cell_sources_match_pinned_commit": true,
+    "source_archive_included": false,
+    "final_zip": "outputs/submission/DocuCheck_AI_Week1_FINAL.zip",
+    "uploaded": false,
+    "new_experiments": false
   }
 }
