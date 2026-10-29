@@ -1,6 +1,33 @@
 # Rà soát và chỉnh sửa báo cáo
 
-**Lưu ý phiên bản (29/10/2026):** Tài liệu này ghi lần rà soát bản kỹ thuật 19 trang. Bản hiện tại trong main.pdf đã được viết lại thành báo cáo 5 trang dành cho người xem; các nhận xét về bố cục và nội dung PDF cũ chỉ có giá trị lịch sử.
+## Hoàn thiện bản 8 trang dành cho người đọc — 29/10/2026
+
+Bổ sung bảng phân bố bốn trường theo số vùng và số ảnh; diễn giải hình dạng, sáng/tương phản, chỉ báo độ nét và mật độ nhãn. Thêm ba tình huống lỗi đã có trong review: sai loại trường, vùng bao thiếu tên và sai giá trị chép chữ. Nội dung chỉ mô tả quan sát, tác động và cách xử lý; không sao chép dữ liệu biên lai hoặc mã ảnh.
+
+Goal 2 giải thích chuẩn hóa, thông tin nguồn và giới hạn của kiểm tra cấu trúc. Goal 3 bổ sung lý do chọn baseline, giả định phân đoạn, cách đọc số liệu và giới hạn chẩn đoán. Phần thảo luận kết nối ba goal; kết luận rút gọn và ưu tiên công việc tiếp theo. PDF không có tên file, đường dẫn nội bộ, hàm/lớp, lệnh chạy, log, checksum hoặc phụ lục minh chứng.
+
+Giữ nguyên bìa và số liệu thí nghiệm. Hình OCR được đổi nhãn trục thành tiếng Việt từ cùng số liệu đã lưu và cùng số bins. Không chạy lại OCR, preparation, evaluation, notebook, kiểm thử hoặc rà soát pixel; việc xác nhận ba tình huống dựa trên kết quả review đã hoàn tất. Kết quả CI đã đọc được cập nhật riêng, đúng commit; không thêm commit kỹ thuật vào PDF.
+
+PDF 8 trang đã được biên dịch XeLaTeX và render. Kết quả kiểm tra hiện tại nằm trong evidence/pdf_qa.json và evidence/final_review.json; không dùng số trang của các mục lịch sử bên dưới làm trạng thái hiện tại.
+
+## Lịch sử: rà soát bản 6 trang — 29/10/2026
+
+Bản hiện tại có 6 trang gồm bìa, trình bày ba kết quả tuần 1 mà không yêu cầu người đọc mở file trong repo. Giữ cách viết ngắn gọn của người dùng; không đưa lại phụ lục minh chứng, lệnh chạy, checksum hoặc danh mục file vào PDF.
+
+Các sửa đổi cần thiết trong lượt rà soát này:
+
+- Phân biệt nhãn bốn trường với transcript OCR; nói rõ validation chính thức hiện không có nhãn bốn trường và hai ảnh train có danh sách nhãn rỗng.
+- Phân biệt lỗi hình học tự động với lỗi vị trí phát hiện khi xem ảnh; ghi rõ nhãn gốc chưa được sửa.
+- Giải thích chia tập theo nhóm SHA-256, seed 42, khoảng 20% số nhóm cho dev; kết quả cấu trúc không chứng minh nhãn sạch.
+- Bổ sung cấu hình OCR và cách ghép vùng, cộng lỗi CER/WER; nói rõ 104 vùng bị loại và 10.488 dự đoán không được ghép chưa đi vào tỷ số.
+- Thay kết luận khẳng định nguyên nhân lỗi OCR bằng diễn giải đúng mức bằng chứng; chưa có phân xử nguyên nhân từng ca.
+- Chống ngắt một dòng đầu/cuối đoạn; tách URL tài liệu tham khảo thành dòng riêng.
+
+Đã kiểm tra 79 hash nguồn/artifact, biên dịch XeLaTeX ba lượt và xem bản render của sáu trang. Không chạy lại OCR, chuẩn bị dữ liệu hoặc bộ kiểm thử dự án. Kết quả 106 tests thuộc lần chạy đã lưu trước đó.
+
+## Lịch sử rà soát bản kỹ thuật 19 trang
+
+Các nhận xét bên dưới mô tả bản cũ và chỉ có giá trị lịch sử.
 
 Ngày rà soát: 28/10/2026. Phạm vi: bìa, nội dung kỹ thuật, khả năng đọc biểu đồ và tính nhất quán của hồ sơ báo cáo. Không sửa mã dự án, dataset hoặc kết quả thực nghiệm.
 

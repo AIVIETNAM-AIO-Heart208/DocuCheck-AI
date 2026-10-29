@@ -18,7 +18,7 @@ try {
     }
     if (-not (Test-Path -LiteralPath main.pdf)) { throw 'main.pdf missing.' }
     if ($Render) {
-        & pdftoppm -r 110 -png main.pdf qa/page
+        & pdftoppm -r 110 -png main.pdf qa/review-page
         if ($LASTEXITCODE -ne 0) { throw 'PDF rendering failed.' }
         & pdftotext -layout main.pdf qa/extracted.txt
         if ($LASTEXITCODE -ne 0) { throw 'PDF text extraction failed.' }

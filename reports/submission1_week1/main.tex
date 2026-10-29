@@ -31,7 +31,7 @@
 \titleformat{\section}{\Large\sffamily\bfseries\color{navy}}{\thesection.}{.6em}{}
 \titleformat{\subsection}{\large\bfseries\color{navy}}{\thesubsection}{.6em}{}
 \titleformat{\subsubsection}{\normalsize\bfseries\color{navy}}{}{0pt}{}
-\titlespacing*{\section}{0pt}{0pt}{14pt}
+\titlespacing*{\section}{0pt}{10pt}{12pt}
 \titlespacing*{\subsection}{0pt}{13pt}{6pt}
 \titlespacing*{\subsubsection}{0pt}{10pt}{4pt}
 \setlength{\parindent}{0pt}
@@ -39,6 +39,10 @@
 \linespread{1.08}
 \setlength{\emergencystretch}{2em}
 \raggedbottom
+\clubpenalty=10000
+\widowpenalty=10000
+\AddToHook{cmd/section/before}{\Needspace{5\baselineskip}}
+\AddToHook{cmd/subsection/before}{\Needspace{4\baselineskip}}
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.25}
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
@@ -101,7 +105,7 @@ Hiểu dữ liệu, xử lý tái lập và OCR baseline}\par
 \section*{Tóm tắt}
 DocuCheck AI hướng tới đọc thông tin trên ảnh biên lai tiếng Việt và cho phép người dùng kiểm tra lại kết quả trên ảnh gốc. Trong tuần đầu, nhóm tập trung vào ba việc: tìm hiểu dữ liệu, chuẩn bị quy trình xử lý có thể lặp lại và thiết lập một mốc OCR ban đầu.
 
-Nhóm đã khảo sát 1.546 bản ghi biên lai, phân tích chất lượng ảnh và rà soát thủ công 40 ảnh được chọn để tìm rủi ro. Dữ liệu đã được chuẩn hóa, chia tập và kiểm tra để hạn chế ảnh trùng giữa các tập. Trên 231 ảnh đánh giá nội bộ, Tesseract đã tạo kết quả nhận dạng cho toàn bộ ảnh. Kết quả này giúp nhóm thấy rõ những khó khăn của cả dữ liệu lẫn cách đánh giá OCR; chưa phải mức chất lượng có thể dùng để trích xuất thông tin tự động.
+Nhóm đã khảo sát 1.546 bản ghi biên lai, phân tích chất lượng ảnh và rà soát thủ công 40 ảnh được chọn để tìm rủi ro. Dữ liệu đã được chuẩn hóa, chia tập và kiểm tra để hạn chế ảnh trùng giữa các tập. Trên 231 ảnh đánh giá nội bộ, Tesseract đã tạo kết quả nhận dạng cho toàn bộ ảnh. Kết quả này giúp nhóm thấy rõ những khó khăn của cả dữ liệu lẫn cách đánh giá OCR; chưa đủ để kết luận chất lượng trích xuất thông tin tự động.
 
 \section{Mục tiêu và phạm vi tuần 1}
 Ảnh biên lai thường có ánh sáng không đều, chữ nhỏ, giấy nhăn hoặc nền phức tạp. Dự án đặt mục tiêu xác định bốn thông tin chính: tên nơi bán, địa chỉ, thời điểm giao dịch và tổng tiền. Mỗi thông tin cần gắn với vị trí trên ảnh để người dùng có thể kiểm tra lại. Trong tuần 1, nhóm xây dựng nền dữ liệu và OCR ban đầu cho mục tiêu đó \cite{mcocr,repo}.
@@ -110,7 +114,7 @@ Nhóm đã khảo sát 1.546 bản ghi biên lai, phân tích chất lượng �
 
 \section{Kết quả 1: Hiểu dữ liệu biên lai}
 \subsection{Quy mô và đặc điểm dữ liệu}
-Bản dữ liệu đang sử dụng gồm 1.155 ảnh biên lai train và 391 ảnh validation chính thức. Phần train có 6.585 vùng gán nhãn cho các trường thông tin cần tìm. Ngoài ra còn có transcript toàn trang và một bộ 6.585 ảnh cắt nhỏ dành riêng cho nhận dạng chữ. Nhóm giữ các nguồn này tách biệt vì ảnh cắt nhỏ chưa được xác nhận là các vùng thông tin trên cùng biên lai.
+Bản dữ liệu MC-OCR đang sử dụng gồm 1.155 bản ghi ảnh biên lai train (tập phát triển mô hình) và 391 bản ghi validation chính thức (tập kiểm định do nguồn dữ liệu cung cấp). Bản validation hiện có không kèm nhãn cho bốn trường thông tin, nên chưa dùng để chấm chất lượng trích xuất. Phần train có 6.585 vùng gán nhãn cho các trường cần tìm. Ngoài ra còn có bản chép chữ tham chiếu (transcript) toàn trang và một bộ 6.585 ảnh cắt nhỏ dành riêng cho nhận dạng chữ. Nhóm giữ các nguồn này tách biệt vì chưa xác minh được liên kết giữa ảnh cắt nhỏ với biên lai gốc.
 
 \begin{table}[H]
 \caption{Quy mô dữ liệu nhóm đã khảo sát.}\label{tab:inventory}
@@ -118,7 +122,7 @@ Bản dữ liệu đang sử dụng gồm 1.155 ảnh biên lai train và 391 �
 \toprule
 \textbf{Thành phần} & \textbf{Số lượng} \\\midrule
 Bản ghi biên lai & 1.546 \\
-Ảnh train có nhãn thông tin & 1.155 \\
+Bản ghi biên lai thuộc tập train & 1.155 \\
 Ảnh validation chính thức & 391 \\
 Vùng thông tin được gán nhãn trên ảnh train & 6.585 \\
 Vùng transcript toàn trang & 40.868 \\
@@ -127,17 +131,42 @@ Vùng transcript toàn trang & 40.868 \\
 \end{tabularx}
 \end{table}
 
-Các nhãn tập trung vào tên nơi bán, địa chỉ, thời điểm giao dịch và tổng tiền. Số vùng gán nhãn không đồng nghĩa số ảnh: một ảnh có thể có nhiều vùng cho cùng một trường. Trong 1.155 ảnh train, có 947 ảnh được gán đủ bốn loại trường; việc thiếu nhãn chưa chứng minh trường đó không xuất hiện trên ảnh.
+Các bản ghi không hoàn toàn là ảnh khác nhau: 1.546 bản ghi biên lai tương ứng 1.491 nội dung tệp ảnh duy nhất; riêng train có 1.122 nội dung duy nhất. Vì vậy, đếm bản ghi phù hợp để mô tả dữ liệu đầu vào, còn chia tập cần xét nhóm nội dung trùng để tránh đánh giá trên ảnh đã xuất hiện ở tập phát triển.
 
-Phần lớn ảnh train có bố cục dọc; độ sáng và độ rõ của chữ thay đổi đáng kể (Hình~\ref{fig:eda}). Những khác biệt này giúp nhóm chọn ảnh cần kiểm tra kỹ hơn.
+Số vùng gán nhãn không đồng nghĩa số ảnh: một ảnh có thể có nhiều vùng cho cùng một trường. Bảng~\ref{tab:fields} cho thấy phân bố bốn trường trong 1.155 ảnh train. Có 947 ảnh được gán đủ bốn loại trường và hai ảnh có danh sách nhãn rỗng. Một vùng còn lại mang nhãn nguồn chưa ánh xạ vào bốn trường, được giữ riêng thay vì tự suy đoán loại thông tin.
 
-\begin{figure}[H]
+\begin{table}[H]
+\caption{Phân bố nhãn trường trên 1.155 bản ghi train. Mỗi ảnh được đếm một lần cho từng trường có mặt trong annotation.}\label{tab:fields}
+\begin{tabularx}{\linewidth}{@{}Yrrr@{}}
+\toprule
+\textbf{Trường thông tin} & \textbf{Số vùng} & \textbf{Ảnh có nhãn} & \textbf{Ảnh chưa có nhãn} \\\midrule
+Tên nơi bán & 1.171 & 1.071 & 84 \\
+Địa chỉ & 1.952 & 1.077 & 78 \\
+Thời điểm giao dịch & 1.347 & 1.088 & 67 \\
+Tổng tiền & 2.114 & 1.081 & 74 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Số vùng tổng tiền nhiều hơn số vùng tên nơi bán, nhưng số ảnh có nhãn khá gần nhau. Vì vậy, cần đánh giá cả mức vùng và mức biên lai. Đồng thời, \textit{chưa có nhãn} không đồng nghĩa thông tin không xuất hiện trên ảnh: cần phân biệt trường vắng mặt, không đọc được và chưa được gán.
+
+Bản chép chữ toàn trang có ở 1.151 ảnh train, với tổng cộng 40.868 vùng chữ. Đây là nguồn tham chiếu cho OCR; nhãn bốn trường phục vụ tác vụ trích xuất thông tin, gọi tắt là KIE. Việc rà soát KIE không tự xác nhận toàn bộ transcript OCR là đúng.
+
+\subsection{Đặc điểm ảnh và ý nghĩa đối với xử lý}
+Chiều rộng ảnh train nằm trong khoảng 352--1.024 pixel, chiều cao 480--2.860 pixel. Có 1.099 ảnh dọc hoặc vuông và 56 ảnh ngang; trung vị tỷ lệ rộng/cao là 0,75. Sự thay đổi tỷ lệ hình dạng trong Hình~\ref{fig:eda} cho thấy cần kiểm tra các ảnh dài, hẹp và ảnh ngang khi lựa chọn cách đổi kích thước hoặc phân đoạn. Ép mọi ảnh về một tỷ lệ cố định có thể làm biến dạng chữ; đây là rủi ro cần kiểm tra, chưa phải kết quả so sánh các phương pháp tiền xử lý.
+
+\begin{figure}[!htbp]
 \centering\includegraphics[width=\linewidth]{figures/eda_distributions.pdf}
 \caption{Phân bố hình dạng, độ sáng, tương phản và mức biến thiên chi tiết của 1.155 ảnh train.}\label{fig:eda}
 \end{figure}
 
+Độ sáng trung bình ảnh xám thay đổi từ khoảng 69,3 đến 224,6 trên thang 0--255, trung vị 133,0; độ tương phản, đo bằng độ lệch chuẩn mức xám, nằm trong khoảng 14,0--86,0. Các phân bố này giúp chọn cả ảnh tối, sáng và ít tương phản để rà soát, thay vì chỉ xem những ảnh có vẻ điển hình. Phương sai Laplacian đo biến thiên chi tiết ảnh và có thể hỗ trợ tìm ảnh cần kiểm tra độ nét, nhưng còn chịu ảnh hưởng của nền và cạnh giấy. Các chỉ số này không phải điểm chất lượng OCR, cũng chưa đủ để đặt ngưỡng tự động loại ảnh.
+
+Mật độ nhãn cũng thay đổi: trung vị là năm vùng KIE mỗi ảnh, nhỏ nhất không có vùng và lớn nhất 29 vùng. Do đó, số vùng lớn có thể phản ánh nhiều phần thông tin hoặc cách gán nhãn cần rà soát; không nên tự động hiểu là ảnh có đầy đủ nhãn hơn.
+
+\Needspace{9\baselineskip}
 \subsection{Rà soát nhãn và ảnh trùng}
-Nhóm rà soát 40 ảnh được chọn có chủ đích để dễ phát hiện vấn đề. Kết quả ghi nhận 6 ảnh đúng, 32 ảnh có ít nhất một vấn đề và 2 ảnh chưa thể kết luận. Những vấn đề thường gặp gồm thiếu vùng cần gán nhãn, nhãn sai hoặc vị trí vùng không khớp nội dung trên ảnh.
+Nhóm rà soát 40 ảnh được chọn có chủ đích, ưu tiên ảnh có cảnh báo về nhãn, hình học hoặc chất lượng ảnh. Kết quả ghi nhận 6 ảnh được đánh giá đúng, 32 ảnh có ít nhất một vấn đề và 2 ảnh chưa thể kết luận. Những vấn đề thường gặp gồm thiếu vùng cần gán nhãn, nhãn sai hoặc vị trí vùng không khớp nội dung trên ảnh. Ngoài các nhóm trong Bảng~\ref{tab:audit}, rà soát còn phát hiện nội dung chép chữ sai dù loại trường và vị trí vùng đúng; vì vậy sửa nhãn cần kiểm tra cả giá trị chữ.
 
 \begin{table}[H]
 \caption{Một số vấn đề ghi nhận khi rà soát 40 ảnh.}\label{tab:audit}
@@ -154,14 +183,26 @@ Chữ khó đọc & 3 & Cần kiểm tra thủ công hoặc xử lý ảnh tốt
 
 \noindent\textit{Các nhóm vấn đề có thể trùng trên cùng một ảnh. Mẫu 40 ảnh được ưu tiên để tìm lỗi, nên tỷ lệ 32/40 không đại diện cho toàn bộ dữ liệu.}
 
-Kiểm tra trên toàn tập còn ghi nhận 115 biên lai có vùng chú thích sai hình học. Nhóm đã nhận diện và giữ thông tin về các trường hợp này để tránh coi chúng là nhãn chuẩn trong những bước sau.
+Ba tình huống đã được xác nhận trong lượt rà soát giúp làm rõ tác động của các lỗi trên:
+\begin{enumerate}[leftmargin=1.6em,itemsep=5pt]
+\item \textbf{Sai loại thông tin:} một vùng chứa ngày/giờ được gán thành địa chỉ. Vùng có thể bao đúng chữ nhưng vẫn tạo tín hiệu huấn luyện sai về ý nghĩa trường. Cần phân xử loại thông tin và sửa nhãn trong phiên bản có lưu lịch sử.
+\item \textbf{Vùng bao không đủ tên nơi bán:} một số chú thích chỉ khoanh một phần tên. Nếu dùng vùng đó để cắt ảnh, nội dung huấn luyện có thể mất chữ dù đa giác vẫn hợp lệ về hình học. Cần kiểm tra phạm vi trên ảnh và vẽ lại vùng sau xác nhận.
+\item \textbf{Sai giá trị chép chữ:} có trường hợp giá trị tiền trong annotation khác nội dung nhìn thấy trên ảnh. Sửa loại trường hoặc vị trí không giải quyết được lỗi này; cần kiểm tra và hiệu chỉnh text riêng. Đây là lỗi annotation KIE đã quan sát, không tự chứng minh transcript OCR toàn trang mắc cùng lỗi.
+\end{enumerate}
+
+Hai ảnh chưa thể kết luận cũng có ý nghĩa: ảnh quá nhòe có thể không đủ căn cứ xác nhận trường thiếu; một số báo cáo tổng kết có ngày và tổng tiền khác nghĩa với giao dịch bán lẻ. Các trường hợp này cần quy ước phạm vi hoặc giữ trạng thái bất định, thay vì ép thành đúng/sai để hoàn tất thống kê.
+
+Kiểm tra tự động trên toàn tập còn ghi nhận 115 bản ghi biên lai có vùng chú thích sai hình học: sáu ảnh có vùng nhãn trường bị tự giao và 109 ảnh khác có vùng transcript vượt biên ảnh. Đây là lỗi hình học của chú thích nguồn, khác với việc vùng đánh dấu không khớp chữ được phát hiện khi xem ảnh. Các lỗi được ghi nhận kèm dữ liệu; nhãn gốc chưa được sửa.
 
 Nhóm phát hiện 20 bản ghi train trùng chính xác với ảnh trong tập validation chính thức và đã cách ly chúng khỏi tập huấn luyện, đánh giá nội bộ. Có thêm 36 cặp ảnh gần giống cần xem lại bằng mắt để xác định có cùng giao dịch hay không. Kết quả hiện tại giúp giảm nguy cơ đánh giá lạc quan do ảnh trùng; chưa thể khẳng định đã tìm hết mọi trường hợp gần trùng.
 
 \section{Kết quả 2: Chuẩn bị dữ liệu cho các bước tiếp theo}
-Nhóm đã xây dựng quy trình đọc ảnh và nhãn, chuẩn hóa về cùng một cấu trúc, ghi lại các vấn đề của dữ liệu gốc và chia tập theo nhóm ảnh trùng chính xác. Dữ liệu gốc được giữ nguyên để có thể đối chiếu khi cần. Quy trình kiểm tra cả bản ghi lẫn ảnh tương ứng; tổng cộng 8.131 bản ghi ảnh, gồm 1.546 biên lai và 6.585 ảnh cắt nhỏ, đã qua kiểm tra cấu trúc.
+\subsection{Chuẩn hóa và giữ thông tin nguồn}
+Nhóm đã xây dựng quy trình đọc ảnh và nhãn, chuẩn hóa về cùng một cấu trúc, ghi lại các vấn đề của dữ liệu gốc và chia tập theo nhóm ảnh trùng chính xác. Mỗi bản ghi lưu mã ảnh, kích thước, nguồn dữ liệu, vùng chữ, nhãn trường và tập được phân vào; các trạng thái thiếu nhãn, nhãn rỗng hoặc vùng lỗi được ghi riêng. Dữ liệu gốc được giữ nguyên để có thể đối chiếu khi cần. Tổng cộng 8.131 bản ghi ảnh, gồm 1.546 biên lai và 6.585 ảnh cắt nhỏ, đã qua kiểm tra cấu trúc; ảnh tương ứng cũng được đọc, kiểm tra kích thước và mã băm nội dung.
 
-\begin{figure}[H]
+Ví dụ, nhãn nguồn chỉ tên nơi bán được ánh xạ sang một trường thống nhất, đồng thời giữ nhãn ban đầu, nội dung chữ, tọa độ và nguồn annotation. Nhãn lạ chưa xác định được nghĩa sẽ được đánh dấu chưa ánh xạ; một danh sách nhãn rỗng vẫn được phân biệt với nguồn không cung cấp nhãn. Cách lưu này giúp sửa lỗi sau khi phân xử mà còn đối chiếu được với dữ liệu ban đầu, thay vì âm thầm thay đổi ý nghĩa của nguồn.
+
+\begin{figure}[!htbp]
 \centering
 \begin{tikzpicture}[node distance=5mm and 6mm, every node/.style={font=\small,align=center}, box/.style={draw=teal,rounded corners=2pt,fill=pale,text width=39mm,minimum height=12mm}, arr/.style={-{Latex[length=2mm]},thick,color=teal}]
 \node[box] (raw) {Ảnh và nhãn gốc};
@@ -172,6 +213,9 @@ Nhóm đã xây dựng quy trình đọc ảnh và nhãn, chuẩn hóa về cùn
 \end{tikzpicture}
 \caption{Quy trình chuẩn bị dữ liệu đã hoàn thành trong tuần 1.}\label{fig:pipeline}
 \end{figure}
+
+\subsection{Chia tập và ngăn trùng chính xác}
+Sau khi cách ly ảnh train trùng validation chính thức, các ảnh có cùng nội dung tệp được gom theo mã băm SHA-256 và luôn ở cùng một tập. Nhóm dành khoảng 20\% số nhóm cho dev nội bộ (tập đánh giá trong quá trình phát triển), với hạt giống ngẫu nhiên cố định là 42. Tỷ lệ áp dụng theo nhóm nên số bản ghi không nhất thiết đúng 80/20. Kết quả chia tập trong Bảng~\ref{tab:splits} không còn nhóm trùng chính xác đi qua các tập đang sử dụng.
 
 \begin{table}[H]
 \caption{Kết quả chia 1.546 bản ghi biên lai.}\label{tab:splits}
@@ -187,10 +231,18 @@ Tổng cộng & 1.546 & \\
 \end{tabularx}
 \end{table}
 
-Quy trình có cách giữ lại bản ghi kèm cảnh báo, bỏ bản ghi lỗi hoặc dừng khi gặp lỗi. Việc lặp lại hai lần chuẩn bị dữ liệu trong hồ sơ kiểm tra cho cùng kết quả đầu ra; bộ kiểm thử của dự án ghi nhận 106 trường hợp đạt. Đây là bằng chứng về tính nhất quán của quy trình. Chất lượng nhãn vẫn cần được rà soát riêng: một bản ghi hợp lệ về cấu trúc vẫn có thể được gán sai nội dung.
+\subsection{Kiểm tra tính nhất quán và xử lý dữ liệu lỗi}
+Quy trình cho phép giữ lại bản ghi kèm cảnh báo, bỏ bản ghi lỗi hoặc dừng khi gặp lỗi. Các số liệu trên thuộc phương án giữ lại kèm cảnh báo, nên chưa phải bộ dữ liệu đã làm sạch toàn bộ nhãn. Nếu chọn bỏ lỗi, việc lọc diễn ra sau chia tập và giữ phân nhóm ban đầu của các ảnh còn lại; quy trình không tự cân bằng lại số lượng.
+
+Hai lần chuẩn bị dữ liệu với cùng đầu vào và cấu hình đã cho kết quả đầu ra giống hệt nhau. Phép kiểm đầu ra đối chiếu nội dung, số bản ghi và phân nhóm để phát hiện bộ kết quả bị thiếu, thay đổi hoặc trộn phiên bản. Kết quả kiểm thử tự động cục bộ cũng ghi nhận 106 trường hợp đạt. Những phép kiểm này hỗ trợ tính nhất quán của quy trình, nhưng không thay thế kiểm tra ngữ nghĩa: một bản ghi hợp lệ về cấu trúc vẫn có thể được gán sai nội dung.
 
 \section{Kết quả 3: OCR ban đầu và bài học rút ra}
-Nhóm sử dụng Tesseract với mô hình tiếng Việt để nhận dạng chữ và vị trí trên ảnh \cite{tesseract}. Trên toàn bộ 231 ảnh dev nội bộ, chương trình tạo kết quả cho 231 ảnh, với 26.859 vùng từ được nhận dạng. Đây là mốc đầu tiên để quan sát lỗi và cải thiện cách xử lý biên lai, chưa phải kết quả trích xuất bốn trường thông tin.
+\subsection{Lựa chọn baseline và cấu hình đánh giá}
+Nhóm sử dụng Tesseract để nhận dạng chữ và vị trí trên ảnh (OCR) \cite{tesseract}. Công cụ có mô hình tiếng Việt sẵn, chạy được trên CPU và trả về vị trí cùng chữ nhận dạng, phù hợp để thiết lập mốc ban đầu mà chưa cần huấn luyện thêm. Lựa chọn này phục vụ khảo sát đường xử lý và phép đo; tuần 1 chưa có thí nghiệm so sánh để xác định engine tốt nhất cho dữ liệu này.
+
+Lần chạy được đánh giá dùng phiên bản 5.5.3.20260724, mô hình tiếng Việt thuộc bộ \textit{tessdata fast}, với chế độ phân đoạn trang PSM~6 (coi ảnh là một khối chữ) và bộ nhận dạng LSTM (OEM~1). Giả định một khối chữ cần được kiểm tra đối với biên lai có nhiều cột hoặc nhiều hướng chữ; hiện chưa có so sánh chế độ phân đoạn để xác nhận tác động đó trên tập này.
+
+Trên toàn bộ 231 ảnh dev nội bộ, chương trình tạo kết quả cho 231 ảnh, với 26.859 vùng từ được nhận dạng (Bảng~\ref{tab:ocrresults}). Xử lý hết tập ảnh cho biết đường chạy hoạt động đầy đủ; chất lượng chữ cần được xem qua phép đo và rà soát riêng.
 
 \begin{table}[H]
 \caption{Kết quả OCR trên 231 ảnh dev nội bộ.}\label{tab:ocrresults}
@@ -205,23 +257,43 @@ WER trên toàn tập (tỷ số) & 2,1448 & Sai khác token với transcript th
 \end{tabularx}
 \end{table}
 
-CER và WER ở đây so chữ nhận dạng với transcript sau khi ghép các vùng trên ảnh. Cả hai tỷ số có thể lớn hơn 1 khi số ký tự hoặc token chèn thêm nhiều hơn độ dài tham chiếu. Giá trị cao hiện tại phản ánh đồng thời lỗi nhận dạng, nhãn tham chiếu chưa sạch và cách ghép vùng chữ; không thể dùng riêng chúng để kết luận Tesseract đọc sai bao nhiêu phần trăm chữ trên ảnh.
+\subsection{Cách tính và giới hạn của CER/WER}
+Để tính lỗi, nhóm gán mỗi vùng từ dự đoán vào vùng transcript hợp lệ nhỏ nhất chứa tâm của nó, rồi ghép chữ theo thứ tự từ trên xuống dưới, từ trái sang phải trong từng vùng. Phép đo dùng 8.304 vùng tham chiếu và loại 104 vùng sai hình học. Chữ được chuẩn hóa Unicode, chữ hoa/thường và khoảng trắng; dấu tiếng Việt và dấu câu vẫn được giữ.
 
-\begin{figure}[H]
+CER là tổng số phép chèn, xóa, thay thế ký tự chia cho tổng số ký tự tham chiếu; WER tính tương tự trên các token tách bằng khoảng trắng. Token tiếng Việt ở đây thường là âm tiết. Nhóm cộng số lỗi và độ dài tham chiếu của tất cả vùng rồi mới chia, thay vì lấy trung bình tỷ số từng ảnh. Cả hai tỷ số có thể lớn hơn 1 vì số lỗi, bao gồm lỗi chèn, có thể vượt độ dài tham chiếu.
+
+Giá trị cao cho thấy sai khác lớn theo cách đo hiện tại. Sai khác có thể đến từ nhận dạng, transcript tham chiếu hoặc cách ghép vùng chữ; phân tích hiện tại chưa tách được mức đóng góp của từng nguyên nhân. Vì vậy, không thể dùng riêng CER/WER để kết luận Tesseract đọc sai bao nhiêu phần trăm chữ trên ảnh.
+
+\subsection{Quan sát và bài học từ kết quả}
+Hình~\ref{fig:ocrerror} cho thấy sai khác phân bố rộng giữa các ảnh. Một tỷ số chung vì thế không thay thế được việc xem các ca cụ thể. Khi rà soát tiếp, cần ưu tiên cả ảnh có sai khác cao lẫn các vùng không ghép được để xác định phép đo đang bỏ qua hoặc phạt những nội dung nào.
+
+\begin{figure}[!htbp]
 \centering\includegraphics[width=\linewidth]{figures/ocr_error_distribution.pdf}
 \caption{Mức sai khác OCR giữa các ảnh dev không đồng đều; biểu đồ dùng cùng cách ghép vùng với chỉ số trong Bảng~\ref{tab:ocrresults}.}\label{fig:ocrerror}
 \end{figure}
 
-Phân tích kết quả cho thấy có 1.886 vùng chữ tham chiếu không nhận được vùng từ tương ứng, trong khi 10.488 vùng từ dự đoán nằm ngoài các vùng tham chiếu hợp lệ. Điều này cho thấy việc đối chiếu chữ dự đoán với nhãn hiện có còn khó khăn. Trước khi so sánh các mô hình OCR, nhóm cần kiểm tra lại nhãn và thống nhất cách đánh giá.
+Có 1.886 vùng tham chiếu không nhận được vùng từ tương ứng; các vùng này được tính với chuỗi nhận dạng rỗng, tạo lỗi xóa. Ngược lại, 10.488 vùng từ dự đoán không được gán vào tham chiếu hợp lệ chỉ được đếm riêng, chưa đi vào CER/WER. Đây là dấu hiệu cần kiểm tra, chưa tự chứng minh lỗi bỏ sót hoặc nhận thừa của OCR. Nhóm chưa báo cáo độ chính xác phát hiện vùng chữ vì đầu ra theo từ và nhãn theo dòng/nhóm chữ khác đơn vị.
+
+Khoảng 39\% số vùng từ dự đoán chưa được ghép, nên tỷ số hiện tại không phản ánh trực tiếp mọi đầu ra của engine. Cần kiểm chứng cả các cặp ghép và phần chưa ghép trước khi so sánh mô hình. Phân tích tuần 1 dừng ở chẩn đoán; chưa có phân loại nguyên nhân do người rà soát gán cho từng ca OCR.
+
+\section{Thảo luận}
+Ba mục tiêu hỗ trợ nhau: EDA và rà soát nhãn chỉ ra rủi ro giám sát sai; chuẩn hóa giữ nguồn và trạng thái lỗi để có thể đối chiếu; OCR tạo đầu ra để khảo sát nhận dạng và phép đo. Kết quả chung là xác định được những điều kiện cần kiểm tra trước khi phát triển mô hình trích xuất thông tin.
+
+Tính tái lập giữ đầu vào và cách chia tập ổn định để đối chiếu các thay đổi sau này. Tuy nhiên, lỗi nhãn được lặp lại nhất quán vẫn là lỗi nhãn; ngăn trùng chính xác cũng chưa giải quyết ảnh cùng giao dịch đã bị cắt hoặc chụp lại. Tính nhất quán, chất lượng annotation và rủi ro gần trùng cần được đánh giá riêng.
+
+Baseline cho phép đo sai khác theo quy tắc rõ ràng, nhưng chưa xác định đóng góp của từng nguyên nhân hoặc chất lượng KIE. Ưu tiên hiện tại là kiểm chứng phép đo và chuẩn bị nhãn đã phân xử để tránh biến sai sót dữ liệu thành kết luận về mô hình.
 
 \section{Kết luận và hướng tiếp theo}
-Ba mục tiêu tuần 1 đã có kết quả cụ thể: nhóm hiểu quy mô và rủi ro của dữ liệu, có quy trình chuẩn bị dữ liệu có thể lặp lại, và có một mốc OCR chạy trên tập dev. Kết quả quan trọng nhất là đã xác định được những điểm có thể làm sai lệch việc huấn luyện hoặc đánh giá sau này: nhãn thiếu/sai, ảnh gần trùng và cách ghép vùng khi tính lỗi OCR.
+Tuần 1 đã hoàn thành khảo sát dữ liệu, quy trình chuẩn bị có thể lặp lại và một mốc OCR trên tập dev. Các giới hạn về nhãn, gần trùng và ghép vùng đã được xác định để định hướng bước phát triển tiếp theo.
 
-Bước tiếp theo là rà soát các nhãn cần dùng cho trích xuất thông tin, xác định các cặp ảnh gần trùng, cải thiện cách đánh giá OCR và xây dựng mô hình nhận diện bốn trường trên biên lai. Các kết quả này sẽ cần được đo ở mức thông tin trích xuất và kiểm tra trực tiếp trên ảnh trước khi hướng tới ứng dụng cho người dùng.
+Bước tiếp theo được ưu tiên theo thứ tự: phân xử các nhãn và quy ước loại chứng từ cần dùng cho đánh giá; xác định danh tính giao dịch của các cặp nghi gần trùng; kiểm chứng cách ghép OCR với transcript trên các ca đại diện; sau đó xây dựng và đánh giá mô hình trích xuất bốn trường trên tập đã kiểm tra. Các kết quả cần được đo ở mức thông tin trích xuất và đối chiếu trực tiếp trên ảnh trước khi hướng tới ứng dụng cho người dùng.
 
 \begin{thebibliography}{9}
-\bibitem{mcocr} MC-OCR Challenge. \textit{Mobile captured receipts OCR}. \url{https://www.rivf2021-mc-ocr.vietnlp.com/}
-\bibitem{tesseract} Tesseract OCR. \textit{Tài liệu sử dụng}. \url{https://tesseract-ocr.github.io/tessdoc/}
-\bibitem{repo} DocuCheck AI. \textit{Kho mã dự án}. \url{https://github.com/AIVIETNAM-AIO-Heart208/DocuCheck-AI}
+\bibitem{mcocr} MC-OCR Challenge. \textit{Mobile captured receipts OCR}.\newline
+\url{https://www.rivf2021-mc-ocr.vietnlp.com/}
+\bibitem{tesseract} Tesseract OCR. \textit{Tài liệu sử dụng}.\newline
+\url{https://tesseract-ocr.github.io/tessdoc/}
+\bibitem{repo} DocuCheck AI. \textit{Kho mã dự án}.\newline
+\url{https://github.com/AIVIETNAM-AIO-Heart208/DocuCheck-AI}
 \end{thebibliography}
 \end{document}

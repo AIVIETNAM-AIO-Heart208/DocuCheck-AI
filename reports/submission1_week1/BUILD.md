@@ -7,4 +7,12 @@ Bản báo cáo dành cho người xem là main.pdf; nội dung LaTeX nằm tron
 
 Tài liệu dùng font Times New Roman/Arial/Consolas nếu có font Windows; trên Linux dùng TeX Gyre Termes/Heros và DejaVu Sans Mono. Biên dịch PDF không cần dữ liệu gốc hay chạy lại OCR.
 
-Bản dành cho người xem được biên tập ngày 29/10/2026, gồm 5 trang A4. evidence/pdf_qa.json ghi kết quả kiểm tra của bản hiện tại. Các hồ sơ kiểm chứng và rà soát cũ trong evidence/, EDITORIAL_REVIEW.md và EVIDENCE_INDEX.md là tài liệu kỹ thuật hỗ trợ, có thể mô tả phiên bản báo cáo 19 trang trước khi biên tập. Chúng không phải nội dung cần kèm vào PDF dành cho người xem.
+Bản dành cho người đọc được hoàn thiện ngày 29/10/2026, gồm 8 trang A4 (bìa và 7 trang nội dung, gồm tài liệu tham khảo). evidence/pdf_qa.json và evidence/final_review.json ghi kết quả kiểm tra bản hiện tại. EVIDENCE_INDEX.md là hồ sơ hỗ trợ riêng; các số liệu và ngữ cảnh lịch sử được ghi rõ trong đó, không chèn vào PDF.
+
+Để biên dịch và kiểm tra bố cục bằng công cụ có sẵn trên Windows:
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -Render
+    pdftotext -bbox-layout main.pdf qa/bbox.html
+    ../../.venv/Scripts/python.exe quality_check.py
+
+Script kiểm tra tạo ảnh tổng hợp trong qa/ và đánh dấu việc xem ảnh là đang chờ. Cần xem các trang render trước khi xác nhận bố cục; kiểm tra tự động không thay thế bước này.

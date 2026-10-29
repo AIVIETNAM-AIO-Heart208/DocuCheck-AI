@@ -1,10 +1,27 @@
 {
   "repository": "AIVIETNAM-AIO-Heart208/DocuCheck-AI",
-  "commit": "4ee27760ee0cb81f3467a2a20ac484bad7efda5e",
-  "queried_date_local": "2026-10-28",
-  "tool": "GitHub connector get_commit_combined_status",
-  "response_structuredContent": {
-    "statuses": []
-  },
-  "interpretation": "No commit status entries returned. This does not establish GitHub Actions check-run success; CI execution status unverified."
+  "commit": "cb04621065469cd0790aa05bb0b79a65a8bd8ba4",
+  "queried_date_local": "2026-10-29",
+  "timezone": "Asia/Saigon",
+  "workflow": "Tests",
+  "run_id": 40857742742,
+  "job_id": 123392875419,
+  "event": "push",
+  "status": "completed",
+  "conclusion": "success",
+  "run_url": "https://github.com/AIVIETNAM-AIO-Heart208/DocuCheck-AI/actions/runs/40857742742",
+  "job_url": "https://github.com/AIVIETNAM-AIO-Heart208/DocuCheck-AI/actions/runs/40857742742/job/123392875419",
+  "test_log_result": "106 passed in 1.89s",
+  "verification": "Workflow run metadata and original job log read through the GitHub connector; log execution timestamp 2026-10-29T10:27:59.7158204Z.",
+  "scope_limit": "Applies to the recorded commit, not the uncommitted report edits or real-data experimental correctness. No workflow rerun performed.",
+  "historical_status_superseded": {
+    "repository": "AIVIETNAM-AIO-Heart208/DocuCheck-AI",
+    "commit": "4ee27760ee0cb81f3467a2a20ac484bad7efda5e",
+    "queried_date_local": "2026-10-28",
+    "tool": "GitHub connector get_commit_combined_status",
+    "response_structuredContent": {
+      "statuses": []
+    },
+    "interpretation": "No commit status entries returned. This does not establish GitHub Actions check-run success; CI execution status unverified."
+  }
 }

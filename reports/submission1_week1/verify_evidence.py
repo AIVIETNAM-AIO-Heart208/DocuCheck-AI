@@ -213,7 +213,7 @@ def make_figures(features, summary, image_metrics):
     for axis, key, label in zip(axes, ("cer", "wer"), ("CER từng ảnh (tỷ số)", "WER từng ảnh (tỷ số)")):
         values = [r[key] for r in image_metrics if r[key] is not None]
         axis.hist(values, bins=25, color="#217e87", edgecolor="white", linewidth=.5)
-        axis.set(xlabel=label, ylabel="Số ảnh internal_dev")
+        axis.set(xlabel=label, ylabel="Số ảnh dev nội bộ")
         axis.grid(axis="y", alpha=.15)
     fig.savefig(directory / "ocr_error_distribution.pdf")
     plt.close(fig)
