@@ -1,8 +1,10 @@
 # Danh mục minh chứng — Submission I, Week 1
 
+**Lưu ý phiên bản (29/10/2026):** Đây là hồ sơ kỹ thuật của bản báo cáo 19 trang trước khi biên tập. PDF hiện tại là bản 5 trang dành cho người xem, không dùng mã E01–E15 hoặc phụ lục minh chứng. Số liệu nguồn vẫn có thể được truy vết bằng danh mục dưới đây; các mô tả về bố cục PDF cũ không còn áp dụng.
+
 Mốc kiểm tra: **28/10/2026, Asia/Saigon**. Commit nguồn: `4ee27760ee0cb81f3467a2a20ac484bad7efda5e`.
 
-Mọi đường dẫn dự án dưới đây tính từ gốc repository. Đường dẫn `evidence/`, `figures/` và các tệp báo cáo tính từ thư mục `reports/submission1_week1/` khi được ghi rõ. PDF và LaTeX dùng cùng mã E01–E15.
+Mọi đường dẫn dự án dưới đây tính từ gốc repository. Đường dẫn `evidence/`, `figures/` và các tệp báo cáo tính từ thư mục `reports/submission1_week1/` khi được ghi rõ. Mã E01–E15 thuộc hồ sơ kỹ thuật cũ.
 
 **Đã kiểm chứng** chỉ áp dụng cho phép kiểm được mô tả. Đọc lại kết quả review không tương đương review lại pixel; kiểm hai lần chạy có sẵn không tương đương chạy lại preparation. Hồ sơ này không chứa ảnh, transcript, ghi chú biên lai chi tiết hoặc credentials.
 

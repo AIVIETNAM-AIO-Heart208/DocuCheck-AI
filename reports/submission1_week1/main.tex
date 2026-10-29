@@ -48,14 +48,11 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\small\sffamily\color{navy}DOCUCHECK AI}
-\fancyhead[R]{\small\sffamily\color{navy}Submission I / Module 05}
+\fancyhead[R]{\small\sffamily\color{navy}BÁO CÁO TUẦN 1}
 \fancyfoot[L]{\footnotesize\color{navy}Báo cáo tiến độ tuần 1 \enspace | \enspace 28.10.2026}
 \fancyfoot[R]{\small\thepage}
 \renewcommand{\headrulewidth}{.4pt}
-\newcommand{\ev}[1]{\textcolor{teal}{\mbox{[E#1]}}}
-\newcommand{\source}[1]{\par{\footnotesize\color{navy}\textit{Nguồn:} #1}\par}
 \newcommand{\note}[1]{\par\begingroup\setlength{\fboxsep}{9pt}\noindent\colorbox{pale}{\parbox{\dimexpr\linewidth-18pt\relax}{#1}}\endgroup\par}
-\newcommand{\continued}[1]{\noindent{\small\sffamily\color{teal}#1}\par\vspace{3pt}}
 \urlstyle{tt}
 \makeatletter
 \g@addto@macro\UrlBreaks{\do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j\do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t\do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D\do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N\do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X\do\Y\do\Z\do\0\do\1\do\2\do\3\do\4\do\5\do\6\do\7\do\8\do\9}
@@ -101,494 +98,130 @@ Hiểu dữ liệu, xử lý tái lập và OCR baseline}\par
 \vspace*{8mm}
 \end{titlepage}
 
-\pagenumbering{roman}
 \section*{Tóm tắt}
-\addcontentsline{toc}{section}{Tóm tắt}
-DocuCheck AI nghiên cứu xử lý biên lai tiếng Việt dựa trên bằng chứng ảnh. Tuần 1 tập trung hiểu dữ liệu, chuẩn hóa quy trình tái lập và thiết lập OCR baseline. Bản MC-OCR cục bộ gồm 1.546 bản ghi hóa đơn, 6.585 vùng KIE và 40.868 vùng transcript toàn trang; 6.585 cặp crop/transcript thuộc nguồn nhận dạng riêng. Kiểm tra EDA cho thấy độ phân giải, độ sáng và độ nét biến thiên; worksheet của mẫu 40 ảnh ghi 6 đúng, 32 sai và 2 bất định. Mẫu ưu tiên rủi ro nên không đại diện tỷ lệ lỗi toàn tập. Pipeline schema 1.1 giữ nguyên annotation nguồn, chia nhóm SHA-256 với seed 42 và cách ly 20 bản ghi train trùng validation chính thức. Kiểm định cấu trúc đạt trên 8.131 bản ghi, đồng thời ghi nhận 115 hóa đơn có lỗi geometry nguồn. Artifact OCR hiện có ghi Tesseract CPU hoàn thành 231 ảnh dev và 26.859 word boxes. Tái tính từ prediction cho micro CER 1,8725 và WER 2,1448, khác số lịch sử trong tài liệu. Các giá trị chịu ảnh hưởng của transcript và ghép vùng, chưa phải benchmark nhận dạng độc lập. Báo cáo đối chiếu artifact, mã nguồn và 106 kiểm thử đạt; chưa đánh giá mô hình KIE, phân xử gần trùng hoặc triển khai chức năng sản phẩm.
+DocuCheck AI hướng tới đọc thông tin trên ảnh biên lai tiếng Việt và cho phép người dùng kiểm tra lại kết quả trên ảnh gốc. Trong tuần đầu, nhóm tập trung vào ba việc: tìm hiểu dữ liệu, chuẩn bị quy trình xử lý có thể lặp lại và thiết lập một mốc OCR ban đầu.
 
-\vspace{6mm}
-\note{\textbf{Quy ước minh chứng.} \textbf{Đã kiểm chứng} nghĩa là đã đọc artifact và thực hiện phép đối chiếu được mô tả trong lần lập báo cáo. \textbf{Lịch sử} là kết quả chỉ được ghi trong tài liệu hoặc log có sẵn. \textbf{Chưa xác minh} là chưa đủ bằng chứng độc lập. Mã \ev{01}--\ev{15} dẫn đến danh mục ở phụ lục và \path{EVIDENCE_INDEX.md}.}
+Nhóm đã khảo sát 1.546 bản ghi biên lai, phân tích chất lượng ảnh và rà soát thủ công 40 ảnh được chọn để tìm rủi ro. Dữ liệu đã được chuẩn hóa, chia tập và kiểm tra để hạn chế ảnh trùng giữa các tập. Trên 231 ảnh đánh giá nội bộ, Tesseract đã tạo kết quả nhận dạng cho toàn bộ ảnh. Kết quả này giúp nhóm thấy rõ những khó khăn của cả dữ liệu lẫn cách đánh giá OCR; chưa phải mức chất lượng có thể dùng để trích xuất thông tin tự động.
 
-\subsection*{Phạm vi và mốc kiểm tra}
-Báo cáo đối chiếu mã nguồn tại commit \texttt{4ee2776} với dữ liệu và artifact cục bộ ngày 28/10/2026 (Asia/Saigon). EDA và evaluation được tái tính; inference OCR, preparation và notebook không được chạy lại trong lần lập báo cáo. Hash nguồn và trạng thái notebook workspace được ghi trong phụ lục minh chứng. \ev{01}\ev{12}\ev{14}
-\clearpage
-\begingroup\small\setlength{\parskip}{0pt}\linespread{1.0}\selectfont\tableofcontents\endgroup
-\clearpage
-\pagenumbering{arabic}
+\section{Mục tiêu và phạm vi tuần 1}
+Ảnh biên lai thường có ánh sáng không đều, chữ nhỏ, giấy nhăn hoặc nền phức tạp. Dự án đặt mục tiêu xác định bốn thông tin chính: tên nơi bán, địa chỉ, thời điểm giao dịch và tổng tiền. Mỗi thông tin cần gắn với vị trí trên ảnh để người dùng có thể kiểm tra lại. Trong tuần 1, nhóm xây dựng nền dữ liệu và OCR ban đầu cho mục tiêu đó \cite{mcocr,repo}.
 
-\Needspace{8\baselineskip}
-\section{Tổng quan dự án}
-\subsection{Bối cảnh và định hướng}
-DocuCheck AI hướng tới chuyển ảnh biên lai bán lẻ tiếng Việt thành bản ghi có cấu trúc, gắn mỗi giá trị với vùng ảnh nguồn và hỗ trợ người dùng rà soát. Bốn trường ban đầu là tên nơi bán, địa chỉ, ngày/giờ giao dịch và tổng tiền. OCR cung cấp nội dung cùng vị trí; Key Information Extraction (KIE) gán nội dung vào trường; bước kiểm tra cần quy tắc và đủ dữ kiện để đối chiếu. Theo product brief, cảnh báo sai lệch chỉ là yêu cầu xem lại, không phải kết luận gian lận. \ev{02}
+Đây là báo cáo tiến độ nghiên cứu. Nhóm chưa huấn luyện mô hình trích xuất bốn trường thông tin, chưa đánh giá độ chính xác theo từng trường và chưa hoàn thành ứng dụng cho người dùng.
 
-Ảnh chụp bằng điện thoại thường có nền phức tạp, ánh sáng không đều, giấy nhăn, chữ phai hoặc chuyển động. Đây cũng là những khó khăn được mô tả trong tác vụ MC-OCR chính thức \cite{mcocr}. Với tiếng Việt, dấu thanh và dấu nguyên âm làm cho sai khác ký tự nhỏ ảnh hưởng đến khả năng đọc đúng; bố cục nhiều dòng và cách ghi tiền/ngày làm tăng yêu cầu giữ ngữ cảnh. Tuần 1 khảo sát những yếu tố này ở mức dữ liệu và baseline, chưa chứng minh một giải pháp sản phẩm hoàn chỉnh.
-
-\subsection{Phạm vi thực hiện và tiêu chí đánh giá}
-Ba mục tiêu được đánh giá theo deliverable thực tế: có thống kê và audit truy vết được; có quy trình chuẩn hóa, chia tập và kiểm định tái lập; có một baseline OCR chạy được và phân tích giới hạn phép đo. Không đặt thêm ngưỡng accuracy ngoài yêu cầu gốc. Bảng~\ref{tab:goals} tóm tắt trạng thái dựa trên bằng chứng cục bộ.
+\section{Kết quả 1: Hiểu dữ liệu biên lai}
+\subsection{Quy mô và đặc điểm dữ liệu}
+Bản dữ liệu đang sử dụng gồm 1.155 ảnh biên lai train và 391 ảnh validation chính thức. Phần train có 6.585 vùng gán nhãn cho các trường thông tin cần tìm. Ngoài ra còn có transcript toàn trang và một bộ 6.585 ảnh cắt nhỏ dành riêng cho nhận dạng chữ. Nhóm giữ các nguồn này tách biệt vì ảnh cắt nhỏ chưa được xác nhận là các vùng thông tin trên cùng biên lai.
 
 \begin{table}[H]
-\caption{Phạm vi hoàn thành của ba mục tiêu tuần 1.}\label{tab:goals}
-\small
-\begin{tabularx}{\linewidth}{@{}P{14mm}P{30mm}YP{32mm}@{}}
+\caption{Quy mô dữ liệu nhóm đã khảo sát.}\label{tab:inventory}
+\begin{tabularx}{\linewidth}{@{}Yr@{}}
 \toprule
-\textbf{Mục tiêu} & \textbf{Nội dung} & \textbf{Deliverable chính} & \textbf{Đánh giá}\\\midrule
-Goal 1 & Hiểu dữ liệu và EDA & Thống kê, audit annotation 40 ảnh, phân tích trùng/gần trùng & Hoàn thành khảo sát; còn rủi ro nguồn\\
-Goal 2 & Xử lý dữ liệu tái lập & Manifest schema 1.1, split, validation, kiểm chứng artifact & Hoàn thành pipeline; bundle gốc còn metadata cũ\\
-Goal 3 & OCR baseline và phân tích lỗi & Tesseract, predictions, CER/WER, chẩn đoán alignment & Hoàn thành baseline đầu tiên; phép đo có giới hạn\\
+\textbf{Thành phần} & \textbf{Số lượng} \\\midrule
+Bản ghi biên lai & 1.546 \\
+Ảnh train có nhãn thông tin & 1.155 \\
+Ảnh validation chính thức & 391 \\
+Vùng thông tin được gán nhãn trên ảnh train & 6.585 \\
+Vùng transcript toàn trang & 40.868 \\
+Ảnh cắt nhỏ cho tác vụ nhận dạng chữ riêng & 6.585 \\
 \bottomrule
 \end{tabularx}
-\source{Đối chiếu \ev{03}--\ev{13}; hoàn thành không đồng nghĩa annotation sạch hoặc OCR đạt chất lượng triển khai.}
 \end{table}
 
-\subsection{Ranh giới với mục tiêu dài hạn}
-Tuần 1 chưa huấn luyện mô hình KIE, chưa có accuracy trích xuất trường hoặc field-level F1. Chức năng kiểm tra nghiệp vụ, API, giao diện và triển khai ứng dụng chưa được nghiệm thu. Crop nhận dạng chữ không được sử dụng như nhãn trường hóa đơn khi chưa xác minh quan hệ nguồn. Những phân biệt này giúp đọc đúng cả thành công của pipeline lẫn giới hạn của kết quả OCR. \ev{02}\ev{09}
+Các nhãn tập trung vào tên nơi bán, địa chỉ, thời điểm giao dịch và tổng tiền. Số vùng gán nhãn không đồng nghĩa số ảnh: một ảnh có thể có nhiều vùng cho cùng một trường. Trong 1.155 ảnh train, có 947 ảnh được gán đủ bốn loại trường; việc thiếu nhãn chưa chứng minh trường đó không xuất hiện trên ảnh.
 
-
-
-\section{Goal 1: Hiểu dataset và phân tích khám phá}
-\subsection{Dataset MC-OCR và bản export cục bộ}
-MC-OCR nghiên cứu ảnh hóa đơn chụp bằng thiết bị di động, gồm đánh giá chất lượng ảnh và trích xuất thông tin. Tài liệu chính thức cho phép một ảnh không có đủ trường mục tiêu hoặc có dòng không đọc được \cite{mcocr,mcocrdata}. Bản cục bộ được dự án hướng dẫn lấy từ Kaggle; lần lập báo cáo kiểm tra dữ liệu đã tồn tại, không xác nhận lại toàn bộ lịch sử tải hoặc điều khoản phân phối. Tổng số của cuộc thi không được dùng thay cho inventory thực tế. \ev{02}\ev{03}
-
-Ba nguồn annotation cần được phân biệt. \textbf{KIE} cung cấp nhãn trường, transcript và polygon của trường mục tiêu. \textbf{Transcript toàn trang} nằm trong sidecar được ghép với ảnh train theo tên tệp tường minh. \textbf{Recognition crop/transcript} là tác vụ nhận dạng độc lập với train/val riêng; không có quan hệ parent receipt hoặc vùng KIE đã được kiểm chứng. Hai nguồn cùng có 6.585 phần tử không chứng minh chúng tương ứng một-một.
-
-\begin{table}[H]
-\caption{Quy mô bản export; đơn vị đếm và mẫu số được tách riêng.}\label{tab:inventory}
-\begin{tabularx}{\linewidth}{@{}YrP{61mm}@{}}
-\toprule
-\textbf{Thành phần} & \textbf{Số lượng} & \textbf{Định nghĩa / giới hạn}\\\midrule
-Bản ghi hóa đơn & 1.546 & 1.155 train và 391 inventory validation\\
-Nội dung hóa đơn duy nhất & 1.491 & Nhóm theo SHA-256 toàn bộ tệp ảnh\\
-Ảnh nguồn KIE train & 1.155 & 1.122 nội dung khác nhau theo SHA-256\\
-Vùng KIE của train & 6.585 & Polygon trường, không phải số ảnh\\
-Ảnh train có sidecar OCR & 1.151 & Trên 1.155 ảnh; thiếu 4 sidecar\\
-Vùng transcript toàn trang & 40.868 & Bao gồm geometry không hợp lệ\\
-Cặp recognition crop/transcript & 6.585 & 5.285 train; 1.300 val riêng\\
-Tổng bản ghi ảnh kiểm định & 8.131 & 1.546 hóa đơn + 6.585 crop\\
-\bottomrule
-\end{tabularx}
-\source{Tái đếm manifest và nguồn, giải mã ảnh và kiểm SHA-256: \ev{03}\ev{12}.}
-\end{table}
-
-Inventory validation chính thức gồm 391 ảnh nhưng CSV cục bộ không có cột nhãn/polygon KIE. Việc có cột transcript mẫu không tạo ra GT KIE hoặc transcript toàn trang phù hợp cho benchmark hiện tại. Do đó pipeline giữ tập này làm inventory, không suy nhãn và không dùng kết quả tuning từ đây. \ev{03}\ev{06}
-
-\subsection{Phân bố annotation và độ bao phủ}
-Trên 1.155 bản ghi train, số vùng KIE mỗi ảnh có min 0, Q1 5, trung vị 5, Q3 7, max 29 và trung bình 5,7013. Có hai mảng annotation rỗng; 947 ảnh có đủ bốn loại trường được ánh xạ. Một ảnh có nhiều vùng cho cùng trường nên số vùng và số ảnh có nhãn là hai đại lượng khác nhau. Không có annotation cho một trường chưa đủ để kết luận trường thực sự không xuất hiện trên ảnh. \ev{03}\ev{12}
-
-\begin{table}[H]
-\caption{Nhãn nguồn và độ bao phủ trên 1.155 bản ghi train.}\label{tab:fields}
-\small
-\begin{tabularx}{\linewidth}{@{}lYrrr@{}}
-\toprule
-\textbf{Nhãn nguồn} & \textbf{Trường chuẩn} & \textbf{Vùng} & \textbf{Ảnh có nhãn} & \textbf{Không gán}\\\midrule
-\texttt{SELLER} & \texttt{seller\_name} & 1.171 & 1.071 & 84\\
-\texttt{ADDRESS} & \texttt{seller\_address} & 1.952 & 1.077 & 78\\
-\texttt{TIMESTAMP} & \texttt{transaction\_datetime} & 1.347 & 1.088 & 67\\
-\texttt{TOTAL\_COST} & \texttt{total\_amount} & 2.114 & 1.081 & 74\\
-\texttt{TOTAL\_TOTAL\_COST} & Chưa ánh xạ & 1 & -- & --\\
-\bottomrule
-\end{tabularx}
-\source{\path{loader.FIELD_MAPPING}, manifest và \path{verified_summary.json}; \ev{03}\ev{12}. Mỗi trường còn 391 ảnh official inventory không có GT KIE, nằm ngoài mẫu số 1.155.}
-\end{table}
-
-Bảng~\ref{tab:fields} cho thấy số vùng tổng tiền và địa chỉ lớn hơn số vùng nơi bán. Đây là phân bố annotation, chưa phản ánh độ khó mô hình hoặc tỷ lệ nhãn đúng. Nhãn bất thường được giữ nguyên để truy tìm và rà soát nguồn.
-
-\subsection{EDA kích thước và các heuristic ảnh}
-\begin{table}[H]
-\caption{Thống kê tái tính trên toàn bộ 1.155 ảnh train.}\label{tab:eda}
-\small
-\begin{tabularx}{\linewidth}{@{}Yrrr@{}}
-\toprule
-\textbf{Đại lượng} & \textbf{Nhỏ nhất} & \textbf{Trung vị} & \textbf{Lớn nhất}\\\midrule
-Rộng (pixel) & 352 & 768 & 1.024\\
-Cao (pixel) & 480 & 1.024 & 2.860\\
-Tỷ lệ rộng/cao & 0,2476 & 0,7500 & 1,7778\\
-Độ sáng trung bình (mức xám) & 69,3267 & 133,0371 & 224,6197\\
-Tương phản (độ lệch chuẩn mức xám) & 14,0370 & 39,5171 & 85,9794\\
-Phương sai Laplacian (mức xám$^2$) & 22,9347 & 918,3987 & 4.827,2302\\
-\bottomrule
-\end{tabularx}
-\source{\path{eda.collect_image_features()} đọc ảnh gốc, OpenCV ảnh xám; \ev{04}\ev{12}.}
-\end{table}
-Các thống kê kích thước là từng phân bố độc lập: không suy rằng mọi ảnh đều có kích thước trung vị 768$\times$1.024. Có 56 ảnh ngang và 1.099 ảnh dọc/vuông. Phương sai Laplacian phản ánh thay đổi cường độ cục bộ; độ nét, nhiễu và chất liệu nền đều có thể ảnh hưởng, vì thế không dùng riêng đại lượng này để chứng nhận ảnh dễ đọc.
+Phần lớn ảnh train có bố cục dọc; độ sáng và độ rõ của chữ thay đổi đáng kể (Hình~\ref{fig:eda}). Những khác biệt này giúp nhóm chọn ảnh cần kiểm tra kỹ hơn.
 
 \begin{figure}[H]
 \centering\includegraphics[width=\linewidth]{figures/eda_distributions.pdf}
-\caption{Phân bố tỷ lệ hình dạng, độ sáng, tương phản và phương sai Laplacian của 1.155 ảnh train, không lọc bỏ ngoại lệ. Hình được tạo mới từ dữ liệu thật bằng hàm EDA hiện có; nguồn \ev{04}\ev{12}.}\label{fig:eda}
+\caption{Phân bố hình dạng, độ sáng, tương phản và mức biến thiên chi tiết của 1.155 ảnh train.}\label{fig:eda}
 \end{figure}
-Hình~\ref{fig:eda} cho thấy sự biến thiên của tín hiệu ảnh và đuôi phải rõ ở phương sai Laplacian. Những phân bố này hỗ trợ chọn ca khó để kiểm tra, không thay thế đánh giá khả năng đọc của con người. Dự án chưa hiệu chuẩn các heuristic thành điểm chất lượng có ground truth hoặc chứng minh một ngưỡng ảnh tốt/xấu.
 
-\subsection{Phương pháp audit chất lượng annotation}
-\path{select_annotation_audit_sample()} chọn 40 ảnh nguồn train không hoàn lại với seed 42. Các tầng chồng lấp gồm cảnh báo geometry, nhãn chưa ánh xạ, mảng KIE rỗng, thiếu transcript, tứ phân vị độ nét và độ phủ/mật độ nhãn. Hàm ưu tiên tầng hiếm và chọn luân phiên sau trộn xác định; mẫu đã được tái tạo đúng 40 ID, thứ tự và lý do chọn. \ev{04}\ev{05}\ev{12}
-
-Quy trình review gồm xem ảnh gốc và overlay, so nhãn/text/polygon với pixel, tìm trường hiện rõ chưa gán và ghi phần chưa chắc chắn. Worksheet đã lưu 40 dòng \texttt{reviewed}: 6 \texttt{correct}, 32 \texttt{incorrect}, 2 \texttt{uncertain}. Lần lập báo cáo kiểm tra CSV và tính nhất quán với mẫu, không review lại pixel. \ev{05}
-
-\note{\textbf{Giới hạn suy luận.} Đây là mẫu ưu tiên tìm lỗi; tỷ lệ 32/40 không ước lượng tỷ lệ lỗi toàn dataset. Audit ghi nhận rủi ro, chưa làm sạch annotation.}
+\subsection{Rà soát nhãn và ảnh trùng}
+Nhóm rà soát 40 ảnh được chọn có chủ đích để dễ phát hiện vấn đề. Kết quả ghi nhận 6 ảnh đúng, 32 ảnh có ít nhất một vấn đề và 2 ảnh chưa thể kết luận. Những vấn đề thường gặp gồm thiếu vùng cần gán nhãn, nhãn sai hoặc vị trí vùng không khớp nội dung trên ảnh.
 
 \begin{table}[H]
-\caption{Các cờ trong worksheet 40 ảnh; một ảnh có thể mang nhiều cờ.}\label{tab:audit}
-\begin{tabularx}{\linewidth}{@{}YrrY@{}}
-\toprule
-\textbf{Nhóm lỗi / cờ} & \textbf{Có} & \textbf{Bất định} & \textbf{Ý nghĩa}\\\midrule
-Sai nhãn KIE & 8 & 2 & Nội dung và ngữ nghĩa trường không khớp\\
-Sai vị trí polygon & 6 & 0 & Vùng không bao đúng nội dung mục tiêu\\
-Thiếu annotation trường & 21 & 5 & Cần nhìn rõ trường liên quan trước khi kết luận\\
-Chữ không đọc được & 3 & 0 & Nhòe, phai hoặc che khuất\\
-Có phần chưa chắc chắn & 6 & 0 & Khác với 2 kết luận tổng thể bất định\\
-\bottomrule
-\end{tabularx}
-\source{Tái đếm \path{annotation_review.csv}, đối chiếu \path{docs/ANNOTATION_AUDIT.md}; \ev{05}\ev{12}.}
-\end{table}
-Sai transcript được ghi trong notes, chưa có cột cờ riêng; vì vậy không thể đếm taxonomy đầy đủ chỉ bằng các cột nhãn, geometry và thiếu trường. Tài liệu mô tả năm ca chỉ sai transcript và sự bất định với báo cáo Z/phiếu bếp. Báo cáo này không chép nội dung biên lai hoặc ảnh riêng tư. Tổng các cờ ở Bảng~\ref{tab:audit} không phải số ảnh lỗi độc nhất. Metadata \texttt{not\_performed} trong audit summary là trạng thái lúc sinh mẫu; CSV mới phản ánh review hoàn tất.
-
-Kiểm tra geometry toàn tập xác nhận 6 vùng KIE trên 6 ảnh có tự giao/chạm cạnh không kề, trong đó 4 có đỉnh lặp; transcript toàn trang có 425 vùng vượt biên trên 109 ảnh. Tổng 115 hóa đơn có vấn đề geometry. Sáu ca geometry nguồn này khác sáu ca polygon sai vị trí trong mẫu review: một kiểm tra tính hợp lệ hình học, một kiểm tra vùng có đúng nội dung trên ảnh hay không. \ev{03}\ev{12}
-
-\subsection{Trùng chính xác và ứng viên gần trùng}
-Nguồn train có 31 nhóm SHA-256 trùng chứa 64 bản ghi. SHA-256 nhận biết tệp ảnh có byte giống nhau, không nhận biết mọi lần chụp cùng giao dịch. Hai mươi bản ghi train trùng official validation được cách ly trước chia nội bộ. Kiểm tra kết hợp receipt/crop không thấy nhóm SHA-256 đi qua các split đang hoạt động. \ev{07}\ev{12}
-
-Audit pHash riêng dùng ảnh xám 32$\times$32, DCT 8$\times$8, bỏ hệ số DC, tạo 63 bit AC và ngưỡng Hamming 6. Artifact ghi 1.526 ảnh băm được, 0 lỗi đọc; 36 cặp ứng viên gồm 10 train/dev, 22 train/official validation, 4 dev/official validation. Số cặp và phân nhóm đã đối chiếu với JSONL; lần này không tái chạy pHash. Các cặp chưa phân xử danh tính giao dịch. Bố cục chung có thể gây khớp giả, xoay/cắt mạnh có thể bị bỏ sót. \ev{08}
-
-\subsection{Đánh giá Goal 1}
-Đã có inventory, EDA, đối chiếu nguồn, audit 40 ảnh và danh sách rủi ro trùng. Bằng chứng đủ cho mục tiêu hiểu dữ liệu. Rủi ro còn lại là annotation sai/bất định, quy tắc cho loại chứng từ đặc biệt, 36 cặp chưa phân xử và quan hệ crop--receipt chưa xác minh. Chưa có cơ sở tuyên bố dữ liệu sạch hoặc benchmark hết leakage gần trùng.
-
-
-\Needspace{8\baselineskip}
-\section{Goal 2: Xử lý dữ liệu tái lập}
-\subsection{Luồng xử lý và đầu ra}
-Các adapter trong \path{loader.py} đọc CSV KIE, sidecar transcript và manifest recognition riêng. \path{prepare_records()} kết hợp inventory, giải mã ảnh, tính checksum, chuẩn hóa annotation và gán split. CLI \path{prepare_dataset.py} ghi bốn artifact sau kiểm định. Notebook dùng lại các hàm này để khảo sát; không phải bước bắt buộc của pipeline. \ev{06}
-
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=6mm and 7mm, every node/.style={font=\small,align=center}, box/.style={draw=teal,rounded corners=2pt,fill=pale,text width=39mm,minimum height=12mm}, arr/.style={-{Latex[length=2mm]},thick,color=teal}]
-\node[box] (raw) {Dữ liệu thô\\CSV, sidecar, ảnh};
-\node[box,right=of raw] (load) {Đọc và parse\\giữ nguồn};
-\node[box,right=of load] (norm) {Chuẩn hóa 1.1\\geometry, checksum};
-\node[box,below=of norm] (split) {Cách ly trùng official\\chia nhóm nội bộ};
-\node[box,left=of split] (policy) {Chính sách chất lượng\\report / skip / fail};
-\node[box,left=of policy] (output) {Staging, kiểm định\\xuất bốn artifact};
-\draw[arr] (raw)--(load);\draw[arr] (load)--(norm);\draw[arr] (norm)--(split);\draw[arr] (split)--(policy);\draw[arr] (policy)--(output);
-\end{tikzpicture}
-\caption{Luồng chuẩn bị dữ liệu theo \protect\path{prepare_records()} và CLI; recognition giữ split nguồn riêng. Trường hợp fail bị từ chối trước công bố bundle thành công. Nguồn \ev{06}.}\label{fig:pipeline}
-\end{figure}
-Hình~\ref{fig:pipeline} đặt chia tập trước lọc \texttt{skip}, đúng với mã hiện tại: những bản ghi giữ lại không được chia cân bằng lại. Bốn đầu ra gồm receipt manifest, recognition manifest, split summary và validation report. Dữ liệu raw không bị sửa; đầu ra chuẩn hóa vẫn giữ vấn đề nguồn bằng trạng thái tường minh.
-
-\subsection{Schema 1.1 và provenance}
-\begin{table}[H]
-\caption{Nhóm metadata phục vụ truy vết; chi tiết đầy đủ tại \protect\path{docs/DATA_SCHEMA.md}.}\label{tab:schema}
-\small
-\begin{tabularx}{\linewidth}{@{}P{35mm}YY@{}}
-\toprule
-\textbf{Nhóm} & \textbf{Trường điển hình} & \textbf{Vai trò}\\\midrule
-Định danh & \texttt{image\_id}, đường dẫn tương đối & ID 24 ký tự từ nguồn/đường dẫn; không phải content hash\\
-Nội dung ảnh & \texttt{checksum\_sha256}, \texttt{image\_group\_id} & Nhóm trùng byte và kiểm định tệp\\
-Annotation nguồn & \texttt{source\_annotations}, \texttt{source\_line}, \texttt{source\_geometry} & Giữ raw arrays, dòng nguồn và geometry\\
-Annotation chuẩn & \texttt{regions}, \texttt{ocr\_regions}, trường canonical & Tách KIE khỏi transcript toàn trang\\
-Chẩn đoán & Trạng thái image/text/label, \texttt{validation\_issues} & Tách thiếu, rỗng, không ánh xạ và không hợp lệ\\
-\bottomrule
-\end{tabularx}
-\source{\path{_normalize_region()}, \path{_opaque_id()}, schema; \ev{06}.}
-\end{table}
-
-Giữ provenance cho phép kiểm tra lỗi đến từ nguồn hay chuẩn hóa và sửa có kiểm soát ở giai đoạn sau. ID dựa trên đường dẫn không bảo đảm ẩn danh; transcript và đường dẫn vẫn cần được quản lý như dữ liệu riêng tư.
-
-\subsection{Trạng thái thiếu và kiểm định hình học}
-Schema 1.1 phân biệt \texttt{present}, \texttt{empty\_in\_source}, \texttt{missing\_in\_source} cho text; label phân biệt mapped, unmapped và thiếu nguồn. Transcript có thể không có sidecar, rỗng, chỉ có một phần hoặc available; available không bảo đảm polygon hợp lệ. Một vùng sai geometry vẫn được giữ với chẩn đoán chính xác và derived bbox bằng null. \ev{06}
-
-\path{validate_polygon()} kiểm số đỉnh, tọa độ hữu hạn, diện tích, đỉnh lặp, tự giao và giới hạn ảnh. \path{validate_manifest()} kiểm ID/đường dẫn, phiên bản schema, quan hệ source--split, checksum--group, trạng thái text/label, provenance và sự nhất quán geometry/bbox. Do đó \texttt{valid=true} có thể cùng tồn tại với annotation nguồn sai đã được mô tả đúng. Tái đối chiếu 6.585 vùng KIE cho thấy nhãn, text và tọa độ giữ nguyên nguồn; đây là tính trung thực chuẩn hóa, không phải chứng nhận ngữ nghĩa. \ev{12}
-
-\subsection{Chia tập xác định và cách ly trùng}
-\path{assign_internal_splits()} sắp khóa nhóm SHA-256 rồi trộn bằng \texttt{random.Random(42)}. Tỷ lệ dev 0,2 áp dụng cho \emph{số nhóm}, không cam kết đúng 20\% số ảnh. Nhóm có cùng content hash không bị chia đôi; một nhóm duy nhất giữ ở train. Với hash thiếu, fallback key được dùng nhất quán nhưng không thể chứng minh danh tính ảnh. \ev{07}
-
-\begin{table}[H]
-\caption{Split receipt đang dùng; không thay đổi trong lần lập báo cáo.}\label{tab:splits}
+\caption{Một số vấn đề ghi nhận khi rà soát 40 ảnh.}\label{tab:audit}
 \begin{tabularx}{\linewidth}{@{}YrY@{}}
 \toprule
-\textbf{Split} & \textbf{Bản ghi} & \textbf{Ý nghĩa}\\\midrule
-\texttt{internal\_train} & 904 & Nguồn train sau cách ly\\
-\texttt{internal\_dev} & 231 & Dev nội bộ dùng cho OCR baseline\\
-Nhóm cách ly trùng official & 20 & Không tham gia hai split nội bộ\\
-\texttt{official\_validation\_inventory} & 391 & Inventory nguồn; chưa có GT KIE phù hợp\\\midrule
-Tổng & 1.546 & Tách biệt với 6.585 crop recognition\\
+\textbf{Vấn đề} & \textbf{Số ảnh} & \textbf{Ví dụ về tác động} \\\midrule
+Thiếu nhãn cho thông tin nhìn thấy & 21 & Mô hình có thể học từ dữ liệu chưa đầy đủ \\
+Gán sai loại thông tin & 8 & Tên nơi bán có thể bị hiểu thành trường khác \\
+Vùng đánh dấu sai vị trí & 6 & Chữ trong vùng không khớp giá trị cần lấy \\
+Chữ khó đọc & 3 & Cần kiểm tra thủ công hoặc xử lý ảnh tốt hơn \\
 \bottomrule
 \end{tabularx}
-\source{Manifest và \path{split_summary.json}; tái đếm \ev{03}\ev{12}. Tên đầy đủ nhóm cách ly: \path{excluded_duplicate_of_official_validation}.}
 \end{table}
 
-\subsection{Ba chính sách xử lý dữ liệu không hợp lệ}
-\textbf{report} giữ mọi bản ghi cùng vấn đề nguồn để khảo sát. \textbf{skip} loại bản ghi có lỗi ảnh, geometry, parse, mismatch hoặc text/label thiếu theo chính sách; nhãn chưa ánh xạ hay tập KIE rỗng riêng lẻ không đủ để loại. Split được gán trước lọc và không tái cân bằng. \textbf{fail} từ chối khi có lỗi thuộc cùng tập điều kiện, CLI trả mã 2 và ghi failure report riêng, giữ bundle thành công cũ. CLI thu thập cả lỗi receipt và crop; API trực tiếp có thể dừng sớm bằng \texttt{ValueError}. Không chính sách nào tự sửa nhãn sai nghĩa. \ev{06}\ev{13}
+\noindent\textit{Các nhóm vấn đề có thể trùng trên cùng một ảnh. Mẫu 40 ảnh được ưu tiên để tìm lỗi, nên tỷ lệ 32/40 không đại diện cho toàn bộ dữ liệu.}
 
-Hồ sơ hardening trên dữ liệu thật ghi \texttt{skip} loại 115 receipt, giữ 1.431 receipt và 6.585 crop; các receipt còn lại giữ nguyên split/provenance. Với \texttt{fail}, CLI trả mã 2 và bảo toàn byte của bundle thành công trước đó. Đây là kết quả đã lưu trong \path{verification.json}, chưa chạy lại hai chính sách trên dữ liệu thật trong lần lập báo cáo. \ev{11}
+Kiểm tra trên toàn tập còn ghi nhận 115 biên lai có vùng chú thích sai hình học. Nhóm đã nhận diện và giữ thông tin về các trường hợp này để tránh coi chúng là nhãn chuẩn trong những bước sau.
 
-\subsection{Tính xác định và kiểm định bundle}
-JSONL dùng UTF-8, sorted keys, LF và strict JSON; không nhúng timestamp hay đường dẫn tuyệt đối máy. Tọa độ nonfinite được giữ dạng chuỗi có chẩn đoán, không tạo literal JSON không chuẩn. Cùng byte đầu vào, thứ tự nguồn, seed, tỷ lệ và môi trường/mã sẽ tạo cùng byte đầu ra. Dòng nguồn lặp có ID phụ thuộc số dòng, nên không hứa bất biến ID khi đổi thứ tự những dòng lặp. \ev{06}
+Nhóm phát hiện 20 bản ghi train trùng chính xác với ảnh trong tập validation chính thức và đã cách ly chúng khỏi tập huấn luyện, đánh giá nội bộ. Có thêm 36 cặp ảnh gần giống cần xem lại bằng mắt để xác định có cùng giao dịch hay không. Kết quả hiện tại giúp giảm nguy cơ đánh giá lạc quan do ảnh trùng; chưa thể khẳng định đã tìm hết mọi trường hợp gần trùng.
 
-\path{--verify-only} kiểm checksum của ba artifact trong report, strict JSON, validation cấu trúc/leakage, split summary và thống kê đầu ra, không đọc lại ảnh raw. Report không chứa hash của chính nó. Cơ chế giúp phát hiện trộn nhầm hoặc hỏng tệp, chưa phải xác thực chống sửa có chủ đích.
-
-\begin{table}[H]
-\caption{Đối chiếu bundle có sẵn trong lần lập báo cáo.}\label{tab:bundle}
-\small
-\begin{tabularx}{\linewidth}{@{}P{42mm}YP{38mm}@{}}
-\toprule
-\textbf{Bundle / phép kiểm} & \textbf{Kết quả hiện tại} & \textbf{Bối cảnh}\\\midrule
-\path{data/processed/} & Cấu trúc đạt 8.131 bản ghi; verify-only từ chối do thiếu artifact checksums & Metadata báo cáo cũ; không tự ghi đè\\
-\path{goal2_hardening_20261028/run_a/} và \path{run_b/} & Cả hai verify thành công; bốn tệp byte-identical giữa hai thư mục & Đối chiếu các lần chạy đã tồn tại\\
-Manifest gốc so với run A & Hai JSONL cùng SHA-256; split summary cùng JSON nhưng khác newline & Không trộn hash giữa phiên bản report\\
-Kiểm ảnh nguồn & 8.131 ảnh giải mã, kích thước và hash khớp & Đọc trực tiếp lần lập báo cáo\\
-\bottomrule
-\end{tabularx}
-\source{\ev{11}\ev{12}; tiền tố hai thư mục run là \path{outputs/audit/}. Không tái chạy preparation.}
-\end{table}
-
-Kết quả ở Bảng~\ref{tab:bundle} phân biệt hai mức kiểm chứng: manifest gốc đạt cấu trúc; hai bundle hardening đạt thêm kiểm checksum và tính nhất quán bốn tệp. Hash cụ thể được ghi trong phụ lục minh chứng.
-
-\subsection{Staging, thay thế và giới hạn rollback}
-CLI serialize vào thư mục tạm bên trong output, kiểm định bundle đã serialize rồi sao lưu và thay thế lần lượt; validation report được thay cuối. Khi thay thế thông thường phát sinh \texttt{OSError}, các tệp đã đổi được phục hồi từ backup. Test tiêm lỗi serialization và từng bước thay thế, cả khi có và chưa có output, đã đạt trong suite hiện tại. \ev{13}
-
-Đây chưa phải giao dịch nguyên tử bốn tệp. Dừng tiến trình, mất điện, lỗi I/O kéo dài trong rollback hoặc nhiều writer đồng thời nằm ngoài bảo đảm đã kiểm thử. Cần một writer cho mỗi output và verify trước khi sử dụng.
-
-\subsection{Đánh giá Goal 2}
-Goal 2 hoàn thành nền tảng chuẩn hóa có provenance, chia nhóm xác định, xử lý lỗi và kiểm định artifact. Bằng chứng gồm validation cấu trúc, hai bundle hardening trùng byte và kiểm thử rollback; bundle mặc định cũ vẫn cần bổ sung metadata checksum trước khi dùng verifier mới. Chất lượng annotation và gần trùng là các rủi ro dữ liệu còn lại. \ev{06}\ev{11}\ev{13}
-
-
-\Needspace{8\baselineskip}
-\section{Goal 3: OCR baseline và phân tích lỗi}
-\subsection{Mục tiêu baseline và cấu hình thực tế}
-Baseline đầu tiên thiết lập đường chạy từ ảnh đến prediction có vị trí, đo tham chiếu và nhận diện vấn đề đánh giá trước các nghiên cứu tiếp theo. Dự án dùng Tesseract với LSTM tiếng Việt trên CPU, không huấn luyện thêm model. Kết quả đánh giá là OCR transcript, không phải trích xuất bốn trường KIE. \ev{09}
-
-\begin{table}[H]
-\caption{Cấu hình mã nguồn và runtime artifact hiện có.}\label{tab:ocrconfig}
-\begin{tabularx}{\linewidth}{@{}P{42mm}Y@{}}
-\toprule
-\textbf{Thuộc tính} & \textbf{Giá trị / bằng chứng}\\\midrule
-Engine runtime & \texttt{tesseract v5.5.3.20260724}\\
-Phiên bản trong YAML / lịch sử & 5.3.4; khác runtime hiện tại, không ép runtime theo YAML\\
-Thiết bị / ngôn ngữ & CPU; \texttt{vie}\\
-Page Segmentation Mode & PSM 6: giả định một khối text đồng nhất\\
-OCR Engine Mode & OEM 1: LSTM\\
-Model & \texttt{vie.traineddata}, \texttt{tesseract-ocr/tessdata\_fast}\\
-Revision đã pin & \path{87416418657359cb625c412a48b6e1d6d41c29bd}\\
-Đầu ra & TSV: text, word box chữ nhật song song trục, confidence\\
-Môi trường ghi nhận & Python 3.12.16; runtime evaluation ghi Windows và 16 CPU logic\\
-\bottomrule
-\end{tabularx}
-\source{\path{baseline.py}, \path{configs/week1.yaml}, runtime và metrics; \ev{09}\ev{10}. Ý nghĩa PSM/OEM theo tài liệu chính thức \cite{tesseract}; model \cite{tessdata}.}
-\end{table}
-
-Model local được kiểm SHA-256 khớp runtime và downloader:
-\begin{quote}\small\path{79df64caf7bcfb2a27df5042ecb6121e196eada34da774956995747636d5bfa1}\end{quote}
-Checksum trên đã khớp tệp model và downloader; pin model chưa đồng nghĩa cố định phiên bản Tesseract hoặc hệ điều hành. \ev{09}\ev{12}
-
-\subsection{Inference, word boxes và theo dõi lỗi}
-\path{run_batch()} lọc split, sắp theo \texttt{image\_id}, chạy từng ảnh và ghi prediction hoặc lỗi riêng. \path{TesseractBaseline.predict()} kiểm ảnh, gọi executable và đọc TSV trong thư mục tạm. Parser kiểm prefix geometry số và loại dòng trống/geometry không dùng được; confidence nguồn được chia 100 khi không âm. Regression test bảo vệ trước continuation fragments sai định dạng. \ev{09}\ev{13}
-
-Lỗi inference không được diễn giải thành OCR thành công rỗng. Prediction thành công có thể hợp lệ với danh sách từ rỗng. Word box là đơn vị đầu ra Tesseract, còn GT có thể bao cả dòng hoặc nhóm chữ; sự khác biệt đơn vị này quyết định cách ghép và giới hạn chỉ số.
-
-\subsection{Ghép prediction với ground truth}
-Evaluation nối prediction và manifest bằng \texttt{image\_id} trên \texttt{internal\_dev}. Ảnh có transcript GT cần một prediction thành công; thiếu, lỗi hoặc danh sách prediction sai kiểu khiến evaluation dừng. Thành công với zero words vẫn được đánh giá bằng hypothesis rỗng. GT thiếu geometry hợp lệ hoặc text chuẩn hóa rỗng được loại với bộ đếm riêng. \ev{10}\ev{13}
+\section{Kết quả 2: Chuẩn bị dữ liệu cho các bước tiếp theo}
+Nhóm đã xây dựng quy trình đọc ảnh và nhãn, chuẩn hóa về cùng một cấu trúc, ghi lại các vấn đề của dữ liệu gốc và chia tập theo nhóm ảnh trùng chính xác. Dữ liệu gốc được giữ nguyên để có thể đối chiếu khi cần. Quy trình kiểm tra cả bản ghi lẫn ảnh tương ứng; tổng cộng 8.131 bản ghi ảnh, gồm 1.546 biên lai và 6.585 ảnh cắt nhỏ, đã qua kiểm tra cấu trúc.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[every node/.style={font=\small,align=center},node distance=5mm and 6mm,box/.style={draw=teal,fill=pale,text width=37mm,minimum height=11mm,rounded corners=2pt},arr/.style={-{Latex[length=2mm]},thick,teal}]
-\node[box] (img) {Ảnh dev};
-\node[box,right=of img] (ocr) {Tesseract inference};
-\node[box,right=of ocr] (words) {Word boxes + text};
-\node[box,below=of words] (align) {Ghép tâm box\\vào GT polygon};
-\node[box,left=of align] (eval) {Chuẩn hóa\\CER / WER};
-\node[box,left=of eval] (err) {Phân tích lỗi\\và độ phủ};
-\draw[arr] (img)--(ocr);\draw[arr] (ocr)--(words);\draw[arr] (words)--(align);\draw[arr] (align)--(eval);\draw[arr] (eval)--(err);
+\begin{tikzpicture}[node distance=5mm and 6mm, every node/.style={font=\small,align=center}, box/.style={draw=teal,rounded corners=2pt,fill=pale,text width=39mm,minimum height=12mm}, arr/.style={-{Latex[length=2mm]},thick,color=teal}]
+\node[box] (raw) {Ảnh và nhãn gốc};
+\node[box,right=of raw] (norm) {Chuẩn hóa và\\ghi nhận vấn đề};
+\node[box,right=of norm] (split) {Cách ly ảnh trùng\\và chia tập};
+\node[box,below=of split] (check) {Kiểm tra dữ liệu\\đầu ra};
+\draw[arr] (raw)--(norm);\draw[arr] (norm)--(split);\draw[arr] (split)--(check);
 \end{tikzpicture}
-\caption{Luồng OCR và đánh giá; GT transcript là nguồn annotation độc lập đi vào bước ghép. Nguồn: \protect\path{inference.py}, \protect\path{metrics.py} và notebook 04, \ev{09}\ev{10}.}\label{fig:ocrflow}
+\caption{Quy trình chuẩn bị dữ liệu đã hoàn thành trong tuần 1.}\label{fig:pipeline}
 \end{figure}
 
-Với từng box dự đoán, lấy tâm từ trung bình tọa độ đỉnh. Nếu tâm nằm trong nhiều polygon GT hợp lệ, chọn polygon có diện tích nhỏ nhất. Trong mỗi vùng GT, sắp các từ theo tọa độ $y$ rồi $x$, nối bằng dấu cách. Thuật toán hiện tại không tái dựng dòng bằng clustering hoặc thứ tự đọc ngữ nghĩa. Vì vậy sai thứ tự có thể làm tăng edit distance dù một phần từ đã nhận đúng. \ev{10}
-
-\subsection{CER, WER và chuẩn hóa tiếng Việt}
-Gọi $S$, $D$, $I$ lần lượt là số phép thay thế, xóa và chèn trên một căn chỉnh edit distance tối ưu; $N$ là độ dài tham chiếu. Với vùng hợp lệ $r$, phép cộng micro trên các vùng được định nghĩa:
-\begin{align}
-\mathrm{CER}_{\mathrm{micro}} &= \frac{\sum_r (S_{c,r}+D_{c,r}+I_{c,r})}{\sum_r N_{c,r}},\\
-\mathrm{WER}_{\mathrm{micro}} &= \frac{\sum_r (S_{t,r}+D_{t,r}+I_{t,r})}{\sum_r N_{t,r}}.
-\end{align}
-Chỉ số $c$ dùng ký tự Unicode sau chuẩn hóa; $t$ dùng token khoảng trắng. Code tính tổng khoảng cách Levenshtein, chưa xuất riêng phân rã $S/D/I$. NFKC, \texttt{casefold()} và gộp whitespace được áp dụng cho cả reference/hypothesis; dấu tiếng Việt và dấu câu được giữ. WER tách theo khoảng trắng nên token thường là âm tiết tiếng Việt, không phải từ đã phân đoạn ngôn ngữ. Micro là chia sau cộng, không phải trung bình CER/WER từng ảnh.
-
-Phép chèn khiến tử số có thể vượt $N$, nên CER/WER lớn hơn 1 vẫn hợp lệ. Vùng GT không nhận box tạo hypothesis rỗng và lỗi xóa; box ngoài mọi GT được đếm \textit{unassigned} nhưng không trực tiếp đi vào CER/WER. Hai kiểu lệch phủ này cần được đọc cùng chỉ số.
-
-\subsection{Kết quả hiện có và số liệu lịch sử}
-Lần lập báo cáo đọc prediction hiện có và tái chạy \path{evaluate_ocr_records()} trong bộ nhớ, đối chiếu toàn bộ summary và các dòng per-image/per-region. Không gọi Tesseract và không ghi đè artifact OCR gốc. Kết quả hiện tại khớp hoàn toàn metric local; số liệu lịch sử chỉ có tài liệu mô tả, không có bộ prediction lịch sử riêng để tái tính. \ev{10}\ev{12}
-
 \begin{table}[H]
-\caption{Hai bối cảnh đo OCR cần giữ tách biệt.}\label{tab:ocrresults}
-\small
-\begin{tabularx}{\linewidth}{@{}Yrr@{}}
+\caption{Kết quả chia 1.546 bản ghi biên lai.}\label{tab:splits}
+\begin{tabularx}{\linewidth}{@{}YrY@{}}
 \toprule
-\textbf{Đại lượng} & \textbf{Artifact hiện có} & \textbf{Tài liệu lịch sử}\\\midrule
-Tesseract & 5.5.3.20260724 & 5.3.4\\
-Ảnh internal dev & 231 & 231\\
-Inference thành công & 231/231 & 231/231\\
-Word boxes & 26.859 & 29.849\\
-Vùng GT được đánh giá & 8.304 & 8.304\\
-Loại do geometry GT & 104 & 104\\
-Micro CER (tỷ số) & 1,8725 & 1,8965\\
-Micro WER (tỷ số) & 2,1448 & 2,1795\\
-Vùng GT không được gán box & 1.886 & 1.643\\
-Box ngoài GT hợp lệ & 10.488 & 12.913\\
-Độ trễ trung bình (giây/ảnh) & 0,3737 & 0,500\\
+\textbf{Nhóm} & \textbf{Số ảnh} & \textbf{Vai trò} \\\midrule
+Train nội bộ & 904 & Dữ liệu cho bước phát triển mô hình \\
+Dev nội bộ & 231 & Dữ liệu đánh giá OCR ban đầu \\
+Cách ly do trùng validation & 20 & Không dùng để huấn luyện hoặc đánh giá nội bộ \\
+Validation chính thức & 391 & Tập ảnh được giữ riêng \\\midrule
+Tổng cộng & 1.546 & \\
 \bottomrule
 \end{tabularx}
-\source{Hiện có: \path{runtime.json}, prediction/evaluation \ev{09}\ev{10}, tái kiểm \ev{12}. Lịch sử: \path{docs/GOAL3_OCR_BASELINE.md} và \path{WEEK1_REPORT.md}; chưa xác minh độc lập bộ chạy cũ.}
 \end{table}
 
-Các tử/mẫu số tái tính là:
-\[
-\mathrm{CER}=\frac{92.591}{49.449}=1{,}872454448\ldots,\qquad
-\mathrm{WER}=\frac{18.332}{8.547}=2{,}144846145\ldots
-\]
-Runtime ghi tổng inference 86,4131 giây, trung bình 0,373664 giây/ảnh. Đây là metadata của lần chạy đã lưu, chưa phải benchmark tốc độ giữa các máy. Số CPU logic/platform trong metric do tiến trình evaluation ghi nhận. \ev{09}\ev{10}
+Quy trình có cách giữ lại bản ghi kèm cảnh báo, bỏ bản ghi lỗi hoặc dừng khi gặp lỗi. Việc lặp lại hai lần chuẩn bị dữ liệu trong hồ sơ kiểm tra cho cùng kết quả đầu ra; bộ kiểm thử của dự án ghi nhận 106 trường hợp đạt. Đây là bằng chứng về tính nhất quán của quy trình. Chất lượng nhãn vẫn cần được rà soát riêng: một bản ghi hợp lệ về cấu trúc vẫn có thể được gán sai nội dung.
 
-Hai cột của Bảng~\ref{tab:ocrresults} khác phiên bản engine và chưa có đủ artifact riêng cho bộ chạy lịch sử; không suy ra cải thiện mô hình từ chênh lệch này. Phiên bản 5.3.4 trong YAML mô tả cấu hình dự kiến, còn runtime hiện có ghi 5.5.3.20260724.
+\section{Kết quả 3: OCR ban đầu và bài học rút ra}
+Nhóm sử dụng Tesseract với mô hình tiếng Việt để nhận dạng chữ và vị trí trên ảnh \cite{tesseract}. Trên toàn bộ 231 ảnh dev nội bộ, chương trình tạo kết quả cho 231 ảnh, với 26.859 vùng từ được nhận dạng. Đây là mốc đầu tiên để quan sát lỗi và cải thiện cách xử lý biên lai, chưa phải kết quả trích xuất bốn trường thông tin.
 
-\note{\textbf{Cách diễn giải.} CER/WER hiện tại mang tính chẩn đoán và phụ thuộc protocol ghép vùng. Độ phủ annotation, chất lượng transcript, vị trí polygon và thứ tự từ đều có thể ảnh hưởng; chưa phải phép đo riêng, có thể so sánh độc lập về khả năng nhận dạng của Tesseract.}
+\begin{table}[H]
+\caption{Kết quả OCR trên 231 ảnh dev nội bộ.}\label{tab:ocrresults}
+\begin{tabularx}{\linewidth}{@{}YrY@{}}
+\toprule
+\textbf{Chỉ số} & \textbf{Kết quả} & \textbf{Cách hiểu} \\\midrule
+Ảnh có kết quả nhận dạng & 231/231 & Chương trình xử lý hết tập ảnh dev \\
+Vùng từ được nhận dạng & 26.859 & Đầu ra để xem chữ và vị trí trên ảnh \\
+CER trên toàn tập (tỷ số) & 1,8725 & Sai khác ký tự với transcript tham chiếu \\
+WER trên toàn tập (tỷ số) & 2,1448 & Sai khác token với transcript tham chiếu \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-\subsection{Phân bố lỗi và các nguồn sai khác}
+CER và WER ở đây so chữ nhận dạng với transcript sau khi ghép các vùng trên ảnh. Cả hai tỷ số có thể lớn hơn 1 khi số ký tự hoặc token chèn thêm nhiều hơn độ dài tham chiếu. Giá trị cao hiện tại phản ánh đồng thời lỗi nhận dạng, nhãn tham chiếu chưa sạch và cách ghép vùng chữ; không thể dùng riêng chúng để kết luận Tesseract đọc sai bao nhiêu phần trăm chữ trên ảnh.
+
 \begin{figure}[H]
 \centering\includegraphics[width=\linewidth]{figures/ocr_error_distribution.pdf}
-\caption{Phân bố CER/WER từng ảnh trên 231 ảnh dev từ artifact đã tái đối chiếu; giữ đầy đủ giá trị, không cắt đuôi. Đây là chỉ số theo protocol vùng, không phải phân bố lỗi thuần nhận dạng. Nguồn \ev{10}\ev{12}.}\label{fig:ocrerror}
+\caption{Mức sai khác OCR giữa các ảnh dev không đồng đều; biểu đồ dùng cùng cách ghép vùng với chỉ số trong Bảng~\ref{tab:ocrresults}.}\label{fig:ocrerror}
 \end{figure}
-Hình~\ref{fig:ocrerror} cho thấy sai khác không đồng đều giữa ảnh, bổ sung thông tin mà một giá trị micro chưa thể hiện. Notebook 04 cung cấp overlay GT/word boxes và so transcript cho ca trung vị/lỗi cao; output lưu sẵn hỗ trợ khảo sát nhưng chưa tạo taxonomy nguyên nhân có nhãn người review. \ev{14}
 
-\begin{table}[H]
-\caption{Phân biệt nguyên nhân có thể ảnh hưởng phép đo; không gán tỷ trọng nhân quả.}\label{tab:errors}
-\small
-\begin{tabularx}{\linewidth}{@{}P{34mm}YY@{}}
-\toprule
-\textbf{Nguồn sai khác} & \textbf{Bằng chứng hiện có} & \textbf{Giới hạn kết luận}\\\midrule
-Nhận dạng OCR & Prediction chứa text/confidence; CER/WER ghi sai khác sau ghép với GT & Chưa tách lỗi nhận dạng khỏi lỗi GT/alignment bằng review từng ca\\
-Ghép vùng / thứ tự & 1.886 GT không nhận box; 10.488 box unassigned; sắp $y$ rồi $x$ & Chưa thể gọi mọi ca là OCR bỏ sót/false positive\\
-Ground truth & 104 vùng dev bị loại geometry; audit nguồn có sai text/nhãn/vị trí & Audit KIE không tự chứng minh lỗi OCR GT cùng vùng\\
-Độ phủ / protocol & GT vùng lớn hơn word boxes; box unassigned đếm riêng & CER/WER không bao phủ mọi text prediction trên trang\\
-\bottomrule
-\end{tabularx}
-\source{\ev{05}\ev{10}\ev{12}; các nguyên nhân có thể chồng lấp, chưa có tỷ lệ phân rã được xác minh.}
-\end{table}
+Phân tích kết quả cho thấy có 1.886 vùng chữ tham chiếu không nhận được vùng từ tương ứng, trong khi 10.488 vùng từ dự đoán nằm ngoài các vùng tham chiếu hợp lệ. Điều này cho thấy việc đối chiếu chữ dự đoán với nhãn hiện có còn khó khăn. Trước khi so sánh các mô hình OCR, nhóm cần kiểm tra lại nhãn và thống nhất cách đánh giá.
 
-\subsection{Đánh giá Goal 3}
-Inference đã có bằng chứng hoàn thành trên toàn bộ 231 ảnh dev, prediction và metric truy vết được, evaluation chặn dữ liệu thiếu, có công cụ xem lỗi. Đây là phạm vi hoàn thành một baseline Tesseract đầu tiên. Chưa đánh giá mô hình KIE được huấn luyện; không có field extraction accuracy hay field-level F1.
+\section{Kết luận và hướng tiếp theo}
+Ba mục tiêu tuần 1 đã có kết quả cụ thể: nhóm hiểu quy mô và rủi ro của dữ liệu, có quy trình chuẩn bị dữ liệu có thể lặp lại, và có một mốc OCR chạy trên tập dev. Kết quả quan trọng nhất là đã xác định được những điểm có thể làm sai lệch việc huấn luyện hoặc đánh giá sau này: nhãn thiếu/sai, ảnh gần trùng và cách ghép vùng khi tính lỗi OCR.
 
-Detection precision/recall/F1 được ghi \texttt{N/A} vì GT theo dòng/vùng và prediction theo từ. Ghép 1:1 bằng IoU sẽ trộn mức chia vùng với khả năng phát hiện. Tham số IoU 0,5 chỉ lưu trong metadata, không điều khiển CER/WER hiện tại; cần protocol và GT tương thích trước khi so mô hình. \ev{10}
+Bước tiếp theo là rà soát các nhãn cần dùng cho trích xuất thông tin, xác định các cặp ảnh gần trùng, cải thiện cách đánh giá OCR và xây dựng mô hình nhận diện bốn trường trên biên lai. Các kết quả này sẽ cần được đo ở mức thông tin trích xuất và kiểm tra trực tiếp trên ảnh trước khi hướng tới ứng dụng cho người dùng.
 
-
-\clearpage
-\Needspace{8\baselineskip}
-\section{Tổng hợp kiểm thử và kiểm chứng}
-\subsection{Kiểm chứng thực hiện trong lần lập báo cáo}
-Lần chạy kiểm thử khi lập hồ sơ báo cáo dùng Windows/Python 3.12.16 tại commit \texttt{4ee2776}, với fixture tổng hợp. Kết quả \textbf{106 passed trong 1,90 giây}, không có test fail; không chạy lại suite trong các lượt biên tập sau đó. Log và lệnh đầy đủ nằm tại \path{evidence/pytest.txt} và \path{repository_context.json}. \ev{13}
-
-\begin{table}[H]
-\caption{Tóm tắt phương pháp và kết quả kiểm chứng hiện tại.}\label{tab:verification}
-\small
-\begin{tabularx}{\linewidth}{@{}P{22mm}YP{48mm}P{12mm}@{}}
-\toprule
-\textbf{Thành phần} & \textbf{Phương pháp} & \textbf{Kết quả} & \textbf{Nguồn}\\\midrule
-Goal 1 & Đếm manifest, ảnh nguồn, nhãn và CSV review & Inventory/EDA khớp; review 40 dòng, không review lại pixel & \ev{12}\\
-Goal 1 & Đối chiếu JSONL gần trùng và summary & 36 cặp; chưa phân xử, không tái băm & \ev{08}\\
-Goal 2 & Decode, kích thước, SHA-256 và validation & 8.131 bản ghi đạt cấu trúc và khớp ảnh & \ev{12}\\
-Goal 2 & So run A/B và gọi verifier & Bốn tệp bằng byte; hai bundle verify thành công & \ev{12}\\
-Goal 2 & Verify bundle gốc & Từ chối metadata thiếu checksums, không sửa output & \ev{12}\\
-Goal 2 & Kiểm leakage SHA-256 trên receipt/crop & 0 nhóm đi qua active split & \ev{12}\\
-Goal 3 & Kiểm prediction, tái tính evaluation & 231 ảnh, 26.859 boxes; summary và chi tiết khớp & \ev{12}\\
-Dự án & Suite tests hiện có & 106 đạt, dữ liệu tổng hợp & \ev{13}\\
-Notebook & Đọc code/output lưu sẵn, kiểm cú pháp cells & 4 tệp có output, không error output; chưa thực thi lại & \ev{14}\\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-Kiểm tra Goal 2 bao gồm hồi phục khi serialization/thay thế lỗi, source/output statistics, policy và phát hiện artifact trộn/hỏng. Goal 3 có test Unicode giữ dấu, token khoảng trắng, alignment, prediction rỗng thành công và từ chối thiếu prediction. Tests này bảo vệ hành vi mã, không trực tiếp đo chất lượng trên ảnh thật.
-
-\subsection{Kết quả lịch sử và trạng thái CI}
-Tài liệu ghi 24, 60 và 104 tests ở các giai đoạn trước; đây là các mốc suite khác nhau, không cộng dồn. Workflow dùng Ubuntu/Python 3.12 và dependency khóa, không cần MC-OCR. Kết quả local 106 tests không xác nhận CI thành công: hồ sơ truy vấn status chưa có log/check-run đủ căn cứ, nên \textbf{trạng thái CI chưa xác minh}. \ev{01}\ev{13}\ev{15}
-
-
-\Needspace{8\baselineskip}
-\section{Thảo luận, kết luận và hướng tiếp theo}
-\subsection{Quan hệ giữa ba mục tiêu}
-Goal 1 xác định cần đo gì và nguồn nào có thể làm GT. Việc phân biệt vùng KIE, transcript toàn trang và crop recognition ngăn sai giả định đầu vào; audit cho thấy rủi ro không chỉ ở ảnh mà còn ở annotation. Goal 2 biến hiểu biết đó thành hợp đồng dữ liệu: giữ provenance, biểu diễn thiếu/lỗi riêng, chia nhóm chống trùng byte và công bố artifact có kiểm định. Goal 3 dùng chính nền tảng này để chạy một baseline và làm lộ ra khoảng cách giữa đơn vị GT với đơn vị prediction.
-
-Giá trị kỹ thuật của tuần đầu nằm ở khả năng truy nguyên. Khi metric cao bất thường, có thể lần từ numerator/denominator đến vùng và prediction cụ thể thay vì đổ mọi sai khác cho engine OCR. Khi validation đạt, vẫn biết 115 hóa đơn có geometry nguồn bất thường vì trạng thái cấu trúc và chất lượng nguồn không bị gộp. Khi số liệu tài liệu khác artifact, checksum và metadata giúp ghi nhận chính xác phạm vi được xác minh. \ev{03}\ev{10}\ev{12}
-
-\subsection{Những giới hạn còn lại}
-\begin{enumerate}
-\item \textbf{Danh tính giao dịch:} 36 ứng viên gần trùng chưa phân xử; pHash không bảo đảm phát hiện mọi ảnh cùng giao dịch. Không có kết luận benchmark hết leakage gần trùng.
-\item \textbf{Chất lượng annotation:} nhãn, text, vị trí và loại chứng từ còn sai/bất định. Mẫu audit không đại diện toàn tập; bản ghi không có nhãn không đồng nghĩa trường vắng trên ảnh.
-\item \textbf{Phép đo OCR:} GT và word boxes khác độ hạt; coverage và thứ tự ghép ảnh hưởng edit distance. Chưa có phân rã nhân quả định lượng OCR/GT/alignment.
-\item \textbf{Tái lập theo môi trường:} model được pin nhưng runtime hiện tại khác phiên bản ghi trong YAML/lịch sử. Bundle gốc thiếu checksum metadata; so bốn tệp lặp chỉ được xác minh trên các bundle hardening có sẵn.
-\item \textbf{Phạm vi chức năng:} không có mô hình KIE đã huấn luyện, metric trường, API, UI hay bộ kiểm tra nghiệp vụ đã nghiệm thu. Quan hệ parent receipt của crop riêng chưa được thiết lập.
-\end{enumerate}
-
-\subsection{Kết luận}
-Ba mục tiêu tuần 1 đạt deliverable trong phạm vi nghiên cứu ban đầu: inventory và EDA có kiểm tra nguồn, audit annotation có hồ sơ, pipeline chuẩn hóa/chia tập/validation có bằng chứng tái lập, OCR baseline có prediction và evaluation đối chiếu được. Kết quả 106 tests đạt hỗ trợ tính đúng của hành vi hiện tại; 8.131 ảnh khớp manifest hỗ trợ tính toàn vẹn dữ liệu. Các kết luận không mở rộng thành chất lượng annotation hoàn hảo, hiệu năng OCR sản xuất hay thành công KIE.
-
-\subsection{Hướng tiếp theo theo bàn giao Week 2}
-Theo \path{docs/WEEK2_HANDOFF.md}, bước sau ưu tiên target KIE từ nhãn được xác minh, giữ quarantine và đánh giá ở mức hóa đơn, phân xử gần trùng và hiệu chỉnh protocol GT--prediction trước so mô hình. Review 40 ảnh đã hoàn tất; cần xử lý các ca bất định còn lại, đồng thời giữ provenance và bất định của OCR. Đây là định hướng tiếp nối, chưa phải kết quả tuần 1. \ev{02}\ev{05}
-
-
-\clearpage
-\addcontentsline{toc}{section}{Tài liệu tham khảo}
 \begin{thebibliography}{9}
-\bibitem{mcocr} MC-OCR Challenge. \textit{Mobile captured receipts OCR: mô tả tác vụ IQA và KIE}. Trang chính thức, truy cập ngày 28/10/2026. \url{https://www.rivf2021-mc-ocr.vietnlp.com/}
-\bibitem{mcocrdata} MC-OCR Challenge. \textit{Dataset: định dạng dữ liệu và annotation}. Truy cập ngày 28/10/2026. \url{https://www.rivf2021-mc-ocr.vietnlp.com/dataset}
-\bibitem{tesseract} Tesseract OCR. \textit{Command Line Usage}. Tài liệu chính thức: OEM, PSM và TSV, truy cập ngày 28/10/2026. \url{https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html}
-\bibitem{tessdata} Tesseract OCR. \textit{tessdata\_fast}, revision \texttt{8741641}. Model tiếng Việt được pin trong dự án; kiểm tra trang revision ngày 28/10/2026. \url{https://github.com/tesseract-ocr/tessdata_fast/tree/87416418657359cb625c412a48b6e1d6d41c29bd}
-\bibitem{repo} DocuCheck AI. \textit{Kho mã và tài liệu kỹ thuật Week 1}. Mốc mã nguồn \texttt{4ee2776}; notebook và artifact cục bộ được phân biệt trong phụ lục. \url{https://github.com/AIVIETNAM-AIO-Heart208/DocuCheck-AI}
+\bibitem{mcocr} MC-OCR Challenge. \textit{Mobile captured receipts OCR}. \url{https://www.rivf2021-mc-ocr.vietnlp.com/}
+\bibitem{tesseract} Tesseract OCR. \textit{Tài liệu sử dụng}. \url{https://tesseract-ocr.github.io/tessdoc/}
+\bibitem{repo} DocuCheck AI. \textit{Kho mã dự án}. \url{https://github.com/AIVIETNAM-AIO-Heart208/DocuCheck-AI}
 \end{thebibliography}
-
-\subsection*{Ghi chú về nguồn và phân phối}
-Các tài liệu web trên được tham khảo cho mô tả dataset và cấu hình engine; số liệu thực nghiệm của báo cáo lấy từ repository/artifact cục bộ, không lấy từ tổng số công bố của cuộc thi. Không sử dụng bài báo, DOI hay tác giả chưa kiểm chứng. Trích dẫn implementation dùng mã E và đường dẫn/hàm ở phụ lục để người đọc nối trực tiếp đến mã nguồn.
-
-Source LaTeX và hình tổng hợp đủ để biên dịch PDF; tái kiểm số liệu cần thêm artifact cục bộ và quyền truy cập dataset. Danh mục tệp cần cung cấp riêng nằm ở phụ lục.
-
-\clearpage
-\appendix
-\section*{PHỤ LỤC -- DANH MỤC MINH CHỨNG}
-\addcontentsline{toc}{section}{PHỤ LỤC -- DANH MỤC MINH CHỨNG}
-\small
-\textbf{Ký hiệu phân phối:} \textbf{S} = mã/tài liệu đang được Git theo dõi; \textbf{L} = artifact local bị ignore, có thể chứa dữ liệu riêng tư; \textbf{R} = tệp tổng hợp tạo cho báo cáo. ``Kiểm chứng'' ở đây theo phép kiểm mô tả, không thay review pixel hoặc lần chạy lịch sử.
-
-\begin{minipage}{\linewidth}
-\captionsetup{hypcap=false}
-\captionof{table}{Ánh xạ hoạt động và kết quả đến nguồn thực tế.}\label{tab:evidence}
-\begin{tabular}{@{}P{10mm}P{31mm}P{83mm}P{25mm}@{}}
-\toprule\textbf{Mã} & \textbf{Goal / nội dung} & \textbf{Đường dẫn hoặc hàm} & \textbf{Trạng thái}\\\midrule
-E01 & Mốc mã, lịch sử & \path{docs/WEEK1_REPORT.md}; \path{evidence/repository_context.json}; \path{evidence/artifact_manifest.csv} & S/R; mốc và hash đã kiểm\\
-E02 & Phạm vi, định hướng & \path{README.md}; \path{docs/idea.md}; \path{docs/WEEK2_HANDOFF.md} & S; nội dung đã đọc\\
-E03 & Goal 1: inventory, annotation & \path{data/processed/manifest.jsonl}; \path{recognition_manifest.jsonl}; \path{validation_report.json}; \path{src/docucheck/data/loader.py} & S/L; tái đếm, đọc ảnh, đối chiếu nguồn\\
-E04 & Goal 1: EDA và chọn mẫu & \path{src/docucheck/data/eda.py}: \path{collect_image_features()}, \path{select_annotation_audit_sample()}; notebook 01/02 & S; tính lại EDA, tái tạo mẫu\\
-E05 & Goal 1: review 40 ảnh & \path{outputs/audit/week1/annotation_review.csv}; \path{annotation_sample.jsonl}; \path{docs/ANNOTATION_AUDIT.md} & S/L; kiểm CSV, chưa review lại pixel\\
-E06 & Goal 2: chuẩn hóa, policy & \path{docs/DATA_SCHEMA.md}; \path{src/docucheck/data/preprocessing.py}: \path{prepare_records()}; \path{validation.py}: \path{validate_manifest()}; \path{scripts/prepare_dataset.py} & S; đọc mã, tests đạt\\
-E07 & Goal 1/2: split, quarantine & \path{src/docucheck/data/splitting.py}: \path{assign_internal_splits()}, \path{find_cross_split_duplicate_groups()}; \path{data/processed/split_summary.json} & S/L; đếm và kiểm exact leakage\\
-E08 & Goal 1: 36 cặp ứng viên & \path{outputs/audit/week1/near_duplicate_candidates.jsonl}; \path{near_duplicate_summary.json}; \path{near_duplicate_failures.jsonl}; \path{src/docucheck/data/duplicates.py} & S/L; kiểm artifact, chưa tái băm/phân xử\\
-E09 & Goal 3: engine, inference & \path{src/docucheck/ocr/baseline.py}: \path{TesseractBaseline}; \path{inference.py}: \path{run_batch()}; \path{scripts/run_ocr.py}; \path{scripts/download_ocr_model.py}; \path{configs/week1.yaml}; \path{outputs/ocr/tesseract_internal_dev/runtime.json} & S/L; đọc mã, runtime, kiểm model hash\\
-E10 & Goal 3: prediction, metric & \path{outputs/ocr/tesseract_internal_dev/predictions.jsonl}; \path{failures.jsonl}; \path{outputs/ocr/evaluation/metrics.json}; \path{per_image_metrics.jsonl}; \path{per_region_alignment.jsonl}; \path{src/docucheck/evaluation/metrics.py}: \path{evaluate_ocr_records()}; \path{scripts/evaluate_ocr.py} & S/L; tái tính khớp, không inference lại\\
-\bottomrule
-\end{tabular}
-\end{minipage}
-\clearpage
-\continued{PHỤ LỤC / DANH MỤC MINH CHỨNG (TIẾP THEO)}
-{\small\textbf{Bảng~\ref{tab:evidence} (tiếp theo).} Hoạt động và nguồn hỗ trợ.}\par
-\small
-\begin{tabular}{@{}P{10mm}P{31mm}P{83mm}P{25mm}@{}}
-\toprule\textbf{Mã} & \textbf{Goal / nội dung} & \textbf{Đường dẫn hoặc hàm} & \textbf{Trạng thái}\\\midrule
-E11 & Goal 2: real-data hardening & \path{outputs/audit/goal2_hardening_20261028/verification.json}; \path{verify_real_data.py}; bốn artifact trong \path{run_a/}, \path{run_b/}, \path{run_skip/} & L; kiểm run A/B; skip/fail real-data là hồ sơ lịch sử\\
-E12 & Kiểm chứng báo cáo & \path{verify_evidence.py}; \path{evidence/verified_summary.json}; \path{evidence/artifact_manifest.csv}; \path{figures/*.pdf} & R; số liệu tổng hợp và hash đã tạo thật\\
-E13 & Tests và rollback & \path{tests/test_prepare_dataset_cli.py}; \path{test_preprocessing.py}; \path{test_annotation_validation.py}; \path{test_splitting.py}; \path{test_ocr_metrics.py}; toàn suite; \path{evidence/pytest.txt} & S/R; 106 đạt local, 28/10/2026\\
-E14 & Notebook và visualization & \path{notebooks/01_dataset_audit.ipynb}; \path{02_exploratory_data_analysis.ipynb}; \path{03_preprocessing_validation.ipynb}; \path{04_ocr_baseline_evaluation.ipynb}; \path{src/docucheck/visualization/receipt.py} & S; workspace có edits sẵn, không thực thi lại\\
-E15 & CI & \path{.github/workflows/tests.yml}; \path{evidence/ci_status.json} & S/R; workflow đã đọc; status rỗng, chưa xác minh run\\
-\bottomrule
-\end{tabular}
-
-\normalsize
-\subsection*{Tệp cần đi kèm khi nộp}
-Nộp PDF cùng source LaTeX, hai hình tổng hợp và hồ sơ trong \path{evidence/}; kèm \path{EVIDENCE_INDEX.md}, \path{BUILD.md}, \path{SUBMISSION_CHECKLIST.md}. Cung cấp repository tại commit đã ghi và bản notebook workspace đúng checksum để kiểm tra implementation.
-
-Để tái kiểm sâu số liệu, cần cung cấp có kiểm soát hai manifest, bundle hardening A/B, worksheet review, near-duplicate artifacts và bộ OCR prediction/runtime/evaluation liệt kê ở E03/E05/E08/E10/E11. Các tệp này đang có local nhưng chưa được đóng gói công khai cùng báo cáo. Không tự kèm raw dataset; người chấm muốn tái tính đặc trưng ảnh cần quyền truy cập dataset phù hợp điều khoản.
-
-\subsection*{Bằng chứng còn thiếu hoặc chưa được tái xác minh}
-Chưa có snapshot riêng của bộ OCR 5.3.4 lịch sử, log CI/check-run thành công, quyết định phân xử 36 cặp gần trùng, liên kết parent receipt cho crop hoặc taxonomy nguyên nhân OCR có nhãn người review. Review trực quan 40 ảnh là hồ sơ có sẵn, chưa lặp lại trong lần lập báo cáo. Các mục này cần được phân biệt với những kết quả đã tái tính trong E12.
 \end{document}

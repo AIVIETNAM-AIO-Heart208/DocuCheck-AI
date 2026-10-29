@@ -1,5 +1,7 @@
 # Rà soát và chỉnh sửa báo cáo
 
+**Lưu ý phiên bản (29/10/2026):** Tài liệu này ghi lần rà soát bản kỹ thuật 19 trang. Bản hiện tại trong main.pdf đã được viết lại thành báo cáo 5 trang dành cho người xem; các nhận xét về bố cục và nội dung PDF cũ chỉ có giá trị lịch sử.
+
 Ngày rà soát: 28/10/2026. Phạm vi: bìa, nội dung kỹ thuật, khả năng đọc biểu đồ và tính nhất quán của hồ sơ báo cáo. Không sửa mã dự án, dataset hoặc kết quả thực nghiệm.
 
 ## Kết luận đối chiếu ba goal với repo
