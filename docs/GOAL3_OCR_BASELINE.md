@@ -36,18 +36,7 @@ Detection precision/recall/F1 là `N/A`: Tesseract tạo box từng từ còn GT
 
 ## Chạy lại
 
-Từ thư mục gốc repository, sau khi có dataset và môi trường Python:
-
-```bash
-uv run python scripts/prepare_dataset.py --dataset-root data/mcocr --output-dir data/processed --seed 42 --validation-fraction 0.2
-uv run python scripts/download_ocr_model.py
-uv run python scripts/run_ocr.py --split internal_dev --limit 3 --output-dir outputs/ocr/smoke
-uv run python scripts/run_ocr.py --split internal_dev --output-dir outputs/ocr/tesseract_internal_dev
-uv run python scripts/evaluate_ocr.py --split internal_dev --output-dir outputs/ocr/evaluation
-uv run jupyter lab
-```
-
-Smoke run 3 ảnh chỉ kiểm tra đường chạy; không dùng file prediction đó để đánh giá toàn bộ split. Dataset, model, predictions, transcript và biểu đồ ở các đường dẫn local bị Git ignore.
+Các lệnh hiện hành, đầu vào/đầu ra và thứ tự chạy nằm trong [hướng dẫn pipeline](PIPELINE.md). Smoke run ba ảnh chỉ kiểm tra đường chạy; không dùng kết quả đó để đánh giá toàn bộ split. Dataset, model, predictions, transcript và biểu đồ ở các đường dẫn local bị Git ignore.
 
 ## Cần cải thiện trước khi tuyên bố chất lượng OCR
 

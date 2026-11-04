@@ -13,15 +13,14 @@ dependencies = [
     "pandas>=2.2,<4",
     "Pillow>=10,<14",
     "matplotlib>=3.9,<4",
-    "seaborn>=0.13,<1",
     "opencv-python-headless>=4.10,<5",
-    "PyYAML>=6,<7",
 ]
 
 [project.optional-dependencies]
 notebooks = [
     "jupyterlab>=4.2,<5",
     "ipykernel>=6.29,<8",
+    "seaborn>=0.13,<1",
     "nbclient>=0.10,<1",
     "nbconvert>=7.16,<8",
     "nbformat>=5.10,<6",

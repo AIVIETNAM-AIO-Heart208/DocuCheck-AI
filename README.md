@@ -35,7 +35,7 @@ uv run pytest
 jupyter lab
 ```
 
-Dataset mặc định nằm ở `data/mcocr`; khi đặt ở vị trí khác, truyền `--dataset-root` cho CLI hoặc đặt biến `MC_OCR_ROOT`. Giá trị trong `configs/week1.yaml` chỉ là đường dẫn tương đối trong workspace.
+Dataset mặc định nằm ở `data/mcocr`; khi đặt ở vị trí khác, truyền `--dataset-root` cho CLI hoặc đặt biến `MC_OCR_ROOT`.
 
 Để tải MC-OCR từ Kaggle, cài Kaggle CLI và cấu hình thông tin xác thực Kaggle (`~/.kaggle/kaggle.json` hoặc `KAGGLE_API_TOKEN`), sau đó chạy từ thư mục gốc repository:
 
