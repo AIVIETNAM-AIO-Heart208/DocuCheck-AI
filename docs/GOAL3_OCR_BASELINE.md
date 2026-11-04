@@ -20,7 +20,7 @@ Goal 3 đo một **OCR baseline** trên ảnh biên lai và khảo sát nơi ph�
 ```
 
 1. `scripts/prepare_dataset.py` tạo `data/processed/manifest.jsonl`. Mỗi ảnh có `split`; một phần ảnh train có `ocr_regions` từ sidecar transcript toàn trang. Các vùng này khác nhãn KIE trong `regions`. `internal_dev` là tập dev nội bộ, không phải official validation.
-2. `scripts/download_ocr_model.py` tải `vie.traineddata` đã pin revision và kiểm SHA-256. `scripts/run_ocr.py` đọc các ảnh trong split, sắp theo `image_id` rồi gọi `TesseractBaseline.predict()` cho từng ảnh. Baseline dùng Tesseract CPU, ngôn ngữ `vie`, PSM 6, OEM 1 và xuất TSV. Parser giữ hàng word box, chữ, polygon chữ nhật và confidence từ 0 đến 1. Lỗi đọc/chạy OCR được ghi riêng trong `failures.jsonl`.
+2. `scripts/download_ocr_model.py` tải `vie.traineddata` đã pin revision và kiểm SHA-256. `scripts/run_ocr.py` đọc các ảnh trong split, sắp theo `image_id` rồi gọi `TesseractBaseline.predict()` cho từng ảnh. Baseline dùng Tesseract CPU, ngôn ngữ `vie`, OEM 1 và xuất TSV. PSM 6 là mặc định; `--psm` cho phép chọn giả định phân đoạn khác và giá trị thực tế được ghi trong `runtime.json`. Parser giữ hàng word box, chữ, polygon chữ nhật và confidence từ 0 đến 1. Lỗi đọc/chạy OCR được ghi riêng trong `failures.jsonl`.
 3. `scripts/evaluate_ocr.py` ghép prediction theo `image_id` với manifest. Ảnh có transcript GT phải có một prediction thành công; thiếu hoặc lỗi thì evaluation dừng. Một prediction thành công với 0 từ vẫn được đánh giá: các vùng GT của ảnh đó có hypothesis rỗng.
 4. `evaluate_ocr_records()` chỉ dùng vùng GT có chữ không rỗng và geometry hợp lệ. Với mỗi box từ dự đoán, lấy tâm box; nếu tâm nằm trong nhiều vùng GT, gán vào vùng có diện tích nhỏ nhất. Các từ đã gán được sắp theo tọa độ `y`, rồi `x`, và nối bằng dấu cách. Box không nằm trong vùng GT hợp lệ được đếm là *unassigned*. Vùng GT không nhận box nào được đếm là *unmatched*.
 5. Sau chuẩn hóa Unicode NFKC, chữ thường và khoảng trắng, code tính khoảng cách chỉnh sửa cho từng transcript GT so với chuỗi dự đoán đã ghép. CER = tổng lỗi ký tự / tổng ký tự GT; WER = tổng lỗi token / tổng token GT. WER ở đây tách theo khoảng trắng, nên token tiếng Việt thường là **âm tiết**, không phải từ ngữ pháp. Đây là **micro average**: cộng tử số và mẫu số trên tất cả vùng hợp lệ rồi mới chia. Dấu tiếng Việt và dấu câu vẫn được giữ. Giá trị có thể lớn hơn 1 do phép chèn. Vùng GT không nhận box đóng góp lỗi xóa; box *unassigned* chỉ được đếm riêng, không trực tiếp đi vào CER/WER.
@@ -32,7 +32,49 @@ Kết quả lịch sử trong `WEEK1_REPORT.md` và artifact local hiện có: T
 
 Các số 1.643 và 12.913 là **dấu hiệu cần xem lại**, không tự chứng minh OCR bỏ sót hoặc nhận nhầm chữ. Box unassigned có thể nằm trên chữ chưa được annotation; vùng unmatched có thể do OCR, polygon GT hoặc cách ghép tâm box. CER/WER cũng trộn sai chữ thực sự với sai ghép vùng và sai transcript GT, vì vậy **không nên dùng chúng để so sánh mô hình như benchmark chuẩn**.
 
+Evaluator hiện ghi cả mẫu số và tỷ lệ coverage: `unmatched_ground_truth_region_rate` dùng số vùng GT hợp lệ làm mẫu số, còn `unassigned_prediction_word_box_rate` dùng tổng word box dự đoán. Hai tỷ lệ này vẫn là chẩn đoán alignment, không phải recall và false-positive rate của OCR.
+
 Detection precision/recall/F1 là `N/A`: Tesseract tạo box từng từ còn GT toàn trang dùng vùng lớn hơn (dòng/nhóm chữ). Ghép 1:1 theo IoU sẽ đánh đồng cách chia vùng với khả năng phát hiện chữ. Tham số `--iou-threshold` hiện chỉ được ghi trong metadata của trạng thái `N/A`; nó không làm thay đổi CER/WER.
+
+## Baseline crop và so sánh PSM
+
+Lượt chạy ngày 04/11/2026 dùng Tesseract 5.3.4, cùng model SHA-256 `79df64caf7bcfb2a27df5042ecb6121e196eada34da774956995747636d5bfa1`. Cả 6.585 crop PSM 7 đều inference thành công. Crop evaluator nối các từ theo thứ tự TSV rồi so trực tiếp với transcript, nên không phụ thuộc polygon hoặc thuật toán ghép vùng.
+
+| Split / PSM | Vai trò | Crop | Rỗng | CER | WER |
+|---|---|---:|---:|---:|---:|
+| `official_val`, PSM 7 | benchmark | 1.300 | 5 | 0,1951 | 0,5549 |
+| `official_train`, PSM 7 | diagnostic | 5.285 | 16 | 0,1968 | 0,5607 |
+| `official_val`, PSM 6 | compatibility | 1.300 | 8 | 0,2269 | 0,6019 |
+
+Trên cùng validation split, PSM 7 giảm CER khoảng 14% tương đối so với PSM 6. Đây là baseline nhận dạng sạch khỏi lỗi ghép vùng, nhưng vẫn phụ thuộc chất lượng transcript nguồn và cách Tesseract tách/nối từ.
+
+So sánh full-page dùng cùng 231 ảnh `internal_dev`, 8.304 vùng GT hợp lệ và không có inference failure:
+
+| PSM | Word box | CER | WER | Unmatched GT | Unassigned box | Giây/ảnh |
+|---:|---:|---:|---:|---:|---:|---:|
+| 4 | 18.629 | 1,8107 | 2,0866 | 33,47% | 19,68% | 0,387 |
+| 6 | 29.849 | 1,8965 | 2,1795 | 19,79% | 43,26% | 0,500 |
+| 11 | 24.347 | 1,8662 | 2,2242 | 20,45% | 29,12% | 0,471 |
+
+PSM 4 có CER/WER thấp nhất và ít box unassigned nhất, nhưng bỏ unmatched nhiều vùng GT hơn đáng kể. PSM 11 giảm unassigned so với PSM 6 nhưng WER cao hơn. Vì mỗi PSM thay đổi segmentation và số box, bảng này không xác lập một chế độ full-page tốt nhất; cần chọn theo trade-off và kiểm tra ảnh thực tế.
+
+Các lượt so sánh được tạo bằng các lệnh sau; mỗi cấu hình ghi vào một thư mục riêng:
+
+```bash
+uv run python scripts/run_ocr.py --manifest data/processed/recognition_manifest.jsonl --split official_train --psm 7 --output-dir outputs/ocr/crop_psm7_official_train
+uv run python scripts/evaluate_ocr.py --mode crop --manifest data/processed/recognition_manifest.jsonl --predictions outputs/ocr/crop_psm7_official_train/predictions.jsonl --split official_train --output-dir outputs/ocr/crop_psm7_official_train_evaluation
+
+uv run python scripts/run_ocr.py --manifest data/processed/recognition_manifest.jsonl --split official_val --psm 6 --output-dir outputs/ocr/crop_psm6_official_val
+uv run python scripts/evaluate_ocr.py --mode crop --manifest data/processed/recognition_manifest.jsonl --predictions outputs/ocr/crop_psm6_official_val/predictions.jsonl --split official_val --output-dir outputs/ocr/crop_psm6_official_val_evaluation
+
+uv run python scripts/run_ocr.py --split internal_dev --psm 4 --output-dir outputs/ocr/tesseract_internal_dev_psm4
+uv run python scripts/evaluate_ocr.py --predictions outputs/ocr/tesseract_internal_dev_psm4/predictions.jsonl --split internal_dev --output-dir outputs/ocr/tesseract_internal_dev_psm4_evaluation
+
+uv run python scripts/run_ocr.py --split internal_dev --psm 11 --output-dir outputs/ocr/tesseract_internal_dev_psm11
+uv run python scripts/evaluate_ocr.py --predictions outputs/ocr/tesseract_internal_dev_psm11/predictions.jsonl --split internal_dev --output-dir outputs/ocr/tesseract_internal_dev_psm11_evaluation
+```
+
+Các artifact local nằm ở `outputs/ocr/crop_psm7_*`, `outputs/ocr/crop_psm6_official_val*`, `outputs/ocr/tesseract_internal_dev_psm4*`, `outputs/ocr/tesseract_internal_dev_psm6_evaluation`, và `outputs/ocr/tesseract_internal_dev_psm11*`.
 
 ## Chạy lại
 

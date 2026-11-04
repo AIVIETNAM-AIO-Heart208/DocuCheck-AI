@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compute local OCR recognition metrics where full-page transcription GT exists."""
+"""Compute local full-page or recognition-crop OCR metrics."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
 from docucheck.data.preprocessing import write_jsonl  # noqa: E402
-from docucheck.evaluation.metrics import evaluate_ocr_records  # noqa: E402
+from docucheck.evaluation.metrics import evaluate_crop_records, evaluate_ocr_records  # noqa: E402
 from docucheck.ocr.inference import load_manifest  # noqa: E402
 
 
@@ -25,6 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--runtime", default=None, help="Runtime metadata JSON used for latency context")
     parser.add_argument("--split", default="internal_dev")
     parser.add_argument("--output-dir", default="outputs/ocr/evaluation")
+    parser.add_argument("--mode", choices=("full-page", "crop"), default="full-page")
     parser.add_argument(
         "--iou-threshold", type=float, default=0.5,
         help="Recorded for future detection evaluation; current word/region pairing has no detection F1",
@@ -49,9 +50,13 @@ def main(argv: list[str] | None = None) -> int:
     manifest = load_manifest(paths["manifest"])
     predictions = load_manifest(paths["predictions"])
     try:
-        summary, image_details, region_details = evaluate_ocr_records(
-            manifest, predictions, split=args.split, iou_threshold=args.iou_threshold
-        )
+        if args.mode == "crop":
+            summary, image_details = evaluate_crop_records(manifest, predictions, split=args.split)
+            region_details = None
+        else:
+            summary, image_details, region_details = evaluate_ocr_records(
+                manifest, predictions, split=args.split, iou_threshold=args.iou_threshold
+            )
     except ValueError as error:
         print(f"OCR evaluation failed: {error}", file=sys.stderr)
         return 2
@@ -65,7 +70,9 @@ def main(argv: list[str] | None = None) -> int:
     summary["inference_runtime_context"] = {
         "engine": runtime.get("engine"),
         "engine_version": runtime.get("engine_version"),
+        "model_sha256": runtime.get("model_sha256"),
         "device": runtime.get("device"),
+        "page_segmentation_mode": runtime.get("preprocessing", {}).get("page_segmentation_mode"),
         "inference_image_count": runtime.get("manifest_record_count"),
         "images_failed": runtime.get("images_failed"),
         "mean_successful_image_latency_seconds": runtime.get("mean_successful_image_latency_seconds"),
@@ -75,13 +82,21 @@ def main(argv: list[str] | None = None) -> int:
     output = paths["output_dir"]
     output.mkdir(parents=True, exist_ok=True)
     (output / "metrics.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    write_jsonl(output / "per_image_metrics.jsonl", image_details)
-    write_jsonl(output / "per_region_alignment.jsonl", region_details)
-    print(json.dumps({key: summary[key] for key in (
-        "split", "metric_status", "images_with_full_page_ground_truth", "images_with_ground_truth_and_predictions",
-        "evaluated_ground_truth_regions", "excluded_invalid_geometry_regions", "cer", "wer",
-        "unmatched_ground_truth_regions", "unassigned_prediction_word_boxes", "detection_metrics",
-    )}, ensure_ascii=False, indent=2))
+    if args.mode == "crop":
+        write_jsonl(output / "per_crop_metrics.jsonl", image_details)
+        summary_keys = (
+            "split", "split_role", "metric_status", "evaluated_crops", "empty_hypothesis_crops", "cer", "wer",
+        )
+    else:
+        write_jsonl(output / "per_image_metrics.jsonl", image_details)
+        write_jsonl(output / "per_region_alignment.jsonl", region_details)
+        summary_keys = (
+            "split", "metric_status", "images_with_full_page_ground_truth", "images_with_ground_truth_and_predictions",
+            "evaluated_ground_truth_regions", "excluded_invalid_geometry_regions", "cer", "wer",
+            "unmatched_ground_truth_regions", "unmatched_ground_truth_region_rate",
+            "unassigned_prediction_word_boxes", "unassigned_prediction_word_box_rate", "detection_metrics",
+        )
+    print(json.dumps({key: summary[key] for key in summary_keys}, ensure_ascii=False, indent=2))
     return 0
 
 

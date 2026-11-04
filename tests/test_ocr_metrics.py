@@ -4,6 +4,7 @@ from docucheck.evaluation.metrics import (
     align_word_predictions_to_lines,
     cer,
     detection_scores,
+    evaluate_crop_records,
     evaluate_ocr_records,
     greedy_polygon_matching,
     normalize_text,
@@ -79,6 +80,11 @@ def test_evaluation_reports_unicode_cer_wer_and_n_a_detection():
     assert summary["cer"] == 0
     assert summary["wer"] == 0
     assert summary["evaluated_ground_truth_regions"] == 1
+    assert summary["unmatched_ground_truth_region_denominator"] == 1
+    assert summary["unmatched_ground_truth_region_rate"] == 0
+    assert summary["total_prediction_word_boxes"] == 2
+    assert summary["unassigned_prediction_word_box_denominator"] == 2
+    assert summary["unassigned_prediction_word_box_rate"] == 0
     assert summary["detection_metrics"]["status"].startswith("N/A")
     assert images[0]["cer"] == 0
     assert regions[0]["text_pred"] == "CỬA HÀNG"
@@ -112,6 +118,8 @@ def test_successful_zero_word_result_counts_as_evaluated_ocr():
     summary, images, _ = evaluate_ocr_records(manifest, predictions, split="internal_dev")
     assert summary["images_with_ground_truth_and_predictions"] == 1
     assert summary["unmatched_ground_truth_regions"] == 1
+    assert summary["unmatched_ground_truth_region_rate"] == 1
+    assert summary["unassigned_prediction_word_box_rate"] is None
     assert images[0]["cer"] == 1.0
 
 
@@ -125,3 +133,60 @@ def test_tesseract_tsv_parser_skips_continuation_fragments_and_bounds_text():
     rows = parse_tesseract_tsv(tsv)
     assert [row["text"] for row in rows] == ["CỬA", "HÀNG"]
     assert len(rows) == 2
+
+
+def _crop_manifest(split="official_val"):
+    return [{
+        "image_id": "crop-1",
+        "split": split,
+        "image_status": "valid",
+        "text_status": "present",
+        "text_raw": "CỬA HÀNG",
+    }]
+
+
+def test_crop_evaluation_joins_emitted_words_and_ignores_geometry():
+    predictions = [{
+        "image_id": "crop-1",
+        "split": "official_val",
+        "status": "ok",
+        "predictions": [
+            {"text": "CỬA", "polygon": [[100, 100]]},
+            {"text": "HÀNG", "polygon": [[0, 0]]},
+        ],
+    }]
+    summary, details = evaluate_crop_records(_crop_manifest(), predictions, split="official_val")
+    assert summary["split_role"] == "benchmark"
+    assert summary["cer"] == summary["wer"] == 0
+    assert summary["character_errors"] == summary["word_errors"] == 0
+    assert details[0]["text_pred"] == "CỬA HÀNG"
+
+
+def test_crop_evaluation_counts_empty_hypothesis_and_train_is_diagnostic():
+    predictions = [{"image_id": "crop-1", "split": "official_train", "status": "ok", "predictions": []}]
+    summary, details = evaluate_crop_records(
+        _crop_manifest("official_train"), predictions, split="official_train"
+    )
+    assert summary["split_role"] == "diagnostic"
+    assert summary["empty_hypothesis_crops"] == 1
+    assert summary["cer"] == summary["wer"] == 1
+    assert details[0]["prediction_word_count"] == 0
+
+
+@pytest.mark.parametrize("predictions", [
+    [],
+    [{"image_id": "crop-1", "split": "official_val", "status": "error"}],
+    [{"image_id": "crop-1", "split": "official_val", "status": "ok"}],
+    [{"image_id": "crop-1", "split": "official_train", "status": "ok", "predictions": []}],
+])
+def test_crop_evaluation_rejects_missing_failed_malformed_or_cross_split_predictions(predictions):
+    with pytest.raises(ValueError, match="Missing or failed OCR predictions"):
+        evaluate_crop_records(_crop_manifest(), predictions, split="official_val")
+
+
+def test_crop_evaluation_rejects_malformed_prediction_words():
+    predictions = [{
+        "image_id": "crop-1", "split": "official_val", "status": "ok", "predictions": [{}]
+    }]
+    with pytest.raises(ValueError, match="Malformed crop prediction word"):
+        evaluate_crop_records(_crop_manifest(), predictions, split="official_val")

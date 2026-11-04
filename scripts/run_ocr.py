@@ -21,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--split", default="internal_dev", help="Manifest split; defaults to the held-out internal development subset")
     parser.add_argument("--output-dir", default="outputs/ocr/tesseract")
     parser.add_argument("--tessdata-dir", default="outputs/ocr/tessdata_fast")
+    parser.add_argument("--psm", type=int, choices=range(14), default=6, help="Tesseract page segmentation mode")
     parser.add_argument("--limit", type=int, default=None, help="Process only the first N sorted records (smoke run)")
     return parser
 
@@ -48,6 +49,7 @@ def main(argv: list[str] | None = None) -> int:
             output_dir=output_dir,
             limit=args.limit,
             tessdata_dir=args.tessdata_dir,
+            psm=args.psm,
         )
     except Exception as error:
         print(f"OCR run failed: {type(error).__name__}: {error}", file=sys.stderr)

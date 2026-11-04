@@ -222,6 +222,7 @@ def evaluate_ocr_records(
     total_gt_chars = 0
     total_word_errors = 0
     total_gt_words = 0
+    total_prediction_boxes = 0
     excluded_invalid_regions = 0
     excluded_empty_transcriptions = 0
     evaluated_regions = 0
@@ -246,6 +247,7 @@ def evaluate_ocr_records(
             else:
                 valid_gt.append(region)
         predicted_regions = predictions_by_id[image_id]["predictions"]
+        total_prediction_boxes += len(predicted_regions)
         aligned, unmatched_predictions = align_word_predictions_to_lines(predicted_regions, valid_gt)
         # A successful OCR run may legitimately return zero word boxes.
         if valid_gt:
@@ -289,6 +291,7 @@ def evaluate_ocr_records(
                 "gt_words": image_gt_words,
                 "wer": image_word_errors / image_gt_words if image_gt_words else None,
                 "unassigned_prediction_count": len(unmatched_predictions),
+                "prediction_word_box_count": len(predicted_regions),
             }
         )
 
@@ -307,7 +310,16 @@ def evaluate_ocr_records(
         "word_errors": total_word_errors,
         "ground_truth_words": total_gt_words,
         "unmatched_ground_truth_regions": missing_region_count,
+        "unmatched_ground_truth_region_denominator": evaluated_regions,
+        "unmatched_ground_truth_region_rate": (
+            missing_region_count / evaluated_regions if evaluated_regions else None
+        ),
         "unassigned_prediction_word_boxes": unmatched_prediction_count,
+        "total_prediction_word_boxes": total_prediction_boxes,
+        "unassigned_prediction_word_box_denominator": total_prediction_boxes,
+        "unassigned_prediction_word_box_rate": (
+            unmatched_prediction_count / total_prediction_boxes if total_prediction_boxes else None
+        ),
         "text_normalization_policy": NORMALIZATION_POLICY,
         "wer_tokenization_policy": WER_TOKENIZATION_POLICY,
         "recognition_alignment": "Assign each Tesseract word box to the smallest valid full-page GT polygon containing its center; sort assigned words by y then x and compare to the GT region transcript.",
@@ -318,3 +330,97 @@ def evaluate_ocr_records(
         },
     }
     return summary, image_details, region_details
+
+
+def evaluate_crop_records(
+    manifest: list[dict[str, Any]],
+    predictions: list[dict[str, Any]],
+    *,
+    split: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Evaluate recognition crops directly against their transcripts."""
+    if split not in {"official_train", "official_val"}:
+        raise ValueError("Crop evaluation supports official_train or official_val")
+    selected = {
+        record["image_id"]: record
+        for record in manifest
+        if record.get("split") == split
+        and record.get("image_status") == "valid"
+        and record.get("text_status") == "present"
+        and isinstance(record.get("text_raw"), str)
+        and normalize_text(record["text_raw"])
+    }
+    if not selected:
+        raise ValueError(f"No valid crop transcripts found for split {split!r}")
+    prediction_rows: dict[str, dict[str, Any]] = {}
+    for row in predictions:
+        if row.get("split") != split:
+            continue
+        image_id = row.get("image_id")
+        if not isinstance(image_id, str) or image_id in prediction_rows:
+            raise ValueError("Malformed or duplicate crop prediction record")
+        prediction_rows[image_id] = row
+
+    incomplete = []
+    for image_id in selected:
+        row = prediction_rows.get(image_id)
+        if row is None or row.get("status") != "ok" or not isinstance(row.get("predictions"), list):
+            incomplete.append(image_id)
+    if incomplete:
+        raise ValueError(
+            f"Missing or failed OCR predictions for {len(incomplete)} crops in split {split!r}; "
+            f"first image_id: {sorted(incomplete)[0]}"
+        )
+
+    details = []
+    total_char_errors = total_gt_chars = 0
+    total_word_errors = total_gt_words = 0
+    empty_hypotheses = 0
+    for image_id in sorted(selected):
+        words = []
+        for prediction in prediction_rows[image_id]["predictions"]:
+            if not isinstance(prediction, dict) or not isinstance(prediction.get("text"), str):
+                raise ValueError(f"Malformed crop prediction word for image_id {image_id}")
+            text = prediction["text"].strip()
+            if text:
+                words.append(text)
+        reference = selected[image_id]["text_raw"]
+        hypothesis = " ".join(words)
+        char_errors, gt_chars = cer(reference, hypothesis)
+        word_errors, gt_words = wer(reference, hypothesis)
+        total_char_errors += char_errors
+        total_gt_chars += gt_chars
+        total_word_errors += word_errors
+        total_gt_words += gt_words
+        empty_hypotheses += not normalize_text(hypothesis)
+        details.append({
+            "image_id": image_id,
+            "split": split,
+            "text_gt": reference,
+            "text_pred": hypothesis,
+            "char_errors": char_errors,
+            "gt_characters": gt_chars,
+            "cer": char_errors / gt_chars if gt_chars else None,
+            "word_errors": word_errors,
+            "gt_words": gt_words,
+            "wer": word_errors / gt_words if gt_words else None,
+            "prediction_word_count": len(words),
+        })
+
+    summary = {
+        "split": split,
+        "split_role": "benchmark" if split == "official_val" else "diagnostic",
+        "metric_status": "available" if total_gt_chars else "N/A — unavailable ground truth",
+        "evaluated_crops": len(details),
+        "empty_hypothesis_crops": empty_hypotheses,
+        "cer": total_char_errors / total_gt_chars if total_gt_chars else None,
+        "character_errors": total_char_errors,
+        "ground_truth_characters": total_gt_chars,
+        "wer": total_word_errors / total_gt_words if total_gt_words else None,
+        "word_errors": total_word_errors,
+        "ground_truth_words": total_gt_words,
+        "text_normalization_policy": NORMALIZATION_POLICY,
+        "wer_tokenization_policy": WER_TOKENIZATION_POLICY,
+        "recognition_alignment": "Direct crop transcript comparison; join emitted non-empty TSV words with spaces.",
+    }
+    return summary, details

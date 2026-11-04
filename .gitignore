@@ -38,3 +38,4 @@ outputs/
 # Spec-driven
 .agents/
 openspec
+AGENTS.md

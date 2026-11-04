@@ -22,6 +22,11 @@ manifest.jsonl ---------------+----> evaluate_ocr.py
                                       +--> metrics.json
                                       +--> per_image_metrics.jsonl
                                       +--> per_region_alignment.jsonl
+
+recognition_manifest.jsonl --> run_ocr.py --psm 7 --> evaluate_ocr.py --mode crop
+                                                        |
+                                                        +--> metrics.json
+                                                        +--> per_crop_metrics.jsonl
 ```
 
 ## 1. Prepare manifests
@@ -90,6 +95,8 @@ uv run python scripts/run_ocr.py \
 
 This reads `data/processed/manifest.jsonl` and source receipt images, using `outputs/ocr/tessdata_fast` for the model by default. It writes word-level predictions to `predictions.jsonl`, execution failures to `failures.jsonl`, and model/runtime details to `runtime.json`.
 
+PSM 6 remains the default. Use `--psm` to compare another Tesseract page segmentation assumption; the selected value is recorded in `runtime.json`.
+
 ## 5. Evaluate OCR recognition
 
 Evaluation pairs full-page OCR transcript regions (`ocr_regions` in the receipt manifest) with the corresponding image predictions. It does not score KIE field extraction.
@@ -101,6 +108,26 @@ uv run python scripts/evaluate_ocr.py \
 ```
 
 The default prediction path is `outputs/ocr/tesseract_internal_dev/predictions.jsonl`, matching the full run above. The evaluation writes `metrics.json`, `per_image_metrics.jsonl`, and `per_region_alignment.jsonl`. A three-image smoke run is not a substitute for the full split. See [Goal 3 OCR baseline](GOAL3_OCR_BASELINE.md) for alignment rules and metric limits.
+
+## 6. Evaluate the recognition crops directly
+
+The separate recognition manifest contains 5,285 `official_train` and 1,300 `official_val` crop/transcript pairs. PSM 7 treats each crop as one text line. Run and evaluate the two splits separately:
+
+```bash
+uv run python scripts/run_ocr.py \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --split official_val --psm 7 \
+  --output-dir outputs/ocr/crop_psm7_official_val
+
+uv run python scripts/evaluate_ocr.py \
+  --mode crop \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --predictions outputs/ocr/crop_psm7_official_val/predictions.jsonl \
+  --split official_val \
+  --output-dir outputs/ocr/crop_psm7_official_val_evaluation
+```
+
+Repeat with `official_train` in a separate directory. The validation result is the benchmark; the train result is diagnostic and must not be combined with it as one headline score. Crop mode writes `metrics.json` and `per_crop_metrics.jsonl`. It joins Tesseract's emitted words and compares them directly with `text_raw`; prediction polygons do not participate in the score.
 
 ## Optional notebooks and code entry points
 

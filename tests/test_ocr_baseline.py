@@ -4,6 +4,7 @@ from PIL import Image
 
 from docucheck.ocr.baseline import TesseractBaseline, parse_tesseract_tsv
 from docucheck.ocr.inference import run_batch
+from scripts import run_ocr as cli
 
 
 def test_tsv_parser_preserves_vietnamese_text_polygon_and_confidence():
@@ -69,5 +70,37 @@ def test_batch_saves_spatial_predictions_and_failures_locally(tmp_path):
     failures = [json.loads(line) for line in (tmp_path / "out" / "failures.jsonl").read_text(encoding="utf-8").splitlines()]
     assert metadata["images_succeeded"] == 1
     assert metadata["images_failed"] == 1
+    assert metadata["preprocessing"]["page_segmentation_mode"] == 6
     assert predictions[0]["predictions"][0]["polygon"][2] == [8, 4]
     assert failures[0]["error_type"] == "ValueError"
+
+
+def test_ocr_cli_defaults_to_psm_6_and_accepts_explicit_mode():
+    assert cli.build_parser().parse_args([]).psm == 6
+    assert cli.build_parser().parse_args(["--psm", "11"]).psm == 11
+
+
+def test_batch_runtime_records_explicit_engine_psm(tmp_path):
+    image = tmp_path / "crop.jpg"
+    Image.new("RGB", (20, 10), "white").save(image)
+
+    class FakeEngine:
+        model_names = {"recognition": "vie.traineddata"}
+        model_source = model_sha256 = engine_version = "synthetic"
+        language = "vie"
+        page_segmentation_mode = 11
+        ocr_engine_mode = 1
+        model_load_seconds = 0.0
+        device = "cpu"
+
+        def predict(self, image_path):
+            return []
+
+    metadata = run_batch(
+        [{"image_id": "crop", "image_path": "crop.jpg", "split": "official_val"}],
+        dataset_root=tmp_path,
+        split="official_val",
+        output_dir=tmp_path / "out",
+        engine=FakeEngine(),
+    )
+    assert metadata["preprocessing"]["page_segmentation_mode"] == 11
