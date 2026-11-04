@@ -34,4 +34,7 @@ Thumbs.db
 *.pdmodel
 logs/
 outputs/
-/playbook
+
+# Spec-driven
+.agents/
+openspec
