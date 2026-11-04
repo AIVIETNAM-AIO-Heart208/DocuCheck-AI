@@ -123,12 +123,28 @@ def prepare_records(
     validation_fraction: float = 0.2,
     invalid_policy: str = "report",
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
-    """Normalize image-level KIE/OCR data and crop-recognition pairs."""
+    """Normalize receipt and recognition records, then assemble their report."""
     if invalid_policy not in {"report", "skip", "fail"}:
         raise ValueError("invalid_policy must be one of: report, skip, fail")
     if not 0 < validation_fraction < 1:
         raise ValueError("validation_fraction must be strictly between 0 and 1")
     root = resolve_dataset_root(dataset_root)
+    receipts, source_receipts, report = _prepare_receipt_records(
+        root, seed, validation_fraction, invalid_policy
+    )
+    recognition, source_recognition, recognition_report = _prepare_recognition_records(root, invalid_policy)
+    report.update(recognition_report)
+    _add_output_statistics(report, source_receipts, source_recognition, receipts, recognition)
+    return receipts, recognition, report
+
+
+def _prepare_receipt_records(
+    root: Path,
+    seed: int,
+    validation_fraction: float,
+    invalid_policy: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """Normalize receipt annotations, assign splits, and apply the receipt policy."""
     source_kie = load_kie_records(root)
     source_ocr = load_full_page_text_records(root)
     ocr_by_image = {record["image_id"]: record["regions"] for record in source_ocr}
@@ -149,7 +165,6 @@ def prepare_records(
     # Include image files without a source annotation row so they remain visible in validation reports.
     for image_name, source in source_rows:
         image_path = root / "train_images" / "train_images" / image_name
-        image_meta = None
         try:
             from docucheck.data.loader import inspect_image
 
@@ -211,7 +226,7 @@ def prepare_records(
             if region["label_raw"] and region["canonical_field"] is None
         })
         relative_path = (Path("train_images") / "train_images" / image_name).as_posix()
-        record = {
+        prepared.append({
             "schema_version": "1.1",
             "image_id": _opaque_id("train", relative_path + (
                 f"|source_line={source['source_line']}" if source and source_id_counts[image_name] > 1 else "")),
@@ -249,8 +264,7 @@ def prepare_records(
             "validation_issues": sorted({
                 issue for region in regions + ocr_regions for issue in region["validation_issues"]
             }),
-        }
-        prepared.append(record)
+        })
 
     validation_inventory = _read_validation_inventory(root)
     official_validation_hashes = {
@@ -270,15 +284,15 @@ def prepare_records(
         replacement = split_by_image.get(record["image_id"])
         if replacement:
             record.update(replacement)
-    all_records = prepared + validation_inventory
-    duplicates = find_cross_split_duplicate_groups(all_records)
+    records = prepared + validation_inventory
+    duplicates = find_cross_split_duplicate_groups(records)
     duplicate_counts = Counter(record["image_group_id"] for record in prepared if record["image_group_id"])
     report = {
         "dataset_root_label": "configured local MC-OCR root",
         "seed": seed,
         "internal_validation_fraction": validation_fraction,
         "invalid_policy": invalid_policy,
-        "records_by_split": dict(Counter(record["split"] for record in all_records)),
+        "records_by_split": dict(Counter(record["split"] for record in records)),
         "image_status_counts": dict(image_status_counts),
         "annotation_status_counts": dict(annotation_status_counts),
         "annotation_issue_counts": dict(Counter(issue for record in prepared for issue in record["annotation_issues"])),
@@ -302,32 +316,37 @@ def prepare_records(
             label for record in prepared for label in record["annotation_fields"]["unmapped_labels"]
         )),
     }
-
     invalid_records = [
-        record for record in all_records
+        record for record in records
         if record["image_status"] != "valid" or record["validation_issues"] or
         set(record.get("annotation_issues", [])) - {"no_kie_row", "source_annotation_arrays_empty", "unmapped_label"}
     ]
-    source_receipts = all_records
+    source_records = records
     report["invalid_record_count"] = len(invalid_records)
     if invalid_policy == "fail" and invalid_records:
         raise ValueError(f"Found {len(invalid_records)} invalid records; see validation report")
     if invalid_policy == "skip" and invalid_records:
         invalid_ids = {record["image_id"] for record in invalid_records}
-        all_records = [record for record in all_records if record["image_id"] not in invalid_ids]
+        records = [record for record in records if record["image_id"] not in invalid_ids]
         report["skipped_record_count"] = len(invalid_records)
     else:
         report["skipped_record_count"] = 0
-    report["records_by_split"] = dict(Counter(record["split"] for record in all_records))
+    report["records_by_split"] = dict(Counter(record["split"] for record in records))
+    return records, source_records, report
 
-    recognition_records = []
+
+def _prepare_recognition_records(
+    root: Path,
+    invalid_policy: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """Normalize crop/transcript pairs, quarantine exact duplicates, and apply policy."""
+    records = []
     for split in ("train", "val"):
         pairs = load_text_recognition_pairs(split, root)
         path_counts = Counter(str(pair["image_path"]) for pair in pairs)
         for pair in pairs:
             image_path = pair["image_path"]
             rel_path = image_path.relative_to(root).as_posix() if image_path.is_relative_to(root) else image_path.as_posix()
-            meta = None
             try:
                 from docucheck.data.loader import inspect_image
 
@@ -335,63 +354,77 @@ def prepare_records(
             except OSError:
                 meta = {"valid": False, "error_type": "read_error"}
             checksum = _sha256_file(image_path) if meta["valid"] else None
-            recognition_records.append(
-                {
-                    "schema_version": "1.1",
-                    "image_id": _opaque_id(f"text_recognition_{split}", rel_path + (
-                        f"|source_line={pair['source_line']}" if path_counts[str(image_path)] > 1 else "")),
-                    "image_path": rel_path,
-                    "source_image_name": image_path.name,
-                    "source_subset": "text_recognition",
-                    "source_split": split,
-                    "split": f"official_{split}",
-                    "split_provenance": "provided text_recognition manifest",
-                    "source_image_ref": pair["source_image_ref"],
-                    "source_line": pair["source_line"],
-                    "annotation_source": f"text_recognition_{split}_data.txt",
-                    "annotation_issues": ["duplicate_source_image_ref"] if path_counts[str(image_path)] > 1 else [],
-                    "image_group_id": checksum,
-                    "checksum_sha256": checksum,
-                    "image_width": meta.get("width"),
-                    "image_height": meta.get("height"),
-                    "image_status": "valid" if meta["valid"] else meta.get("error_type", "invalid"),
-                    "text_raw": pair["text_raw"],
-                    "text_status": text_status(pair["text_raw"]),
-                }
-            )
-    recognition_validation_hashes = {
-        record["image_group_id"] for record in recognition_records
+            records.append({
+                "schema_version": "1.1",
+                "image_id": _opaque_id(f"text_recognition_{split}", rel_path + (
+                    f"|source_line={pair['source_line']}" if path_counts[str(image_path)] > 1 else "")),
+                "image_path": rel_path,
+                "source_image_name": image_path.name,
+                "source_subset": "text_recognition",
+                "source_split": split,
+                "split": f"official_{split}",
+                "split_provenance": "provided text_recognition manifest",
+                "source_image_ref": pair["source_image_ref"],
+                "source_line": pair["source_line"],
+                "annotation_source": f"text_recognition_{split}_data.txt",
+                "annotation_issues": ["duplicate_source_image_ref"] if path_counts[str(image_path)] > 1 else [],
+                "image_group_id": checksum,
+                "checksum_sha256": checksum,
+                "image_width": meta.get("width"),
+                "image_height": meta.get("height"),
+                "image_status": "valid" if meta["valid"] else meta.get("error_type", "invalid"),
+                "text_raw": pair["text_raw"],
+                "text_status": text_status(pair["text_raw"]),
+            })
+    validation_hashes = {
+        record["image_group_id"] for record in records
         if record["source_split"] == "val" and record["image_group_id"]
     }
-    recognition_quarantine_count = 0
-    for record in recognition_records:
-        if record["source_split"] == "train" and record["image_group_id"] in recognition_validation_hashes:
+    quarantine_count = 0
+    for record in records:
+        if record["source_split"] == "train" and record["image_group_id"] in validation_hashes:
             record["split"] = "excluded_duplicate_of_official_val"
             record["split_provenance"] = "quarantined exact crop duplicate of official recognition validation"
-            recognition_quarantine_count += 1
-    report["recognition_records_by_split"] = dict(Counter(record["split"] for record in recognition_records))
-    report["recognition_validation_duplicate_quarantine_count"] = recognition_quarantine_count
-    report["recognition_missing_crop_count"] = sum(record["image_status"] != "valid" for record in recognition_records)
-    report["recognition_text_status_counts"] = dict(Counter(record["text_status"] for record in recognition_records))
-    invalid_recognition = [r for r in recognition_records
-                           if r["image_status"] != "valid" or r["text_status"] != "present" or r["annotation_issues"]]
-    report["invalid_recognition_record_count"] = len(invalid_recognition)
-    source_recognition = recognition_records
-    if invalid_policy == "fail" and invalid_recognition:
-        raise ValueError(f"Found {len(invalid_recognition)} invalid recognition records")
+            quarantine_count += 1
+    invalid_records = [
+        record for record in records
+        if record["image_status"] != "valid" or record["text_status"] != "present" or record["annotation_issues"]
+    ]
+    source_records = records
+    report = {
+        "recognition_records_by_split": dict(Counter(record["split"] for record in records)),
+        "recognition_validation_duplicate_quarantine_count": quarantine_count,
+        "recognition_missing_crop_count": sum(record["image_status"] != "valid" for record in records),
+        "recognition_text_status_counts": dict(Counter(record["text_status"] for record in records)),
+        "invalid_recognition_record_count": len(invalid_records),
+    }
+    if invalid_policy == "fail" and invalid_records:
+        raise ValueError(f"Found {len(invalid_records)} invalid recognition records")
     if invalid_policy == "skip":
-        invalid_ids = {r["image_id"] for r in invalid_recognition}
-        recognition_records = [r for r in recognition_records if r["image_id"] not in invalid_ids]
-    report["recognition_records_by_split"] = dict(Counter(r["split"] for r in recognition_records))
-    report["skipped_recognition_record_count"] = len(invalid_recognition) if invalid_policy == "skip" else 0
+        invalid_ids = {record["image_id"] for record in invalid_records}
+        records = [record for record in records if record["image_id"] not in invalid_ids]
+    report["recognition_records_by_split"] = dict(Counter(record["split"] for record in records))
+    report["skipped_recognition_record_count"] = len(invalid_records) if invalid_policy == "skip" else 0
+    return records, source_records, report
+
+
+def _add_output_statistics(
+    report: dict[str, Any],
+    source_receipts: list[dict[str, Any]],
+    source_recognition: list[dict[str, Any]],
+    receipts: list[dict[str, Any]],
+    recognition: list[dict[str, Any]],
+) -> None:
+    """Attach source/output statistics and the legacy top-level duplicate counts."""
     report["source_statistics"] = _manifest_statistics(source_receipts, source_recognition)
-    report["output_statistics"] = _manifest_statistics(all_records, recognition_records)
-    for key in ("exact_duplicate_groups", "records_in_exact_duplicate_groups",
-                "cross_split_duplicate_group_count", "cross_split_duplicate_groups",
-                "official_validation_duplicate_quarantine_count", "official_validation_duplicate_quarantine_groups",
-                "recognition_validation_duplicate_quarantine_count"):
+    report["output_statistics"] = _manifest_statistics(receipts, recognition)
+    for key in (
+        "exact_duplicate_groups", "records_in_exact_duplicate_groups",
+        "cross_split_duplicate_group_count", "cross_split_duplicate_groups",
+        "official_validation_duplicate_quarantine_count", "official_validation_duplicate_quarantine_groups",
+        "recognition_validation_duplicate_quarantine_count",
+    ):
         report[key] = report["output_statistics"][key]
-    return all_records, recognition_records, report
 
 
 def _manifest_statistics(receipts: list[dict[str, Any]], recognition: list[dict[str, Any]]) -> dict[str, Any]:
