@@ -48,6 +48,20 @@ Lượt chạy ngày 04/11/2026 dùng Tesseract 5.3.4, cùng model SHA-256 `79df
 
 Trên cùng validation split, PSM 7 giảm CER khoảng 14% tương đối so với PSM 6. Đây là baseline nhận dạng sạch khỏi lỗi ghép vùng, nhưng vẫn phụ thuộc chất lượng transcript nguồn và cách Tesseract tách/nối từ.
 
+## So sánh ba engine trên `official_val`
+
+Lượt chạy hoàn tất ngày 05/11/2026 dùng đúng 1.300 crop `official_val`, 23.739 ký tự GT và 4.815 token GT cho cả ba engine. VietOCR và PaddleOCR chạy recognition-only trên crop có sẵn; PaddleOCR không chạy detector. Không engine nào có inference failure.
+
+| Engine | Model | Crop rỗng | CER | WER | Giây/crop |
+|---|---|---:|---:|---:|---:|
+| VietOCR 0.3.13 | `vgg_transformer` | 0 | 0,0959 | 0,3387 | 0,0850 |
+| PaddleOCR 3.7.0 | `latin_PP-OCRv5_mobile_rec` | 5 | 0,1744 | 0,6303 | 0,0998 |
+| Tesseract 5.3.4, PSM 7 | `vie.traineddata` | 5 | 0,1951 | 0,5549 | 0,0652 |
+
+VietOCR có CER thấp nhất, giảm khoảng 50,8% tương đối so với Tesseract PSM 7. PaddleOCR có CER thấp hơn Tesseract nhưng WER cao hơn, nên không nên kết luận từ một chỉ số duy nhất. Các lượt inference cuối được chạy tuần tự trên CPU sau khi lượt song song gây oversubscription; latency được giữ làm provenance, không dùng để xếp hạng tốc độ vì số thread nội bộ và tải máy chưa được kiểm soát như benchmark hiệu năng.
+
+Checkpoint VietOCR có SHA-256 `380512193a8b6cbf6fad80deacdc9b6939d10d473d199892fc6408d13775ea59`; thư mục model PaddleOCR có digest `0cf4c40d7eaf7eaff0d9042db18a49624d4b57f4a86516a1cb47f8f020c08b8a`; Tesseract dùng hash đã ghi ở phần baseline. Lệnh cài optional dependency, tải model, inference, evaluation và comparison nằm trong [hướng dẫn pipeline](PIPELINE.md). `outputs/ocr/engine_comparison/per_crop_comparison.jsonl` và notebook 04 giữ ba hypothesis để xem các crop bất đồng cục bộ.
+
 So sánh full-page dùng cùng 231 ảnh `internal_dev`, 8.304 vùng GT hợp lệ và không có inference failure:
 
 | PSM | Word box | CER | WER | Unmatched GT | Unassigned box | Giây/ảnh |

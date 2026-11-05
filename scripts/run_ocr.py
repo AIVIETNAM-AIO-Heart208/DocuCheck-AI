@@ -12,6 +12,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
 from docucheck.ocr.inference import load_manifest, run_batch  # noqa: E402
+from docucheck.ocr.recognizers import PaddleOCRBaseline, VietOCRBaseline  # noqa: E402
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,6 +22,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--split", default="internal_dev", help="Manifest split; defaults to the held-out internal development subset")
     parser.add_argument("--output-dir", default="outputs/ocr/tesseract")
     parser.add_argument("--tessdata-dir", default="outputs/ocr/tessdata_fast")
+    parser.add_argument("--engine", choices=("tesseract", "vietocr", "paddleocr"), default="tesseract")
+    parser.add_argument("--model-path", default=None, help="VietOCR model file or PaddleOCR model directory")
     parser.add_argument("--psm", type=int, choices=range(14), default=6, help="Tesseract page segmentation mode")
     parser.add_argument("--limit", type=int, default=None, help="Process only the first N sorted records (smoke run)")
     return parser
@@ -42,6 +45,16 @@ def main(argv: list[str] | None = None) -> int:
         if not any(record.get("split") == args.split for record in records):
             print(f"No records found for split {args.split!r}", file=sys.stderr)
             return 2
+        engine = None
+        if args.engine != "tesseract":
+            selected = [record for record in records if record.get("split") == args.split]
+            if any(record.get("source_subset") != "text_recognition" for record in selected):
+                print(f"Engine {args.engine!r} supports recognition-crop records only", file=sys.stderr)
+                return 2
+            if args.engine == "vietocr":
+                engine = VietOCRBaseline(**({"model_path": args.model_path} if args.model_path else {}))
+            else:
+                engine = PaddleOCRBaseline(**({"model_dir": args.model_path} if args.model_path else {}))
         metadata = run_batch(
             records,
             dataset_root=args.dataset_root,
@@ -50,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
             limit=args.limit,
             tessdata_dir=args.tessdata_dir,
             psm=args.psm,
+            engine=engine,
         )
     except Exception as error:
         print(f"OCR run failed: {type(error).__name__}: {error}", file=sys.stderr)
