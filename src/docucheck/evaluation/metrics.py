@@ -187,19 +187,26 @@ def evaluate_ocr_records(
     A missing prediction is an inference/coverage failure, not an empty OCR result.
     Refuse incomplete inputs so a partial run cannot silently produce a CER/WER.
     """
-    manifest_by_id = {
-        record["image_id"]: record
-        for record in manifest
-        if record.get("split") == split
-    }
-    predictions_by_id = {
-        row["image_id"]: row
-        for row in predictions
-        if row.get("split") == split
-    }
+    manifest_by_id = {}
+    all_ids = set()
+    for record in manifest:
+        image_id = record.get("image_id")
+        if not isinstance(image_id, str) or not image_id or image_id in all_ids:
+            raise ValueError("Malformed or duplicate full-page manifest image_id")
+        all_ids.add(image_id)
+        if record.get("split") == split:
+            manifest_by_id[image_id] = record
+    predictions_by_id = {}
+    for row in predictions:
+        image_id = row.get("image_id")
+        if not isinstance(image_id, str) or not image_id or image_id in predictions_by_id:
+            raise ValueError("Malformed or duplicate full-page prediction image_id")
+        if image_id not in manifest_by_id or row.get("split") != split:
+            raise ValueError("Unknown or cross-split full-page prediction image_id")
+        predictions_by_id[image_id] = row
     gt_image_ids = [
         image_id for image_id, record in manifest_by_id.items()
-        if record.get("ocr_regions") and record.get("ocr_ground_truth_status") == "available"
+        if record.get("ocr_regions") and record.get("ocr_ground_truth_status") in {"available", "partial_transcriptions", "no_usable_transcriptions"}
     ]
     incomplete_ids = []
     for image_id in gt_image_ids:
@@ -230,10 +237,11 @@ def evaluate_ocr_records(
     missing_region_count = 0
     images_with_gt = 0
     images_with_gt_predictions = 0
+    geometry_regions = geometry_unmatched = geometry_unassigned = 0
     for image_id in sorted(manifest_by_id):
         record = manifest_by_id[image_id]
         gt_regions = record.get("ocr_regions", [])
-        if not gt_regions or record.get("ocr_ground_truth_status") != "available":
+        if not gt_regions or record.get("ocr_ground_truth_status") not in {"available", "partial_transcriptions", "no_usable_transcriptions"}:
             continue
         images_with_gt += 1
         valid_gt = []
@@ -247,6 +255,13 @@ def evaluate_ocr_records(
             else:
                 valid_gt.append(region)
         predicted_regions = predictions_by_id[image_id]["predictions"]
+        geometry_gt = [{**r, "text_raw": ""} for r in gt_regions
+                       if r.get("polygon") and not r.get("validation_issues")]
+        geometry_aligned, geometry_unused = align_word_predictions_to_lines(predicted_regions, geometry_gt)
+        geometry_missing = sum(not r["matched"] for r in geometry_aligned)
+        geometry_regions += len(geometry_aligned)
+        geometry_unmatched += geometry_missing
+        geometry_unassigned += len(geometry_unused)
         total_prediction_boxes += len(predicted_regions)
         aligned, unmatched_predictions = align_word_predictions_to_lines(predicted_regions, valid_gt)
         # A successful OCR run may legitimately return zero word boxes.
@@ -292,6 +307,9 @@ def evaluate_ocr_records(
                 "wer": image_word_errors / image_gt_words if image_gt_words else None,
                 "unassigned_prediction_count": len(unmatched_predictions),
                 "prediction_word_box_count": len(predicted_regions),
+                "geometry_valid_region_count": len(geometry_aligned),
+                "geometry_unmatched_region_count": geometry_missing,
+                "geometry_unassigned_word_count": len(geometry_unused),
             }
         )
 
@@ -316,6 +334,15 @@ def evaluate_ocr_records(
         ),
         "unassigned_prediction_word_boxes": unmatched_prediction_count,
         "total_prediction_word_boxes": total_prediction_boxes,
+        "text_alignment_scope": "Only valid regions with nonempty source transcript; separate geometry_coverage includes empty-transcript regions.",
+        "geometry_coverage": {
+            "valid_regions": geometry_regions,
+            "unmatched_regions": geometry_unmatched,
+            "unmatched_region_rate": geometry_unmatched / geometry_regions if geometry_regions else None,
+            "unassigned_word_boxes": geometry_unassigned,
+            "word_box_denominator": total_prediction_boxes,
+            "unassigned_word_box_rate": geometry_unassigned / total_prediction_boxes if total_prediction_boxes else None,
+        },
         "unassigned_prediction_word_box_denominator": total_prediction_boxes,
         "unassigned_prediction_word_box_rate": (
             unmatched_prediction_count / total_prediction_boxes if total_prediction_boxes else None

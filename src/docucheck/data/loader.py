@@ -188,6 +188,29 @@ def inspect_image(path: str | Path) -> dict[str, Any]:
         return {"valid": False, "error_type": type(error).__name__}
 
 
+def parse_full_page_text_line(line: str, line_number: int) -> dict[str, Any]:
+    """Parse ID, eight coordinates, comma-preserving text, and terminal category."""
+    fields = line.split(",", 9)
+    issue = None
+    polygon = text = category = None
+    if len(fields) != 10 or "," not in fields[-1]:
+        issue = "unexpected_field_count"
+    else:
+        candidate, category = fields[-1].rsplit(",", 1)
+        if category not in {*FIELD_MAPPING, "OTHER"}:
+            issue = "unknown_terminal_category"
+        else:
+            text = candidate
+        try:
+            values = [float(value) for value in fields[1:9]]
+            polygon = [[values[i], values[i + 1]] for i in range(0, 8, 2)]
+        except ValueError:
+            issue = "invalid_coordinates"
+    return {"source_row": fields[0] if fields else str(line_number), "text_raw": text,
+            "polygon": polygon, "source_category": category, "source_issue": issue,
+            "source_line": line_number, "source_raw": line}
+
+
 def load_full_page_text_records(
     dataset_root: str | Path | None = None,
 ) -> list[dict[str, Any]]:
@@ -198,29 +221,7 @@ def load_full_page_text_records(
     for path in sorted(sidecar_dir.glob("*.tsv")):
         regions = []
         for line_number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
-            fields = line.split(",", 10)
-            issue = None
-            polygon = None
-            text = None
-            if len(fields) != 11:
-                issue = "unexpected_field_count"
-            else:
-                try:
-                    values = [float(value) for value in fields[1:9]]
-                    polygon = [[values[i], values[i + 1]] for i in range(0, 8, 2)]
-                except ValueError:
-                    issue = "invalid_coordinates"
-                text = fields[10]
-            regions.append(
-                {
-                    "source_row": fields[0] if fields else str(line_number),
-                    "text_raw": text,
-                    "polygon": polygon,
-                    "source_issue": issue,
-                    "source_line": line_number,
-                    "source_raw": line,
-                }
-            )
+            regions.append(parse_full_page_text_line(line, line_number))
         records.append(
             {
                 "image_id": f"{path.stem}.jpg",

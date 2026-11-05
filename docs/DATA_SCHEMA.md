@@ -32,6 +32,14 @@ Each region carries `text_raw`, `label_raw` (KIE regions), `polygon`, and geomet
 
 KIE raw objects remain in `source_geometry`; full-page OCR rows retain `source_raw`, `source_line`, and `source_issue`. OCR provenance is `kie_data/kie_data/boxes_and_transcripts/<source image stem>.tsv`, joined by the explicit matching filename. No OCR region is assigned a KIE label from this join.
 
+Full-page sidecar rows contain ID, eight coordinates, transcript (possibly with
+commas), and a terminal category. The category is preserved as `source_category`,
+not interpreted as OCR text or assigned as a KIE field. Empty transcripts remain
+empty. The parser correction dated 05/11/2026 does not retroactively rewrite old
+manifests; use the separate corrected manifest for the PSM comparison. See
+[PSM_CORRECTED_PROTOCOL.md](PSM_CORRECTED_PROTOCOL.md) for partial-transcript
+evaluation and the distinction between text coverage and geometry coverage.
+
 Availability states:
 
 - `annotation_status`: `annotated`, `no_kie_row`, `source_annotation_arrays_empty`, or `no_kie_ground_truth_columns_observed`. Detailed annotation problems are orthogonal in `annotation_issues`.

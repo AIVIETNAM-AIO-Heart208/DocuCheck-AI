@@ -1,5 +1,10 @@
 # Goal 3 — OCR baseline và phân tích lỗi
 
+**Đính chính nguồn 05/11/2026:** Parser full-page trước đây đọc nhầm cột nhãn
+thành transcript và đã được sửa. Các CER/WER full-page lịch sử bên dưới không dùng để xếp hạng
+chất lượng OCR. Xem [phát hiện và phạm vi ảnh hưởng](PSM_COMPARISON_REPORT.md).
+Phát hiện này không thuộc parser recognition crop.
+
 **Cập nhật 05/11/2026:** Đã tái chạy clean crop benchmark cho **Week 2 Goal 1**
 bằng Tesseract 5.5.3.20260724, có exact-match, coverage và review 24 mẫu. Xem
 [báo cáo Week 2](WEEK2_REPORT.md). Các bảng ngày 04/11/2026 bên dưới được giữ

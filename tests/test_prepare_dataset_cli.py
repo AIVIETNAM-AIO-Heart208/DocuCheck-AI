@@ -154,7 +154,7 @@ def test_nonfinite_source_geometry_survives_strict_serialization_and_staged_vali
     _write_dataset(root)
     directory = root / "kie_data/kie_data/boxes_and_transcripts"
     directory.mkdir(parents=True)
-    raw = "0,nan,2,20,2,20,12,1,12,,Nguyên văn"
+    raw = "0,nan,2,20,2,20,12,1,12,Nguyên văn,OTHER"
     (directory / "receipt_a.tsv").write_text(raw, encoding="utf-8")
     assert _run(root, output) == 0
     rows = [json.loads(line) for line in (output / "manifest.jsonl").read_text(encoding="utf-8").splitlines()]

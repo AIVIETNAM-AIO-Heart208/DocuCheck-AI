@@ -29,6 +29,7 @@ def run_batch(
     engine: Any | None = None,
     tessdata_dir: str | Path = "outputs/ocr/tessdata_fast",
     psm: int = 6,
+    executable: str | None = None,
 ) -> dict[str, Any]:
     """Run predictions on one declared manifest split, recording per-image failures."""
     if limit is not None and limit <= 0:
@@ -38,7 +39,7 @@ def run_batch(
     selected = sorted(selected, key=lambda record: record["image_id"])
     if limit is not None:
         selected = selected[:limit]
-    engine = engine or TesseractBaseline(tessdata_dir=tessdata_dir, psm=psm)
+    engine = engine or TesseractBaseline(tessdata_dir=tessdata_dir, psm=psm, executable=executable)
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     prediction_path = output / "predictions.jsonl"

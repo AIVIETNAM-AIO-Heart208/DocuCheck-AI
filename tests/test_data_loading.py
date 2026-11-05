@@ -80,7 +80,7 @@ def test_full_page_transcript_parser_preserves_commas(tmp_path):
     sidecar_dir = tmp_path / "kie_data" / "kie_data" / "boxes_and_transcripts"
     sidecar_dir.mkdir(parents=True)
     (sidecar_dir / "fixture.tsv").write_text(
-        "0,1,2,20,2,20,12,1,12,,Tổng tiền, đã thanh toán\n", encoding="utf-8"
+        "0,1,2,20,2,20,12,1,12,Tổng tiền, đã thanh toán,OTHER\n", encoding="utf-8"
     )
     records = load_full_page_text_records(tmp_path)
     assert records[0]["regions"][0]["text_raw"] == "Tổng tiền, đã thanh toán"

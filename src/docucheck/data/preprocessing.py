@@ -59,6 +59,7 @@ def _normalize_region(region: dict[str, Any], width: int, height: int, source: s
         "source_issue": region.get("source_issue"),
         "source_line": region.get("source_line"),
         "source_raw": region.get("source_raw"),
+        "source_category": region.get("source_category"),
         "label_status": ("not_applicable" if source != "kie" else
                          "missing_in_source" if not region.get("label_raw") else
                          "mapped" if region.get("canonical_field") else "unmapped"),

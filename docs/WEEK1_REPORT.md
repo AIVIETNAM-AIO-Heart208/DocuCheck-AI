@@ -1,5 +1,11 @@
 # Báo cáo hoàn thành Week 1
 
+**Đính chính nguồn full-page ngày 05/11/2026:** Đã phát hiện parser đọc nhầm cột
+nhãn thành transcript. CER/WER OCR full-page trong báo cáo lịch sử này không
+được dùng để kết luận chất lượng nhận dạng; xem
+[PSM_COMPARISON_REPORT.md](PSM_COMPARISON_REPORT.md). Các số liệu cũ được giữ
+để truy nguyên, không phải kết quả đã sửa GT.
+
 ## Goal 1 — Hiểu dữ liệu và phân tích khám phá (EDA)
 
 **Kết luận cuối ngày 2026-10-28: PASS.** Đã xác minh dữ liệu cục bộ, chạy lại EDA, hoàn tất review trực quan 40/40 ảnh, tái kiểm sáu ca bất định và năm ca chỉ sai transcript, phân loại lỗi và kiểm tra tính nhất quán. Reviewer trong worksheet: **Minh Nguyễn**. PASS áp dụng cho mục tiêu hiểu, khảo sát và ghi nhận chất lượng dữ liệu; các annotation lỗi và rủi ro dưới đây vẫn cần xử lý trước khi dùng làm ground truth đáng tin cậy.

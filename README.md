@@ -11,6 +11,12 @@ Validation đạt CER **20,65%**, WER **56,18%**, exact-match **23,69%** với c
 Tesseract PSM 7 cố định. Xem [báo cáo và giới hạn](docs/WEEK2_REPORT.md),
 [protocol](docs/WEEK2_RECOGNITION_PROTOCOL.md) và [cách chạy lại](docs/PIPELINE.md).
 
+So sánh full-page PSM 6/4/11 đã chạy đủ 231 ảnh và đánh giá lại sau khi sửa
+parser transcript nguồn. PSM 11 có CER 0,6084 / WER 0,8160 trên phần GT có chữ;
+lợi thế so với PSM 6 còn nhỏ. Goal 2 đã hoàn tất đối chiếu 20 ca, giữ rõ các
+giới hạn và nhận xét chưa thống nhất, chưa đổi cấu hình production. Xem
+[báo cáo PSM và các giới hạn](docs/PSM_COMPARISON_REPORT.md).
+
 ## Phạm vi ban đầu
 
 Nghiên cứu tập trung vào biên lai bán lẻ một trang, ưu tiên tiếng Việt. Các trường dự kiến gồm tên nơi bán, địa chỉ, ngày/giờ giao dịch và tổng tiền. Chỉ kiểm tra số học khi có đủ thành phần và quy tắc phù hợp; sai lệch là lý do để rà soát, không phải bằng chứng gian lận.

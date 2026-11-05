@@ -239,7 +239,7 @@ def test_source_arrays_region_geometry_and_ocr_lines_survive_normalization(tmp_p
     _write_dataset(tmp_path, invalid_geometry=True)
     directory = tmp_path / "kie_data/kie_data/boxes_and_transcripts"
     directory.mkdir(parents=True)
-    raw = "0,1,2,20,2,20,12,1,12,,Tổng tiền, đã thanh toán"
+    raw = "0,1,2,20,2,20,12,1,12,Tổng tiền, đã thanh toán,OTHER"
     (directory / "receipt_a.tsv").write_text(raw + "\nmalformed row\n", encoding="utf-8")
     source = load_kie_records(tmp_path)[0]
     records, _, _ = prepare_records(tmp_path)

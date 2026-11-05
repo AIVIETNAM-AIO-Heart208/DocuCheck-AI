@@ -97,6 +97,14 @@ This reads `data/processed/manifest.jsonl` and source receipt images, using `out
 
 PSM 6 remains the default. Use `--psm` to compare another Tesseract page segmentation assumption; the selected value is recorded in `runtime.json`.
 
+On Windows, `--tesseract "C:\Program Files\Tesseract-OCR\tesseract.exe"` selects
+an executable outside PATH. The controlled PSM comparison and a discovered
+full-page transcript parsing defect are documented in
+[PSM_COMPARISON_REPORT.md](PSM_COMPARISON_REPORT.md). Historical full-page CER/WER
+used incorrectly parsed GT. The corrected comparison uses a separate manifest;
+the original `data/processed/manifest.jsonl` is intentionally preserved. Use the
+corrected manifest explicitly for full-page evaluation, as documented in the report.
+
 ## 5. Evaluate OCR recognition
 
 Evaluation pairs full-page OCR transcript regions (`ocr_regions` in the receipt manifest) with the corresponding image predictions. It does not score KIE field extraction.

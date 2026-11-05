@@ -22,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--split", default="internal_dev", help="Manifest split; defaults to the held-out internal development subset")
     parser.add_argument("--output-dir", default="outputs/ocr/tesseract")
     parser.add_argument("--tessdata-dir", default="outputs/ocr/tessdata_fast")
+    parser.add_argument("--tesseract", default=None, help="Tesseract executable path, otherwise use PATH")
     parser.add_argument("--engine", choices=("tesseract", "vietocr", "paddleocr"), default="tesseract")
     parser.add_argument("--model-path", default=None, help="VietOCR model file or PaddleOCR model directory")
     parser.add_argument("--psm", type=int, choices=range(14), default=6, help="Tesseract page segmentation mode")
@@ -63,6 +64,7 @@ def main(argv: list[str] | None = None) -> int:
             limit=args.limit,
             tessdata_dir=args.tessdata_dir,
             psm=args.psm,
+            executable=args.tesseract,
             engine=engine,
         )
     except Exception as error:
