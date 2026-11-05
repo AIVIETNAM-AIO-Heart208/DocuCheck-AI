@@ -6,6 +6,11 @@ DocuCheck AI nghiên cứu cách trích xuất và rà soát thông tin trên �
 
 Dự án đang ở giai đoạn chuẩn bị dữ liệu và nghiên cứu. Định hướng sản phẩm mới là đề xuất; OCR, trích xuất thông tin, kiểm tra và ứng dụng cho người dùng chưa được xem là tính năng đã triển khai.
 
+Ngày 05/11/2026 đã chạy **Week 2 — Goal 1: benchmark recognition trên 6.585 crop**.
+Validation đạt CER **20,65%**, WER **56,18%**, exact-match **23,69%** với cấu hình
+Tesseract PSM 7 cố định. Xem [báo cáo và giới hạn](docs/WEEK2_REPORT.md),
+[protocol](docs/WEEK2_RECOGNITION_PROTOCOL.md) và [cách chạy lại](docs/PIPELINE.md).
+
 ## Phạm vi ban đầu
 
 Nghiên cứu tập trung vào biên lai bán lẻ một trang, ưu tiên tiếng Việt. Các trường dự kiến gồm tên nơi bán, địa chỉ, ngày/giờ giao dịch và tổng tiền. Chỉ kiểm tra số học khi có đủ thành phần và quy tắc phù hợp; sai lệch là lý do để rà soát, không phải bằng chứng gian lận.

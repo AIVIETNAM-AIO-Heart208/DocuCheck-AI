@@ -1,5 +1,10 @@
 # Goal 3 — OCR baseline và phân tích lỗi
 
+**Cập nhật 05/11/2026:** Đã tái chạy clean crop benchmark cho **Week 2 Goal 1**
+bằng Tesseract 5.5.3.20260724, có exact-match, coverage và review 24 mẫu. Xem
+[báo cáo Week 2](WEEK2_REPORT.md). Các bảng ngày 04/11/2026 bên dưới được giữ
+làm kết quả lịch sử của môi trường Tesseract 5.3.4.
+
 Goal 3 đo một **OCR baseline** trên ảnh biên lai và khảo sát nơi phép đo gặp vấn đề. Nó chưa trích xuất bốn trường KIE (`SELLER`, `ADDRESS`, `TIMESTAMP`, `TOTAL_COST`) và chưa có điểm đánh giá KIE.
 
 ## Luồng chạy

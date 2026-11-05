@@ -129,6 +129,24 @@ uv run python scripts/evaluate_ocr.py \
 
 Repeat with `official_train` in a separate directory. The validation result is the benchmark; the train result is diagnostic and must not be combined with it as one headline score. Crop mode writes `metrics.json` and `per_crop_metrics.jsonl`. It joins Tesseract's emitted words and compares them directly with `text_raw`; prediction polygons do not participate in the score.
 
+For the complete Week 2 Goal 1 workflow, the runner audits every crop, saves a
+train layout gallery, locks PSM 7/model/source hashes, and runs train then validation:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/run_recognition_benchmark.py --tesseract 'C:\Program Files\Tesseract-OCR\tesseract.exe' --output-dir outputs/ocr/week2/goal1
+.\.venv\Scripts\python.exe scripts/verify_recognition_benchmark.py --run-dir outputs/ocr/week2/goal1
+.\.venv\Scripts\python.exe scripts/review_recognition_errors.py --metrics outputs/ocr/week2/goal1/official_train/per_crop_metrics.jsonl --output-dir outputs/ocr/week2/goal1/error_review
+```
+
+Omit `--tesseract` when it is on PATH. Use `--audit-only` to inspect the train
+layout gallery before inference. Choose a fresh run directory for every benchmark
+and a fresh review directory for every review; existing locked runs/reviews are
+preserved. Metrics include CER/WER, normalized exact match, exclusions and coverage.
+The verifier recomputes all scores from saved predictions without repeating OCR.
+Open the local `error_review/index.html`, inspect each crop and fill review notes;
+selection groups alone do not constitute a completed review. See the
+[recognition protocol](WEEK2_RECOGNITION_PROTOCOL.md) for split and failure policies.
+
 ## Optional notebooks and code entry points
 
 The notebooks are for local inspection, not required pipeline commands:

@@ -338,18 +338,36 @@ def evaluate_crop_records(
     *,
     split: str,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Evaluate recognition crops directly against their transcripts."""
+    """Evaluate crops directly, reporting exclusions and requiring full coverage.
+
+    Invalid images and missing/blank references are excluded with explicit counts.
+    Inference failures for eligible crops abort evaluation; a successful empty
+    hypothesis is scored as deletion of the entire nonempty reference.
+    """
     if split not in {"official_train", "official_val"}:
         raise ValueError("Crop evaluation supports official_train or official_val")
-    selected = {
-        record["image_id"]: record
-        for record in manifest
-        if record.get("split") == split
-        and record.get("image_status") == "valid"
-        and record.get("text_status") == "present"
-        and isinstance(record.get("text_raw"), str)
-        and normalize_text(record["text_raw"])
-    }
+    manifest_ids = set()
+    split_records = {}
+    selected = {}
+    exclusions: Counter[str] = Counter()
+    for record in manifest:
+        image_id = record.get("image_id")
+        if not isinstance(image_id, str) or not image_id or image_id in manifest_ids:
+            raise ValueError("Malformed or duplicate crop manifest image_id")
+        manifest_ids.add(image_id)
+        if record.get("split") != split:
+            continue
+        split_records[image_id] = record
+        if record.get("image_status") != "valid":
+            exclusions["invalid_image"] += 1
+        elif not isinstance(record.get("text_raw"), str):
+            exclusions["missing_or_invalid_transcript"] += 1
+        elif not normalize_text(record["text_raw"]):
+            exclusions["empty_transcript"] += 1
+        elif record.get("text_status") != "present":
+            exclusions["invalid_text_status"] += 1
+        else:
+            selected[image_id] = record
     if not selected:
         raise ValueError(f"No valid crop transcripts found for split {split!r}")
     prediction_rows: dict[str, dict[str, Any]] = {}
@@ -357,8 +375,10 @@ def evaluate_crop_records(
         if row.get("split") != split:
             continue
         image_id = row.get("image_id")
-        if not isinstance(image_id, str) or image_id in prediction_rows:
+        if not isinstance(image_id, str) or not image_id or image_id in prediction_rows:
             raise ValueError("Malformed or duplicate crop prediction record")
+        if image_id not in split_records:
+            raise ValueError(f"Unknown crop prediction image_id for split {split!r}")
         prediction_rows[image_id] = row
 
     incomplete = []
@@ -376,6 +396,7 @@ def evaluate_crop_records(
     total_char_errors = total_gt_chars = 0
     total_word_errors = total_gt_words = 0
     empty_hypotheses = 0
+    exact_matches = 0
     for image_id in sorted(selected):
         words = []
         for prediction in prediction_rows[image_id]["predictions"]:
@@ -393,6 +414,8 @@ def evaluate_crop_records(
         total_word_errors += word_errors
         total_gt_words += gt_words
         empty_hypotheses += not normalize_text(hypothesis)
+        exact_match = normalize_text(reference) == normalize_text(hypothesis)
+        exact_matches += exact_match
         details.append({
             "image_id": image_id,
             "split": split,
@@ -405,6 +428,7 @@ def evaluate_crop_records(
             "gt_words": gt_words,
             "wer": word_errors / gt_words if gt_words else None,
             "prediction_word_count": len(words),
+            "exact_match": exact_match,
         })
 
     summary = {
@@ -412,7 +436,19 @@ def evaluate_crop_records(
         "split_role": "benchmark" if split == "official_val" else "diagnostic",
         "metric_status": "available" if total_gt_chars else "N/A — unavailable ground truth",
         "evaluated_crops": len(details),
+        "manifest_crops": len(split_records),
+        "eligible_crops": len(selected),
+        "excluded_crops": sum(exclusions.values()),
+        "exclusion_counts": {key: exclusions[key] for key in (
+            "invalid_image", "missing_or_invalid_transcript", "empty_transcript", "invalid_text_status",
+        )},
+        "successful_prediction_crops": len(details),
+        "missing_or_failed_prediction_crops": 0,
+        "eligible_prediction_coverage": len(details) / len(selected),
+        "manifest_evaluation_coverage": len(details) / len(split_records),
         "empty_hypothesis_crops": empty_hypotheses,
+        "exact_match_crops": exact_matches,
+        "exact_match_rate": exact_matches / len(details),
         "cer": total_char_errors / total_gt_chars if total_gt_chars else None,
         "character_errors": total_char_errors,
         "ground_truth_characters": total_gt_chars,
@@ -422,5 +458,7 @@ def evaluate_crop_records(
         "text_normalization_policy": NORMALIZATION_POLICY,
         "wer_tokenization_policy": WER_TOKENIZATION_POLICY,
         "recognition_alignment": "Direct crop transcript comparison; join emitted non-empty TSV words with spaces.",
+        "failure_policy": "Abort if any eligible crop lacks a successful prediction; successful empty output counts as deletions.",
+        "exclusion_policy": "First matching reason: invalid image, missing/invalid transcript, normalized empty transcript, invalid text status.",
     }
     return summary, details

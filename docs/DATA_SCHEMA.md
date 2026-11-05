@@ -96,4 +96,14 @@ Publication is not an atomic four-file filesystem transaction. Process terminati
 
 Crop evaluation uses `recognition_manifest.jsonl` and writes `metrics.json` plus private `per_crop_metrics.jsonl`. It joins non-empty prediction words in emitted TSV order and compares the result directly with `text_raw`, without polygon matching. `official_val` has split role `benchmark`; `official_train` has split role `diagnostic`, and their rates are not combined.
 
+Crop metrics also include normalized `exact_match_rate`/`exact_match_crops`,
+per-crop `exact_match`, manifest/eligible/evaluated counts, disjoint exclusion
+counts and both eligible prediction coverage and all-manifest evaluation
+coverage. Missing/failed inference for an eligible crop aborts evaluation;
+successful empty predictions count as deletions. Duplicate manifest IDs,
+duplicate prediction IDs and unknown prediction IDs are rejected. Input SHA-256
+hashes link metrics to the manifest, predictions and runtime. Inference environment
+comes from runtime metadata; the evaluation machine is recorded separately.
+See the [Week 2 recognition protocol](WEEK2_RECOGNITION_PROTOCOL.md).
+
 CER uses Unicode NFKC, casefolding and whitespace collapse while preserving accents and punctuation. WER uses whitespace-separated Vietnamese syllables; it is not linguistic word segmentation. Recognition alignment assigns a predicted word box to the smallest valid GT polygon containing its center, then sorts words by y and x. GT polygons have coarser line/region granularity than Tesseract word boxes, so one-to-one detection F1 is not meaningful for this annotation pairing.

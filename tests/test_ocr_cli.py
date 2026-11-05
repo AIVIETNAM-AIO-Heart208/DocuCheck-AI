@@ -27,6 +27,11 @@ def test_crop_mode_writes_crop_artifacts_only(tmp_path, capsys):
     assert (output / "metrics.json").is_file()
     assert (output / "per_crop_metrics.jsonl").is_file()
     assert not (output / "per_image_metrics.jsonl").exists()
+    metrics = json.loads((output / "metrics.json").read_text(encoding="utf-8"))
+    assert metrics["exact_match_rate"] == 1.0
+    assert metrics["manifest_evaluation_coverage"] == 1.0
+    assert metrics["excluded_crops"] == 0
+    assert set(metrics["input_sha256"]) == {"manifest", "predictions"}
     assert '"split_role": "benchmark"' in capsys.readouterr().out
 
 

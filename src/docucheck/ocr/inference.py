@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import platform
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -45,7 +47,7 @@ def run_batch(
     predictions = []
     failures = []
     per_image_seconds = []
-    for record in selected:
+    for index, record in enumerate(selected, 1):
         image_path = root / record["image_path"]
         image_started = time.perf_counter()
         try:
@@ -70,6 +72,8 @@ def run_batch(
                     "error_message": str(error),
                 }
             )
+        if index % 250 == 0 or index == len(selected):
+            print(f"OCR {split}: {index}/{len(selected)}, {len(failures)} failures", file=sys.stderr, flush=True)
 
     for path, rows in ((prediction_path, predictions), (failures_path, failures)):
         with path.open("w", encoding="utf-8", newline="\n") as stream:
@@ -80,6 +84,11 @@ def run_batch(
         "engine": "Tesseract",
         "engine_version": engine.engine_version,
         "python_version": platform.python_version(),
+        "platform": platform.platform(),
+        "cpu_count_logical": os.cpu_count(),
+        "omp_thread_limit": os.environ.get("OMP_THREAD_LIMIT"),
+        "batch_size": 1,
+        "workers": 1,
         "model_names": engine.model_names,
         "model_source": engine.model_source,
         "model_sha256": engine.model_sha256,

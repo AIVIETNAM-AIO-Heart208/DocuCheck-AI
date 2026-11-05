@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -76,16 +77,28 @@ def main(argv: list[str] | None = None) -> int:
         "inference_image_count": runtime.get("manifest_record_count"),
         "images_failed": runtime.get("images_failed"),
         "mean_successful_image_latency_seconds": runtime.get("mean_successful_image_latency_seconds"),
+        "cpu_count_logical": runtime.get("cpu_count_logical"),
+        "platform": runtime.get("platform"),
+    }
+    summary["evaluation_environment"] = {
+        "python_version": platform.python_version(),
         "cpu_count_logical": os.cpu_count(),
         "platform": platform.platform(),
     }
+    summary["input_sha256"] = {
+        name: hashlib.sha256(paths[name].read_bytes()).hexdigest()
+        for name in ("manifest", "predictions")
+    }
+    if runtime_path and runtime_path.is_file():
+        summary["input_sha256"]["runtime"] = hashlib.sha256(runtime_path.read_bytes()).hexdigest()
     output = paths["output_dir"]
     output.mkdir(parents=True, exist_ok=True)
     (output / "metrics.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if args.mode == "crop":
         write_jsonl(output / "per_crop_metrics.jsonl", image_details)
         summary_keys = (
-            "split", "split_role", "metric_status", "evaluated_crops", "empty_hypothesis_crops", "cer", "wer",
+            "split", "split_role", "metric_status", "evaluated_crops", "excluded_crops",
+            "empty_hypothesis_crops", "cer", "wer", "exact_match_rate",
         )
     else:
         write_jsonl(output / "per_image_metrics.jsonl", image_details)
