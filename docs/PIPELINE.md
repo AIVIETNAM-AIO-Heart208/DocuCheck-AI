@@ -124,12 +124,14 @@ uv run python scripts/evaluate_ocr.py \
   --manifest data/processed/recognition_manifest.jsonl \
   --predictions outputs/ocr/crop_psm7_official_val/predictions.jsonl \
   --split official_val \
-  --output-dir outputs/ocr/crop_psm7_official_val_evaluation
+  --output-dir outputs/ocr/crop_psm7_official_val
 ```
 
 Repeat with `official_train` in a separate directory. The validation result is the benchmark; the train result is diagnostic and must not be combined with it as one headline score. Crop mode writes `metrics.json` and `per_crop_metrics.jsonl`. It joins Tesseract's emitted words and compares them directly with `text_raw`; prediction polygons do not participate in the score.
 
-For the complete Week 2 Goal 1 workflow, the runner audits every crop, saves a
+### Audit, benchmark, verify, and review
+
+For the complete recognition benchmark workflow, the runner audits every crop, saves a
 train layout gallery, locks PSM 7/model/source hashes, and runs train then validation:
 
 ```powershell
@@ -146,6 +148,69 @@ The verifier recomputes all scores from saved predictions without repeating OCR.
 Open the local `error_review/index.html`, inspect each crop and fill review notes;
 selection groups alone do not constitute a completed review. See the
 [recognition protocol](WEEK2_RECOGNITION_PROTOCOL.md) for split and failure policies.
+
+The verifier checks the source hashes recorded for that run. After changing the
+OCR implementation, use the run's matching source revision or saved source snapshot
+to verify historical evidence; a source-hash mismatch does not by itself mean the
+saved predictions are corrupt. Keep the original run hashes and artifacts.
+
+## 7. Optional: compare Tesseract, VietOCR, and PaddleOCR
+
+The default Tesseract commands above require no heavyweight Python OCR runtime. Install both optional CPU stacks only when running the three-engine comparison:
+
+```bash
+uv sync --extra vietocr --extra paddleocr
+uv run --extra vietocr python scripts/download_recognition_models.py --engine vietocr
+uv run --extra paddleocr python scripts/download_recognition_models.py --engine paddleocr
+```
+
+The model setup stores checkpoints under ignored `outputs/ocr/models/`. Run the recognition engines sequentially to avoid CPU oversubscription, then evaluate each result in the same directory as its `runtime.json`:
+
+```bash
+uv run --extra vietocr python scripts/run_ocr.py \
+  --engine vietocr \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --split official_val \
+  --output-dir outputs/ocr/vietocr_official_val
+
+uv run python scripts/evaluate_ocr.py \
+  --mode crop \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --predictions outputs/ocr/vietocr_official_val/predictions.jsonl \
+  --split official_val \
+  --output-dir outputs/ocr/vietocr_official_val
+
+uv run --extra paddleocr python scripts/run_ocr.py \
+  --engine paddleocr \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --split official_val \
+  --output-dir outputs/ocr/paddleocr_official_val
+
+uv run python scripts/evaluate_ocr.py \
+  --mode crop \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --predictions outputs/ocr/paddleocr_official_val/predictions.jsonl \
+  --split official_val \
+  --output-dir outputs/ocr/paddleocr_official_val
+
+uv run python scripts/compare_ocr_engines.py \
+  --tesseract outputs/ocr/crop_psm7_official_val \
+  --vietocr outputs/ocr/vietocr_official_val \
+  --paddleocr outputs/ocr/paddleocr_official_val \
+  --output-dir outputs/ocr/engine_comparison
+```
+
+The comparison writes `comparison.json` and `per_crop_comparison.jsonl`. It rejects failed or mismatched runs instead of ranking different crop sets. On the recorded 1,300-crop `official_val` comparison run, VietOCR reached CER 0.0959 / WER 0.3387, PaddleOCR CER 0.1744 / WER 0.6303, and Tesseract 5.3.4 PSM 7 CER 0.1951 / WER 0.5549. All three used 23,739 reference characters and 4,815 reference whitespace tokens with zero inference failures.
+
+That comparison uses a different Tesseract run from the 5.5.3.20260724 baseline
+in [the recognition benchmark report](WEEK2_REPORT.md), which reports validation
+CER 0.2065 / WER 0.5618. Preserve each run's engine version and artifact paths
+when citing results. To compare new runs, evaluate the same crop IDs, reference
+transcripts and normalization policy, and pass their actual output directories
+to `compare_ocr_engines.py`. Choose models and tune parameters on development
+data drawn from training; keep official validation for fixed-configuration evaluation.
+
+These are recognition-only results on supplied crops, not full-page detection or KIE scores. The source transcripts may contain annotation noise. Mean latency remains in the artifact for provenance, but model threading and host load were not controlled tightly enough to claim a speed ranking.
 
 ## Optional notebooks and code entry points
 

@@ -50,6 +50,7 @@ def test_batch_saves_spatial_predictions_and_failures_locally(tmp_path):
     ]
 
     class FakeEngine:
+        engine_name = "Tesseract"
         model_names = {"recognition": "vie.traineddata"}
         model_source = "synthetic"
         model_sha256 = "fake-hash"
@@ -59,6 +60,7 @@ def test_batch_saves_spatial_predictions_and_failures_locally(tmp_path):
         ocr_engine_mode = 1
         model_load_seconds = 0.0
         device = "cpu"
+        preprocessing = {"page_segmentation_mode": 6}
 
         def predict(self, image_path):
             if image_path.name == "invalid.jpg":
@@ -77,6 +79,7 @@ def test_batch_saves_spatial_predictions_and_failures_locally(tmp_path):
 
 def test_ocr_cli_defaults_to_psm_6_and_accepts_explicit_mode():
     assert cli.build_parser().parse_args([]).psm == 6
+    assert cli.build_parser().parse_args([]).engine == "tesseract"
     assert cli.build_parser().parse_args(["--psm", "11"]).psm == 11
 
 
@@ -85,6 +88,7 @@ def test_batch_runtime_records_explicit_engine_psm(tmp_path):
     Image.new("RGB", (20, 10), "white").save(image)
 
     class FakeEngine:
+        engine_name = "Tesseract"
         model_names = {"recognition": "vie.traineddata"}
         model_source = model_sha256 = engine_version = "synthetic"
         language = "vie"
@@ -92,6 +96,7 @@ def test_batch_runtime_records_explicit_engine_psm(tmp_path):
         ocr_engine_mode = 1
         model_load_seconds = 0.0
         device = "cpu"
+        preprocessing = {"page_segmentation_mode": 11}
 
         def predict(self, image_path):
             return []

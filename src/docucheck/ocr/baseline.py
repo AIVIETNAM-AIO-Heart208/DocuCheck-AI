@@ -65,6 +65,7 @@ class TesseractBaseline:
     ocr_engine_mode = 1
     model_repository = "tesseract-ocr/tessdata_fast"
     model_revision = "87416418657359cb625c412a48b6e1d6d41c29bd"
+    engine_name = "Tesseract"
 
     def __init__(
         self,
@@ -114,6 +115,14 @@ class TesseractBaseline:
     @property
     def device(self) -> str:
         return "cpu"
+
+    @property
+    def preprocessing(self) -> dict[str, Any]:
+        return {
+            "page_segmentation_mode": self.page_segmentation_mode,
+            "ocr_engine_mode": self.ocr_engine_mode,
+            "output": "word-level TSV with axis-aligned polygons",
+        }
 
     def predict(self, image_path: str | Path) -> list[dict[str, Any]]:
         path = Path(image_path)

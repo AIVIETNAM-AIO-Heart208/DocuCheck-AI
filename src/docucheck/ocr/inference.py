@@ -26,7 +26,7 @@ def run_batch(
     split: str = "internal_dev",
     output_dir: str | Path = "outputs/ocr/tesseract",
     limit: int | None = None,
-    engine: TesseractBaseline | None = None,
+    engine: Any | None = None,
     tessdata_dir: str | Path = "outputs/ocr/tessdata_fast",
     psm: int = 6,
 ) -> dict[str, Any]:
@@ -81,7 +81,7 @@ def run_batch(
                 stream.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
 
     metadata = {
-        "engine": "Tesseract",
+        "engine": engine.engine_name,
         "engine_version": engine.engine_version,
         "python_version": platform.python_version(),
         "platform": platform.platform(),
@@ -94,11 +94,7 @@ def run_batch(
         "model_sha256": engine.model_sha256,
         "language": engine.language,
         "device": engine.device,
-        "preprocessing": {
-            "page_segmentation_mode": engine.page_segmentation_mode,
-            "ocr_engine_mode": engine.ocr_engine_mode,
-            "output": "word-level TSV with axis-aligned polygons",
-        },
+        "preprocessing": engine.preprocessing,
         "split": split,
         "manifest_record_count": len(selected),
         "images_succeeded": len(predictions),
