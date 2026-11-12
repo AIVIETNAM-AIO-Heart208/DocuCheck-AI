@@ -38,3 +38,7 @@ All files are staged and verified before replacement; ordinary write/replacement
 ## Local-only artifacts
 
 MC-OCR images, processed manifests/crops, OCR model weights, predictions, transcript text, per-image metrics and notebook outputs are private local artifacts and must not be committed or redistributed without confirming dataset terms.
+
+## Goal 1 review closure — 2026-11-06
+
+The 24-case review is closed by an explicit keep-original-GT decision: 15 cases have recorded observations and 9 have insufficient evidence to relabel. This does not certify all source labels. Benchmark scores and the sealed 2026-11-05 bundle are unchanged. Current review: `outputs/ocr/week2/goal1_20261106_review_final/`; current submission: `outputs/submission/DocuCheck_AI_Week2_FINAL_v2.zip`.

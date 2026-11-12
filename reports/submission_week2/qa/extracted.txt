@@ -1,0 +1,562 @@
+                         AI-VIETNAM
+                       KHÓA HỌC AIO2026
+
+
+
+
+  BÁO CÁO TIẾN ĐỘ TUẦN 2
+                 Đánh giá OCR và phân tích lỗi
+
+
+
+
+               DocuCheck AI
+               Hệ thống xử lý và kiểm tra tài liệu
+
+       Benchmark crop, phân đoạn trang và so sánh ba engine
+
+
+
+
+Tên nhóm             Winner Winner Chicken Dinner
+
+Thành viên 1         Nguyễn Văn Minh
+
+Thành viên 2         Nguyễn Thành Trung
+
+
+
+
+                 Ngày lập báo cáo: 06 tháng 11 năm 2026
+
+
+           github.com/AIVIETNAM-AIO-Heart208/DocuCheck-AI
+DOCUCHECK AI                                                                            BÁO CÁO TUẦN 2
+
+
+
+Tóm tắt
+
+Trong tuần 2, nhóm chuyển từ khảo sát dữ liệu và thiết lập OCR ban đầu sang đánh giá có kiểm soát. Ba
+hướng thực hiện gồm: xây dựng benchmark nhận dạng trên ảnh cắt nhỏ (crop), so sánh chế độ phân đoạn
+trang của Tesseract và đối chiếu ba engine nhận dạng tiếng Việt. Các thí nghiệm trả lời những câu hỏi khác
+nhau, vì vậy kết quả được trình bày riêng theo tập dữ liệu và quy tắc chấm điểm.
+Trên 1.300 crop validation, baseline Tesseract của Goal 1 đạt CER 20,65%, WER 56,18% và tỷ lệ khớp
+hoàn toàn 23,69%. Phép đo có đủ coverage và không có lỗi thực thi. Trên ảnh toàn trang, nhóm phát hiện
+lỗi đọc transcript nguồn, sửa parser và đánh giá lại cùng dự đoán. Sau đính chính, PSM 11 có CER/WER
+quan sát thấp nhất, nhưng lợi thế so với PSM 6 còn nhỏ và chưa ổn định giữa các ảnh.
+Trong phép so sánh ba engine, VietOCR có CER 9,59% và WER 33,87%, thấp nhất trên cùng 1.300 crop.
+Tesseract có thời gian trung bình/crop thấp nhất của lượt chạy đó. Kết quả cho thấy VietOCR đáng được
+thử nghiệm ở bước nhận dạng tiếp theo; việc đọc cả hóa đơn vẫn cần bộ phát hiện vùng chữ và đánh giá
+toàn hệ thống.
+
+
+I. Mục tiêu và phạm vi tuần 2
+
+Tuần 1 đã hình thành dữ liệu chuẩn hóa, cách chia tập và OCR baseline. Tuần 2 tập trung làm rõ chất
+lượng của phép đo, ảnh hưởng của phân đoạn và lựa chọn engine. Phạm vi vẫn là OCR; chưa đánh giá khả
+năng trích xuất tên nơi bán, địa chỉ, thời điểm giao dịch và tổng tiền của hệ thống KIE.
+
+Bảng 1: Ba mục tiêu và kết quả chính của Week 2. Nguồn: hồ sơ Goal 1, Goal 2 và báo cáo Goal 3 của nhóm.
+
+Mục tiêu              Câu hỏi đánh giá                                      Kết quả chính
+
+Goal 1:               Khi có sẵn vùng chữ, baseline nhận dạng được đến      Audit 6.585 crop; đo riêng
+benchmark crop        mức nào?                                              train/validation; phân tích 24
+                                                                            mẫu lỗi.
+Goal 2: PSM           Cách phân đoạn ảnh ảnh hưởng nội dung OCR và          So sánh 231 ảnh; sửa transcript
+toàn trang            phép ghép vùng ra sao?                                nguồn; review 20 trường hợp.
+Goal 3: ba            Engine nào cho CER/WER phù hợp hơn trên cùng          VietOCR thấp nhất cả hai chỉ
+engine                crop?                                                 số; PaddleOCR và Tesseract
+                                                                            đổi thứ hạng theo chỉ số.
+
+
+
+  Đính chính kết quả tuần 1. Parser transcript toàn trang trước đây đọc nhầm cột nhãn thành chữ tham
+  chiếu. CER/WER full-page lịch sử không còn là bằng chứng hợp lệ về chất lượng nhận dạng. Báo
+  cáo này sử dụng kết quả đã sửa; bản tuần 1 được giữ nguyên để truy nguyên. Parser của bộ crop riêng
+  không chịu lỗi này.
+
+
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                          1
+DOCUCHECK AI                                                                               BÁO CÁO TUẦN 2
+
+
+
+II. Dữ liệu, thiết kế và cách đánh giá
+
+2.1 Ba thí nghiệm và ranh giới so sánh
+
+Dự án sử dụng dữ liệu hóa đơn tiếng Việt MC-OCR [1]. Bộ nhận dạng cục bộ gồm 6.585 cặp
+crop/transcript: 5.285 thuộc official_train và 1.300 thuộc official_val. Chưa xác minh được
+liên kết crop với hóa đơn gốc hoặc trường KIE, nên kiểm tra trùng crop chưa loại được mọi rò rỉ dữ liệu ở
+cấp giao dịch.
+
+Bảng 2: Thiết kế các thí nghiệm. Các phiên bản Tesseract khác nhau được giữ thành các lượt đánh giá riêng.
+
+Goal           Dữ liệu và vai trò             Cấu hình và phép đối chiếu
+
+1              5.285 crop train: chẩn         Tesseract 5.5.3.20260724, vie, OEM 1, PSM 7; so trực tiếp
+               đoán; 1.300 crop val:          với transcript crop.
+               benchmark
+2              231 hóa đơn internal_dev Cùng phiên bản Tesseract như Goal 1; PSM 6, 4, 11; ghép
+                                        word box với vùng GT hợp lệ.
+3              1.300 crop official_val        VietOCR 0.3.13, Tesseract 5.3.4 và PaddleOCR 3.7.0; chỉ
+                                              nhận dạng crop.
+
+
+Goal 1 giữ cấu hình cố định trước inference, dùng ảnh gốc, CPU, một worker và batch size 1; không resize,
+nhị phân hóa hay tinh chỉnh mô hình. Train dùng để chẩn đoán, không gộp với validation thành một điểm
+chung. Validation từng xuất hiện trong thử nghiệm cũ, nên không được mô tả là tập chưa từng được xem.
+Việc chọn cấu hình trong tương lai cần tập dev được tách từ train.
+
+
+2.2 CER, WER, exact-match và coverage
+
+Hai chuỗi được chuẩn hóa Unicode NFKC, casefold và gộp khoảng trắng; giữ dấu tiếng Việt và dấu câu.
+Gọi ri là chuỗi tham chiếu, hi là chuỗi dự đoán, Dc và Dt là khoảng cách Levenshtein ở mức ký tự và
+token [5]. Với n đơn vị được chấm:
+                                ∑n                            ∑n
+                                       Dc (ri , hi )               Dt (ri , hi )
+                       CER =        ∑n
+                                   i=1
+                                                     , WER = ∑i=1
+                                                                n                .              (1)
+                                       i=1 |ri |                i=1 | tok(ri )|
+
+Đây là micro average: cộng lỗi trước khi chia, không lấy trung bình tỷ lệ từng mẫu. Token tách theo
+khoảng trắng, thường là âm tiết tiếng Việt, không phải từ ngữ pháp. Lỗi chèn có thể làm CER/WER vượt
+100%. Exact-match là số crop có hai chuỗi chuẩn hóa bằng nhau chia số crop được đánh giá.
+Prediction rỗng sau một lượt inference thành công được tính như xóa toàn bộ chữ tham chiếu. Lỗi thực thi
+hoặc thiếu prediction là lỗi coverage và làm phép so sánh không hợp lệ; không được thay bằng chuỗi rỗng.
+Goal 1 báo cả tỷ lệ prediction hợp lệ trên crop đủ điều kiện và tỷ lệ crop được chấm trên toàn manifest.
+
+
+2.3 Ghép vùng đối với ảnh toàn trang
+
+Goal 2 gán tâm word box vào polygon GT nhỏ nhất chứa tâm, rồi nối từ theo tọa độ tâm y, tiếp đến x.
+Phạm vi chấm chữ chỉ có vùng chứa transcript không rỗng; phạm vi hình học còn gồm vùng chưa có chữ
+tham chiếu. Box không được ghép vào text GT không đi vào CER/WER như lỗi chèn. Do đó, điểm toàn
+trang còn chịu ảnh hưởng của độ phủ nhãn và thứ tự ghép, không thể so trực tiếp với điểm crop.
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                          2
+DOCUCHECK AI                                                                            BÁO CÁO TUẦN 2
+
+
+
+III. Goal 1: Benchmark nhận dạng trên crop
+
+3.1 Kiểm tra dữ liệu đầu vào
+
+Audit đã giải mã và đối chiếu checksum, kích thước của 6.585/6.585 ảnh; xác nhận 6.585 ID duy nhất,
+không ảnh hỏng hoặc transcript rỗng/không hợp lệ. Không có nhóm trùng chính xác theo SHA-256 trong
+bộ crop hoặc giữa hai split. Đối chiếu toàn bộ cặp với transcript nguồn cho 0 sai khác về text, đường dẫn,
+dòng nguồn và split. Kết quả xác nhận dữ liệu chuẩn bị giữ đúng nguồn; chưa chứng minh nguồn luôn
+đúng với pixel.
+PSM 7 giả định một dòng chữ [2]. Khảo sát ban đầu cho thấy phần lớn mẫu là dòng, từ hoặc số, nhưng
+review sau inference vẫn tìm thấy crop nhiều dòng. Trong toàn tập, 972 crop train và 245 crop validation
+có chiều cao tối đa 20 pixel. Chữ nhỏ là điều kiện cần quan tâm khi diễn giải lỗi, chưa phải bằng chứng
+nhân quả độc lập.
+
+
+3.2 Kết quả nhận dạng
+
+Bảng 3: Kết quả Goal 1, Tesseract 5.5.3.20260724, PSM 7. Nguồn: metrics và runtime đã lưu ngày 05/11/2026.
+
+Chỉ số                                                                    Train (chẩn đoán)      Validation
+
+Crop đánh giá                                                                           5.285         1.300
+Micro CER                                                                          20,1183%      20,6496%
+Micro WER                                                                          56,2225%      56,1786%
+Exact-match                                                                        22,6868%      23,6923%
+Crop khớp hoàn toàn                                                                     1.199           308
+Prediction rỗng                                                                            54            18
+Lỗi thực thi / crop bị loại                                                              0/0           0/0
+Hai tỷ lệ coverage                                                                     100%           100%
+Thời gian vòng inference                                                         530,07 giây 129,16 giây
+Thời gian trung bình/crop                                                          100,24 ms      99,30 ms
+
+
+Ở mức ký tự, train có 19.788 lỗi trên 98.358 ký tự tham chiếu; ở mức token có 11.231 lỗi trên 19.976
+token. Validation tương ứng có 4.902 lỗi trên 23.739 ký tự và 2.705 lỗi trên 4.815 token:
+                                 4 902                               2 705
+                   CERval =            ≈ 20,6496%,       WERval =          ≈ 56,1786%.
+                                23 739                               4 815
+Tỷ lệ khớp hoàn toàn validation là 308/1 300 ≈ 23,6923%. Coverage 100% cho thấy mọi crop đều được
+tính vào phép đo; không đồng nghĩa mọi crop có chữ đầu ra hoặc nhận dạng đúng.
+Tổng hai vòng inference khoảng 659,23 giây, gồm khởi động tiến trình Tesseract, kiểm tra ảnh và đọc TSV.
+Môi trường là Windows 11, Python 3.12.16 và 16 CPU logic; tải máy chưa được cô lập, giới hạn thread
+OpenMP chưa đặt. Đây là thời gian lượt chạy, chưa phải benchmark tốc độ có lặp. Điểm train/validation
+gần nhau không được diễn giải như thí nghiệm huấn luyện để đánh giá overfitting.
+
+
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                          3
+DOCUCHECK AI                                                                                BÁO CÁO TUẦN 2
+
+
+3.3 Phân tích 24 mẫu lỗi và bài học
+
+Mẫu phân tích được chọn trên train, bốn crop trong mỗi nhóm: đầu ra rỗng, nghi lỗi dấu, nghi lỗi khoảng
+trắng, nội dung số, chữ nhỏ và lỗi hỗn hợp lớn. Quá trình rà soát gồm sáu bảng ảnh tổng hợp và phóng lớn
+chín trường hợp cần đọc kỹ. Đây là mẫu tìm lỗi có chủ đích; các số đếm dưới đây không ước lượng tỷ lệ
+lỗi toàn bộ dữ liệu.
+
+Bảng 4: Nhận định chính từ 24 mẫu lỗi Goal 1. Các nhận định về nhãn nguồn vẫn cần được thẩm định trước khi
+hiệu chỉnh.
+
+Nhóm nhận định                                                                                          Số mẫu
+
+Lỗi nhận dạng, thường kèm chữ nhỏ/mờ/font khó                                                                 10
+Kết hợp vấn đề nguồn/layout và lỗi OCR                                                                         7
+Nghi transcript nguồn sai dấu, giữ GT                                                                          1
+Khác quy ước khoảng trắng/token hóa                                                                            3
+Lỗi OCR kèm khác quy ước định dạng                                                                             3
+
+Tổng                                                                                                          24
+
+
+Layout và output rỗng. Hai crop nhiều dòng không có prediction. Điều kiện này không phù hợp với giả
+định một dòng của PSM 7, nên layout là một nguyên nhân khả dĩ. Tuy nhiên, chưa có thử nghiệm đổi PSM
+riêng cho các crop này để xác lập tác động. Benchmark giữ nguyên cấu hình; hướng khảo sát layout được
+dành cho bước sau.
+Khoảng trắng và nội dung số. Một số mẫu có chữ số đúng nhưng cách đặt khoảng trắng quanh gạch nối,
+dấu hai chấm hoặc thời gian khác nguồn. WER có thể tăng mạnh dù phần số được giữ. Một trường hợp
+tiền tệ có chữ số tiền đúng nhưng tiền tố tiền tệ sai; không dùng lỗi tiền tố để kết luận giá trị tiền bị đọc sai
+hoặc trường KIE đã được trích xuất sai.
+Chất lượng ảnh và dạng chữ. Review ghi nhận chữ nhỏ, nhòe, in chấm và logo nghiêng/cách điệu, cùng
+các lỗi nhầm chữ, chữ số và dấu tiếng Việt. Những yếu tố này có thể đồng thời xuất hiện trên một crop.
+Mẫu quan sát chưa tách được mức đóng góp riêng của độ nét, kích thước và font.
+Ground truth vẫn có bất định. Có ca transcript thiếu từ hoặc dấu phân cách nhìn thấy trên ảnh; một số
+dấu và tháng chưa đủ rõ để kết luận. Clean benchmark ở đây loại bỏ khâu ghép polygon khi chấm crop,
+không có nghĩa mọi nhãn đã sạch. GT gốc và điểm benchmark được giữ nguyên sau review.
+
+  Kết thúc rà soát ngày 06/11/2026. Đã đóng review 24/24 mẫu theo quyết định giữ nguyên GT và
+  điểm benchmark: 15 mẫu ghi nhận quan sát, 9 mẫu chưa đủ bằng chứng để sửa nhãn. Đây là kết luận
+  xử lý của lượt rà soát, không chứng nhận mọi nhãn đúng hoặc xác lập nguyên nhân của mọi lỗi.
+
+
+3.4 Kiểm chứng đã thực hiện
+
+Lượt kiểm thử ngày 05/11/2026 đạt 134/134 bài kiểm thử và 80 kiểm tra benchmark, gồm đối chiếu đầu
+vào, độ phủ mẫu và tính lại chỉ số từ dự đoán cùng dữ liệu tham chiếu. Tổng lỗi từng crop khớp kết quả
+tổng hợp; mã băm giúp truy nguyên đúng đầu vào của phép đo. Tuy nhiên, tính lại bằng cùng bộ đánh giá
+chưa phải kiểm chứng bằng một triển khai độc lập và không xác nhận độ đúng của nhãn nguồn.
+
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                            4
+DOCUCHECK AI                                                                             BÁO CÁO TUẦN 2
+
+
+
+IV. Goal 2: So sánh PSM trên ảnh toàn trang
+
+4.1 Sửa lỗi tham chiếu trước khi kết luận
+
+Mỗi dòng nguồn có ID, tám tọa độ, transcript có thể chứa dấu phẩy và nhãn loại ở cuối. Parser cũ tách sai
+ranh giới, dùng nhãn hoặc một phần transcript kèm nhãn làm GT. Đối chiếu 231 sidecar cho thấy cả 8.408
+chuỗi trong manifest cũ khác transcript được tách đúng. Nhóm tạo manifest đánh giá riêng, giữ ID, split,
+ảnh và polygon; tái dùng toàn bộ prediction cũ vì inference không sử dụng GT.
+Trong 8.408 vùng, 104 có hình học không hợp lệ. Trong 8.304 vùng còn lại, 4.265 có transcript không
+rỗng và 4.039 không có transcript. Điểm chữ được tính trên 4.265 vùng, gồm 56.619 ký tự và 11.584
+token; cả 231 ảnh đều đóng góp. Giảm mẫu số từ 8.304 xuống 4.265 là thay đổi protocol sau sửa nguồn,
+không phải cải thiện OCR.
+
+
+4.2 Kết quả với transcript đã sửa
+
+Các lượt chạy tuần tự theo thứ tự PSM 6, 4, 11, cùng ảnh gốc, vie, OEM 1, CPU, một worker/batch và
+giới hạn thread OpenMP bằng 1. PSM 6 giả định khối chữ thống nhất; PSM 4 xử lý một cột có kích thước
+chữ thay đổi; PSM 11 tìm chữ rải rác [2]. Mỗi chế độ thành công trên 231/231 ảnh, không lỗi thực thi.
+
+Bảng 5: Kết quả trên internal_dev sau sửa transcript tham chiếu. Vùng không nhận box chỉ xét GT có chữ;
+nguồn: thí nghiệm Goal 2.
+
+PSM           CER           WER Lỗi ký tự Ảnh rỗng GT không nhận box
+
+  6     61,5712%       81,9061%       34.861            0 902/4.265 (21,15%)
+  4     64,0068%       81,9406%       36.240           14 1.376/4.265 (32,26%)
+ 11     60,8365% 81,5953%             34.445            0 837/4.265 (19,62%)
+
+
+Tử số WER tương ứng là 9.488, 9.492 và 9.452. PSM 11 thấp hơn PSM 6 khoảng 0,735 điểm phần trăm
+CER và 0,311 điểm phần trăm WER. PSM 4 có 14 ảnh output rỗng, dù inference thành công; những ảnh
+này vẫn đóng góp lỗi xóa khi chấm chữ.
+
+Bảng 6: Độ phủ chữ và hình học sau sửa transcript. Mẫu số box của PSM 6/4/11 lần lượt là 26.859/18.482/24.208;
+nguồn: thí nghiệm Goal 2.
+
+PSM Box ngoài text GT                     Box ngoài GT hình học              GT hình học không nhận box
+
+  6     18.459 (68,73%)                   10.488 (39,05%)                    1.886/8.304 (22,71%)
+  4     10.915 (59,06%)                   3.586 (19,40%)                     2.798/8.304 (33,69%)
+ 11     15.490 (63,99%)                   7.043 (29,09%)                     1.736/8.304 (20,91%)
+
+
+PSM 4 có ít box ngoài GT hình học hơn nhưng cũng để nhiều vùng GT không nhận box hơn. Hai phép
+gán có thể khác nhau khi polygon chồng lấp; không trộn các số đếm. Vùng thiếu transcript không phải
+mẫu ngẫu nhiên, nên CER/WER chỉ mô tả phần chữ có tham chiếu. Box ngoài GT chưa đủ để kết luận
+phát hiện sai; các tỷ lệ coverage không phải precision, recall hay detection F1.
+
+
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                         5
+DOCUCHECK AI                                                                                            BÁO CÁO TUẦN 2
+
+
+4.3 Phân tích 20 trường hợp tiêu biểu
+
+Quá trình phân tích gồm 20 ảnh chẩn đoán, đối chiếu vị trí vùng chữ và chuỗi được ghép. Mẫu gồm các
+ca cải thiện, suy giảm, đánh đổi độ phủ, ảnh khó, mẫu chọn với seed 42 và đầu ra rỗng. Hình 1 cho thấy
+đổi PSM có thể cải thiện một ảnh nhưng làm mất nội dung ở ảnh khác.
+
+
+                                                       PSM 6        PSM 4            PSM 11
+                            99,0
+                    100
+ CER từng ảnh (%)
+
+
+
+
+                     80                                            74,5
+                                             67,6                                               65,7
+
+                     60
+                                                                                                         48,6
+                                                                            42,7
+                     40                                    35,5
+                                     28,4                                                                        30,3
+
+                     20
+
+
+                      0
+                          Ca 01 · PSM 4 phục hồi chữ    Ca 05 · PSM 4 mất phần đầu            Ca 07 · PSM 11 tăng độ phủ
+
+Hình 1: CER của ba trường hợp được chọn có chủ đích từ phân tích lỗi Goal 2. Sự thay đổi trái chiều giữa các ảnh
+cho thấy ảnh hưởng của bố cục; mẫu này không đại diện phân bố toàn tập.
+
+
+Ca 01 và 07: phục hồi nội dung. Ở ca 01, PSM 6 chỉ phát tám box; PSM 4 phục hồi thêm chữ, giảm
+CER từ khoảng 99,0% xuống 28,4%. Ở ca 07, PSM 11 lấy thêm vùng bảng/header mà PSM 6 biểu diễn
+kém, nhưng thứ tự từ trong dòng vẫn có lỗi. Điểm giảm không đồng nghĩa toàn bộ dòng đã được nhận
+dạng đúng.
+Ca 05: mất phần đầu hóa đơn. PSM 4 phát 21 box so với 108 box của PSM 6, bỏ phần đầu và làm CER
+tăng từ khoảng 35,5% lên 74,5%. Hiện tượng mất phần đầu đã được xác nhận trong hồ sơ thẩm định. Bất
+thường về ngày tháng trong nguồn chưa được phân xử nên transcript vẫn được giữ nguyên.
+Ca 10: ảnh hưởng của thứ tự ghép. Bốn token trên cùng một dòng có tâm y lần lượt 876,5; 877,0; 878,5;
+879,5 pixel. Quy tắc ưu tiên y làm chuỗi được nối khác thứ tự trái sang phải. Truy nguyên cho thấy đóng
+góp của phép ghép đối với dòng này; kết luận nguyên nhân tổng thể vẫn còn bất định. Thuật toán và điểm
+benchmark được giữ nguyên.
+Ca 16 và 17: nguyên nhân chưa được thống nhất. Ca 16 có chữ nằm ngang và PSM 4 trả danh sách
+rỗng với trạng thái thành công; chưa tách được nguyên nhân do hướng ảnh hay yếu tố khác. Ca 17 còn bất
+đồng về giả thuyết GT lệch dòng. Có thể truy nguyên phép gán box vào vùng, nhưng chưa đủ căn cứ kết
+luận lỗi annotation đã được xác nhận.
+
+
+4.4 Mức ổn định của lợi thế PSM 11
+
+So với PSM 6, CER của PSM 11 tốt hơn trên 110 ảnh, kém hơn trên 108 ảnh và bằng nhau trên 13 ảnh. Phân
+tích bootstrap ghép cặp 5.000 lần trong hồ sơ cho khoảng 95% của chênh lệch CER là [−1,696; 0,173]
+điểm phần trăm, của WER là [−1,287; 0,644] điểm phần trăm. Cả hai chứa 0. Đây là phân tích thăm dò
+sau chạy, giả định ảnh độc lập; không loại được sai số annotation hoặc alignment.
+Nhóm chọn PSM 11 làm ứng viên cho thí nghiệm tiếp theo, giữ PSM 6 làm đối chứng. Chưa thay mặc
+định sản phẩm và chưa kết luận PSM 11 tốt nhất cho mọi hóa đơn. PSM 4 cần xem kỹ nguy cơ bỏ dòng
+hoặc trả rỗng dù có ưu điểm ở một số bố cục.
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                                        6
+DOCUCHECK AI                                                                                  BÁO CÁO TUẦN 2
+
+
+
+V. Goal 3: So sánh ba engine nhận dạng
+
+5.1 Phạm vi và cấu hình thí nghiệm
+
+VietOCR, Tesseract và PaddleOCR chạy tuần tự trên cùng 1.300 crop official_val, với 23.739 ký tự và
+4.815 token tham chiếu. Đây là nhận dạng trên crop có sẵn; PaddleOCR không chạy detector. Theo báo
+cáo nhóm, mỗi engine thành công 1.300/1.300 crop, không lỗi thực thi và đã vượt kiểm tra tập crop, split
+và mẫu số.
+
+Bảng 7: Cấu hình, chất lượng nhận dạng và thời gian thực thi Goal 3 trên 1.300 crop validation. Nguồn: báo cáo
+thí nghiệm ba engine.
+
+Engine                  Model                                                           Rỗng         CER        WER
+
+VietOCR 0.3.13          vgg_transformer [3]                                                  0      9,59%    33,87%
+Tesseract 5.3.4         Tiếng Việt (vie), PSM 7                                              5 19,51%        55,49%
+PaddleOCR 3.7.0         latin_PP‐OCRv5_mobile_rec [4]                                        5 17,44%        63,03%
+
+Engine                                                              Tổng thời gian (giây)    Trung bình/crop (ms)
+
+VietOCR                                                                            137,7                        105,9
+Tesseract                                                                            85,7                        65,9
+PaddleOCR                                                                          207,7                        159,8
+
+
+
+
+    VietOCR                    9,59                           VietOCR                       33,87
+
+
+
+
+   Tesseract                                   19,51         Tesseract                                  55,49
+
+
+
+
+ PaddleOCR                                  17,44           PaddleOCR                                        63,03
+
+
+               0     5      10        15       20      25                0      20          40          60
+                      CER (%) · thấp hơn tốt hơn                               WER (%) · thấp hơn tốt hơn
+
+Hình 2: Thứ hạng theo CER và WER trên cùng 1.300 crop Goal 3. Hai ô dùng thang đo riêng. Biểu đồ làm rõ việc
+PaddleOCR và Tesseract đổi thứ hạng giữa hai chỉ số; nguồn: báo cáo nhóm.
+
+
+VietOCR giảm CER khoảng 50,8% và WER khoảng 39,0% tương đối so với Tesseract; tương ứng giảm
+9,92 và 21,62 điểm phần trăm. PaddleOCR giảm CER khoảng 10,6% nhưng tăng WER khoảng 13,6%
+tương đối. Cần xem cả hai chỉ số: khoảng trắng, dấu câu và lỗi trong token có thể ảnh hưởng kết quả,
+nhưng chưa có đối chiếu từng crop để xác nhận cơ chế hoặc phân bố lỗi của Goal 3.
+
+  Giới hạn bằng chứng. Kết quả Goal 3 được tổng hợp từ báo cáo thí nghiệm của nhóm. Chưa có bộ
+  dự đoán và nhật ký thực thi gốc trong hồ sơ đối chiếu để kiểm chứng độc lập độ phủ mẫu và thời gian.
+  Thời gian còn khác số liệu ở bản ghi trước, nên chỉ được xem là quan sát của lượt chạy được báo cáo.
+
+
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                                  7
+DOCUCHECK AI                                                                             BÁO CÁO TUẦN 2
+
+
+
+VI. Thảo luận và độ tin cậy của kết luận
+
+6.1 Phân biệt nhận dạng, ghép vùng và chất lượng nguồn
+
+Ba goal cùng cho thấy một điểm OCR chỉ có nghĩa khi biết đơn vị chấm và ground truth. Goal 1 loại khâu
+ghép polygon bằng cách so trực tiếp từng crop. Goal 2 còn phụ thuộc phân đoạn trang, vị trí box, thứ tự
+nối từ và phần GT có transcript. Goal 3 dùng crop như Goal 1 nhưng có engine, phiên bản và môi trường
+khác. Không dùng khoảng cách giữa các bảng để tính mức cải thiện chung của dự án.
+Phát hiện lỗi parser là kết quả quan trọng của tuần 2: một evaluator có thể tính đúng khoảng cách chỉnh
+sửa trên một tham chiếu sai. Kiểm thử và checksum giúp phát hiện lỗi thực thi, thay đổi dữ liệu hoặc sai
+tổng hợp; chúng không tự chứng nhận chữ tham chiếu đúng với ảnh. Vì thế, kiểm tra nguồn và review
+trực quan cần được duy trì cùng kiểm thử tự động.
+
+
+6.2 Đánh đổi độ chính xác và thời gian
+
+Trong Goal 3, VietOCR đạt độ chính xác tốt nhất theo CER/WER, còn Tesseract có thời gian trung
+bình/crop thấp nhất của lượt chạy. Chưa đủ cơ sở để khái quát thứ hạng tốc độ vì chưa đối chiếu được cách
+đo, số luồng, tải máy và số lần lặp. Bản ghi trước ghi trung bình 85,0; 65,2; 99,8 ms/crop cho VietOCR,
+Tesseract và PaddleOCR, khác 105,9; 65,9; 159,8 ms/crop trong báo cáo thí nghiệm hiện tại. Nguyên nhân
+chênh lệch cần được làm rõ bằng nhật ký gốc.
+Ở Goal 2, tổng thời gian PSM 6/4/11 lần lượt là 96,51/92,51/108,72 giây; trung bình 417,4/400,2/470,3
+ms/ảnh. Đây là quan sát đơn lượt, có chi phí khởi động tiến trình, không phải xếp hạng tốc độ có ý nghĩa
+thống kê. Lựa chọn cấu hình còn phải xét bỏ sót nội dung: PSM 4 nhanh hơn trong lần đo nhưng có 14
+ảnh rỗng.
+
+
+6.3 Bằng chứng đã có và phần còn hạn chế
+
+Bảng 8: Bằng chứng và giới hạn của từng thí nghiệm. Nguồn: hồ sơ Goal 1, Goal 2 và báo cáo thí nghiệm Goal 3.
+
+Thành phần             Bằng chứng hiện có                         Giới hạn cần giữ
+
+Goal 1                 Chỉ số từng crop khớp tổng hợp; có         Nhãn nguồn chưa được phân xử toàn bộ;
+                       kiểm tra dữ liệu và phân tích 24 mẫu.      mẫu lỗi không đại diện.
+Goal 2                 Kết quả sau sửa nguồn trên 231 ảnh;        GT thiếu chữ ở nhiều vùng; bất định
+                       phân biệt độ phủ chữ và hình học.          nguyên nhân và thứ tự ghép còn tồn tại.
+Goal 3                 Các bản tổng hợp thống nhất CER/WER        Chưa đối chiếu dự đoán và nhật ký gốc;
+                       của ba engine.                             thời gian khác bản ghi trước.
+Khả năng áp dụng       Có cơ sở chọn ứng viên OCR cho bước        Chưa có detection F1, field accuracy
+                       nghiên cứu tiếp theo.                      KIE hay đánh giá end-to-end.
+
+
+Lượt kiểm chứng Goal 2 ngày 05/11/2026 đạt 167/167 bài kiểm thử và 170 kiểm tra về nguồn dữ liệu, độ
+phủ và tính lại kết quả. Khoảng cách chỉnh sửa của 12.795 vùng qua ba PSM được đối chiếu bằng một
+triển khai độc lập. Các kiểm tra này xác nhận tính nhất quán của phép tính; những bất định về nhãn và
+nguyên nhân lỗi vẫn cần được giải quyết riêng.
+
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                         8
+DOCUCHECK AI                                                                                BÁO CÁO TUẦN 2
+
+
+
+VII. Kết luận và hướng tiếp theo
+
+Tuần 2 đã tạo được baseline crop có phạm vi và mẫu số rõ ràng, sửa một lỗi nguồn ảnh hưởng đến diễn
+giải OCR toàn trang, đồng thời có kết quả so sánh ba engine trên cùng bộ crop. Giá trị chính là kết nối số
+đo với điều kiện thực nghiệm và bằng chứng lỗi, từ đó tránh lựa chọn cấu hình chỉ theo một chỉ số tổng
+hợp.
+VietOCR là ứng viên ưu tiên cho bước nhận dạng tiếp theo dựa trên CER/WER Goal 3. Với Tesseract toàn
+trang, PSM 11 là ứng viên cần thử thêm và PSM 6 tiếp tục làm đối chứng. Đây là định hướng nghiên cứu
+có điều kiện; chưa xác nhận kiến trúc cuối cùng hoặc chất lượng trích xuất trường của sản phẩm.
+
+Bảng 9: Các bước tiếp theo và tiêu chí kiểm tra dự kiến; chưa phải kết quả đã hoàn thành.
+
+Ưu      Công việc                                             Tiêu chí đối chiếu
+tiên
+
+1       Hoàn thiện hồ sơ thực nghiệm Goal 3 và quy            Khớp ID, mẫu số, dự đoán và model; cách đo,
+        ước đo thời gian.                                     số luồng rõ ràng, đo lặp cùng điều kiện.
+2       Phân xử các ca transcript/geometry còn bất            Có quyết định theo từng ca, phiên bản nhãn và
+        định.                                                 lịch sử sửa; giữ split đã khóa.
+3       Thử cải tiến thứ tự ghép dòng và xử lý hướng          Tách từng thay đổi, so với baseline cố định; đo
+        ảnh trên dev.                                         cả điểm chữ và coverage.
+4       Ghép detector với VietOCR và đánh giá                 Chấm vùng chữ và nội dung trên dữ liệu phù
+        end-to-end.                                           hợp; sau đó mới đo từng trường KIE.
+
+
+Quá trình chọn mô hình và tham số tiếp theo cần dùng dữ liệu phát triển tách từ train. Khi chuyển sang
+KIE, nhãn trường phải được kiểm tra riêng; transcript crop không tự trở thành nhãn tên nơi bán, thời gian
+hoặc tổng tiền. Các ví dụ review hiện có là đầu vào cho phân xử và thiết kế thí nghiệm, không thay thế tập
+đánh giá đại diện.
+
+
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                         9
+DOCUCHECK AI                                                                        BÁO CÁO TUẦN 2
+
+
+
+Tài liệu tham khảo
+
+ [1] Ban tổ chức MC-OCR. Mobile-Captured Image Document Recognition for Vietnamese Receipts.
+     RIVF 2021. Trang chính thức về dữ liệu và tác vụ.
+     rivf2021-mc-ocr.vietnlp.com. Truy cập: 06/11/2026.
+
+ [2] Nhóm phát triển Tesseract OCR. Improving the quality of the output, mục “Page segmentation
+     method”. Tài liệu chính thức về các chế độ PSM.
+     Tesseract Documentation: Page segmentation method. Truy cập: 06/11/2026.
+
+ [3] pbcquoc và cộng tác viên. VietOCR: Transformer OCR, mục “Model Zoo”. Kho mã nguồn gốc và
+     cấu hình mô hình.
+     github.com/pbcquoc/vietocr. Truy cập: 06/11/2026.
+
+ [4] Nhóm phát triển PaddleOCR, PaddlePaddle. Text Recognition Module. Tài liệu chính thức về mô
+     hình và mô-đun nhận dạng chữ.
+     PaddleOCR Documentation: Text Recognition Module. Truy cập: 06/11/2026.
+
+ [5] Jitsi và cộng tác viên. JiWER: Process API reference. Tài liệu định nghĩa và cách tổng hợp CER/WER
+     từ khoảng cách chỉnh sửa.
+     jitsi.github.io/jiwer/reference/process. Truy cập: 06/11/2026.
+
+
+
+
+Báo cáo tiến độ tuần 2 | 06.11.2026                                                                 10
+

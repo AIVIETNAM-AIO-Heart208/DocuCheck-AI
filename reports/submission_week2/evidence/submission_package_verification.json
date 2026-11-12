@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "archive": "outputs/submission/DocuCheck_AI_Week2_FINAL_v3.zip",
+  "archive_sha256": "4c2f0b610848c4d3eb55fb5dddbbe15180fcea251213b4637869d1b9e8278186",
+  "archive_bytes": 299315,
+  "file_count": 38,
+  "pdf_sha256": "227c3fabb4cafe24e6ba7617a07f5d5065ff51d82908e424b570d730eb731dbf",
+  "crc_check": "passed",
+  "manifest_hashes": "passed",
+  "pdf_matches_reviewed_report": true,
+  "source_files_rechecked": 32,
+  "date": "2026-11-06"
+}

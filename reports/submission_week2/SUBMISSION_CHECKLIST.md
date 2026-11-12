@@ -20,3 +20,13 @@ Ngày: 06/11/2026. PDF cuối: **11 trang A4** (bìa, 9 trang nội dung và tà
 - [x] Đối chiếu 638 tệp được bảo vệ không đổi sau khi tạo báo cáo, gồm Week 1, các bundle Week 2, docs/src/tests và hai manifest.
 
 Đây là bộ báo cáo local, không xác nhận đã upload hoặc giảng viên nghiệm thu. Không commit/push.
+
+## Bộ đính kèm
+
+- [x] Tạo `outputs/submission/DocuCheck_AI_Week2_FINAL_v3.zip` gồm 38 file; kích thước và SHA-256 tại `evidence/submission_package_verification.json`.
+- [x] Kèm báo cáo, minh chứng theo ba goal, hai biểu đồ, hướng dẫn đọc và danh mục file.
+- [x] Phân biệt file gốc với bảng trích xuất qua SOURCE_PROVENANCE.json.
+- [x] Kiểm CRC ZIP, toàn bộ SHA-256 và PDF khớp bản đã qua QA.
+- [x] Ghi rõ giới hạn Goal 3; không đưa dữ liệu OCR chi tiết vào bộ nộp.
+
+Cập nhật Goal 1 ngày 06/11: đóng 24/24 ca theo quyết định giữ GT; 15 ca ghi nhận quan sát, 9 ca chưa đủ bằng chứng sửa nhãn. Hồ sơ ngày 05/11 và benchmark không đổi. Hai tài liệu docs/WEEK2_REPORT.md và docs/WEEK2_HANDOFF.md được cập nhật có chủ đích; các tệp khác trong mốc bảo vệ giữ nguyên. ZIP v3 thay thế bản FINAL cũ khi nộp.

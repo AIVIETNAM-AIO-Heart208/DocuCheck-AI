@@ -1,0 +1,144 @@
+{
+  "archive": "outputs\\submission\\DocuCheck_AI_Week2_FINAL_v3.zip",
+  "matches": [
+    {
+      "file": "evidence/goal1/error_review_summary.json",
+      "line": 5,
+      "category": "workflow_or_review_language",
+      "text": "  \"adjudication_status\": \"closed_keep_original_gt\","
+    },
+    {
+      "file": "evidence/goal2/pytest_20261105.txt",
+      "line": 1,
+      "category": "workflow_or_review_language",
+      "text": "Command: .venv\\Scripts\\python.exe -m pytest -q -p no:cacheprovider"
+    }
+  ],
+  "pdf_metadata": [
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff00490020004d1ee5006300200074006900ea00750020007600e00020007000681ea1006d0020007600690020007400751ea7006e00200032>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0032002e003100200042006100200074006800ed0020006e0067006800691ec7006d0020007600e0002000720061006e00680020006700691edb006900200073006f0020007300e1006e0068>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0032002e00320020004300450052002c0020005700450052002c002000650078006100630074002d006d00610074006300680020007600e000200063006f007600650072006100670065>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0032002e003300200047006800e900700020007600f9006e0067002001111ed10069002000761edb006900201ea3006e006800200074006f00e0006e0020007400720061006e0067>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff00490049002000441eef0020006c00691ec70075002c00200074006800691ebf00740020006b1ebf0020007600e00020006300e1006300680020011100e1006e006800200067006900e1>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0033002e00310020004b00691ec3006d0020007400720061002000641eef0020006c00691ec70075002001111ea700750020007600e0006f>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0033002e00320020004b1ebf00740020007100751ea30020006e00681ead006e002000641ea1006e0067>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0033002e003300200050006800e2006e0020007400ed006300680020003200340020006d1eab00750020006c1ed700690020007600e00020006200e00069002000681ecd0063>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0033002e00340020004b00691ec3006d0020006300681ee9006e00670020011100e30020007400681ef100630020006800691ec7006e>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff00490049004900200047006f0061006c00200031003a002000420065006e00630068006d00610072006b0020006e00681ead006e002000641ea1006e006700200074007200ea006e002000630072006f0070>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0034002e0031002000531eed00610020006c1ed700690020007400680061006d00200063006800691ebf007500200074007201b01edb00630020006b006800690020006b1ebf00740020006c00751ead006e>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0034002e00320020004b1ebf00740020007100751ea3002000761edb00690020007400720061006e0073006300720069007000740020011100e3002000731eed0061>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0034002e003300200050006800e2006e0020007400ed0063006800200032003000200074007201b01edd006e0067002000681ee3007000200074006900ea00750020006200691ec30075>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0034002e00340020004d1ee9006300201ed5006e002001111ecb006e0068002000631ee700610020006c1ee300690020007400681ebf002000500053004d002000310031>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0049005600200047006f0061006c00200032003a00200053006f0020007300e1006e0068002000500053004d00200074007200ea006e00201ea3006e006800200074006f00e0006e0020007400720061006e0067>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0035002e00310020005000681ea1006d0020007600690020007600e0002000631ea500750020006800ec006e006800200074006800ed0020006e0067006800691ec7006d>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff005600200047006f0061006c00200033003a00200053006f0020007300e1006e006800200062006100200065006e00670069006e00650020006e00681ead006e002000641ea1006e0067>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0036002e003100200050006800e2006e0020006200691ec700740020006e00681ead006e002000641ea1006e0067002c00200067006800e900700020007600f9006e00670020007600e00020006300681ea500740020006c01b01ee3006e00670020006e006700751ed3006e>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0036002e00320020011000e1006e0068002001111ed50069002001111ed900200063006800ed006e00680020007800e100630020007600e00020007400681edd00690020006700690061006e>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0036002e0033002000421eb1006e00670020006300681ee9006e00670020011100e30020006300f30020007600e00020007000681ea7006e0020006300f2006e002000681ea1006e0020006300681ebf>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff005600490020005400681ea3006f0020006c00751ead006e0020007600e0002001111ed9002000740069006e002000631ead0079002000631ee700610020006b1ebf00740020006c00751ead006e>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0056004900490020004b1ebf00740020006c00751ead006e0020007600e00020006801b01edb006e00670020007400691ebf00700020007400680065006f>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Creator(LaTeX with hyperref)"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Title<feff0044006f006300750043006800650063006b0020004100490020002d0020004200e1006f0020006300e1006f0020007400691ebf006e002001111ed90020007400751ea7006e00200032>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Author<feff00570069006e006e00650072002000570069006e006e0065007200200043006800690063006b0065006e002000440069006e006e00650072003a0020004e0067007500791ec5006e002000560103006e0020004d0069006e0068003b0020004e0067007500791ec5006e00200054006800e0006e00680020005400720075006e0067>"
+    },
+    {
+      "file": "DocuCheck_AI_Week2_Report.pdf",
+      "entry": "/Producer(MiKTeX-dvipdfmx \\(20250413\\))"
+    },
+    {
+      "file": "figures/engine_metrics.pdf",
+      "entry": "/Creator (Matplotlib v3.11.2, https://matplotlib.org)"
+    },
+    {
+      "file": "figures/engine_metrics.pdf",
+      "entry": "/Producer (Matplotlib pdf backend v3.11.2)"
+    },
+    {
+      "file": "figures/psm_cases.pdf",
+      "entry": "/Creator (Matplotlib v3.11.2, https://matplotlib.org)"
+    },
+    {
+      "file": "figures/psm_cases.pdf",
+      "entry": "/Producer (Matplotlib pdf backend v3.11.2)"
+    }
+  ],
+  "report_text_matches": {
+    "ai_tool_names": [],
+    "workflow_or_review_language": []
+  },
+  "changes_to_submission": false
+}

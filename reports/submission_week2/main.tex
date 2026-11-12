@@ -205,7 +205,7 @@ Mẫu phân tích được chọn trên train, bốn crop trong mỗi nhóm: đ�
 \textbf{Nhóm nhận định} & \textbf{Số mẫu}\\\midrule
 Lỗi nhận dạng, thường kèm chữ nhỏ/mờ/font khó & 10\\
 Kết hợp vấn đề nguồn/layout và lỗi OCR & 7\\
-Nghi transcript nguồn sai dấu, cần phân xử & 1\\
+Nghi transcript nguồn sai dấu, giữ GT & 1\\
 Khác quy ước khoảng trắng/token hóa & 3\\
 Lỗi OCR kèm khác quy ước định dạng & 3\\\midrule
 \textbf{Tổng} & \textbf{24}\\
@@ -221,7 +221,7 @@ Lỗi OCR kèm khác quy ước định dạng & 3\\\midrule
 
 \textbf{Ground truth vẫn có bất định.} Có ca transcript thiếu từ hoặc dấu phân cách nhìn thấy trên ảnh; một số dấu và tháng chưa đủ rõ để kết luận. Clean benchmark ở đây loại bỏ khâu ghép polygon khi chấm crop, không có nghĩa mọi nhãn đã sạch. GT gốc và điểm benchmark được giữ nguyên sau review.
 
-\note{\textbf{Giới hạn của phân tích lỗi.} Cả 24 mẫu có nhận xét, mức tin cậy và bằng chứng đối chiếu. Các trường hợp chưa rõ nhãn nguồn cần được thẩm định trước khi hiệu chỉnh. Kết quả hiện tại phục vụ chẩn đoán; chưa xác lập nguyên nhân của mọi lỗi hoặc tạo ra một bộ nhãn đã được xác nhận đầy đủ.}
+\note{\textbf{Kết thúc rà soát ngày 06/11/2026.} Đã đóng review 24/24 mẫu theo quyết định giữ nguyên GT và điểm benchmark: 15 mẫu ghi nhận quan sát, 9 mẫu chưa đủ bằng chứng để sửa nhãn. Đây là kết luận xử lý của lượt rà soát, không chứng nhận mọi nhãn đúng hoặc xác lập nguyên nhân của mọi lỗi.}
 
 \subsection{Kiểm chứng đã thực hiện}
 Lượt kiểm thử ngày 05/11/2026 đạt 134/134 bài kiểm thử và 80 kiểm tra benchmark, gồm đối chiếu đầu vào, độ phủ mẫu và tính lại chỉ số từ dự đoán cùng dữ liệu tham chiếu. Tổng lỗi từng crop khớp kết quả tổng hợp; mã băm giúp truy nguyên đúng đầu vào của phép đo. Tuy nhiên, tính lại bằng cùng bộ đánh giá chưa phải kiểm chứng bằng một triển khai độc lập và không xác nhận độ đúng của nhãn nguồn.

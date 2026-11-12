@@ -4,7 +4,7 @@
 
 **Trạng thái:** Hoàn thành Goal 1 về kỹ thuật: audit, inference, CER/WER/exact-match,
 tests, phân tích trực quan 24 mẫu và bộ minh chứng tái lập. Các nhận xét có ghi
-mức tin cậy và đang chờ người xác nhận trước khi dùng để sửa nhãn.
+mức tin cậy. Ngày 06/11/2026, nhóm xác nhận đóng review 24/24 ca theo quyết định giữ GT: 15 ca ghi nhận quan sát, 9 ca chưa đủ bằng chứng để sửa nhãn. Không còn ca chờ quyết định xử lý; bất định nhãn vẫn được giữ rõ, không chứng nhận mọi nhãn đúng. Hồ sơ cuối: `outputs/ocr/week2/goal1_20261106_review_final/`; hồ sơ ngày 05/11 được bảo toàn.
 
 **Phạm vi báo cáo:** Goal 1. Báo cáo này không nghiệm thu Goal 2/3 của Week 2.
 
@@ -75,7 +75,7 @@ GT gốc được giữ nguyên; không sửa điểm benchmark sau review.
 |---|---:|
 | Lỗi nhận dạng, thường kèm chữ nhỏ/mờ/font khó | 10 |
 | Có cả vấn đề nguồn/layout và lỗi OCR | 7 |
-| Nghi transcript nguồn sai dấu, cần phân xử | 1 |
+| Nghi transcript nguồn sai dấu, giữ GT | 1 |
 | Khác quy ước khoảng trắng/token hóa | 3 |
 | Lỗi OCR kèm khác quy ước định dạng | 3 |
 | **Tổng** | **24** |

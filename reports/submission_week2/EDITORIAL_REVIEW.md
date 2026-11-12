@@ -41,3 +41,7 @@ Kết quả QA cuối: **10 trang A4**, gồm bìa và 9 trang nội dung. Đã 
 ## Điều chỉnh phạm vi tài liệu tham khảo theo yêu cầu
 
 Chỉ giữ năm nguồn công khai có link; bỏ năm mục nội bộ không có link và các trích dẫn số tương ứng. Nguồn số liệu nhóm vẫn ghi ở caption và truy nguyên trong hồ sơ minh chứng. Tên nhóm trên bìa và metadata được khôi phục; không còn tên nhóm ở mục tài liệu tham khảo. PDF vẫn 11 trang. Đã xem các trang thay đổi; các trang còn lại có hash render giống bản đã kiểm tra.
+
+## Goal 1, 06/11/2026
+
+Đã đối chiếu lại đủ 24 crop và ghi quyết định giữ GT được xác nhận. 15 ca ghi nhận quan sát; 9 ca chưa đủ bằng chứng sửa nhãn. Đóng review không đồng nghĩa xác nhận toàn bộ nhãn. Báo cáo và gói v2 dùng hồ sơ mới, không sửa bundle gốc.

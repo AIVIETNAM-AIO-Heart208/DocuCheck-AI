@@ -1,0 +1,20 @@
+{
+  "pdf_sha256": "227c3fabb4cafe24e6ba7617a07f5d5065ff51d82908e424b570d730eb731dbf",
+  "status": "complete",
+  "pages_inspected": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "method": "Inspected all 11 rendered pages in three contact sheets, including changed Goal 1 closure text; automatic bounding-box and glyph checks supplement visual inspection.",
+  "findings": "No clipping, overlaps, broken Vietnamese glyphs, detached headings or unintended sparse pages observed.",
+  "revision": "Goal 1 closure: 24 cases closed, 15 observations and 9 insufficient-evidence labels; original GT and scores retained."
+}

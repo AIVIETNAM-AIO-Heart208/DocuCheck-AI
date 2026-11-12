@@ -2,6 +2,12 @@
 
 Ngày đối chiếu: 06/11/2026, Asia/Saigon. Đường dẫn bên dưới tính từ gốc repo. PDF là báo cáo dành cho giảng viên; hồ sơ này giữ chi tiết kỹ thuật và các điểm chưa xác minh.
 
+## Bộ đính kèm đã chuẩn bị
+
+Bộ nộp: `outputs/submission/DocuCheck_AI_Week2_FINAL_v3.zip`, gồm 38 file (kích thước và SHA-256 tại `evidence/submission_package_verification.json`). Bản giải nén ở `outputs/submission/DocuCheck_AI_Week2_FINAL_v3/`. Có PDF 11 trang, minh chứng tổng hợp ba goal, hai biểu đồ, hướng dẫn đọc, checklist, danh mục nguồn và SHA-256. Danh mục trong ZIP chỉ dẫn các file thực sự đính kèm, không yêu cầu người đọc có workspace.
+
+Đã kiểm CRC của ZIP, đủ danh sách file, hash từng file và bản PDF khớp bản đã qua QA. Kết quả tại `evidence/submission_package_verification.json`. Không chạy lại OCR/evaluation/test suite; không upload. Goal 3 được ghi rõ là số liệu nhóm cung cấp chưa kiểm chứng độc lập. Không kèm ảnh hóa đơn, transcript, dự đoán chi tiết, dữ liệu gốc hoặc model weights.
+
 ## Phân loại nguồn
 
 Nguồn công khai dưới đây bổ sung căn cứ phương pháp, không thay thế các artifact thực nghiệm A/B/C. Bản PDF hiện hành có 11 trang; tài liệu tham khảo chỉ giữ năm nguồn công khai có link. Hồ sơ nội bộ được truy nguyên trong bảng bên dưới, không liệt kê trong mục tham khảo của PDF.
@@ -33,7 +39,7 @@ Nguồn công khai dưới đây bổ sung căn cứ phương pháp, không thay
 | Audit 6.585 crop, split, ID và trùng chính xác | `outputs/ocr/week2/goal1_20261105/audit.json`; `source_transcript_verification.json` | A/B. Đọc audit và kiểm hash tệp; không giải mã hoặc băm lại toàn bộ ảnh raw trong lượt viết báo cáo. Audit khẳng định giữ đúng nguồn, không xác nhận annotation đúng pixel. |
 | CER/WER/exact-match Goal 1, tử số/mẫu số | `outputs/ocr/week2/goal1_20261105/{official_train,official_val}/metrics.json`, `per_crop_metrics.jsonl` | A. Cộng lại lỗi và độ dài đã lưu; đối chiếu số dòng, exact-match ratio, manifest/prediction/runtime hashes. Không tính lại edit distance từ chuỗi. |
 | Thời gian Goal 1 | Các `runtime.json`, metrics; `docs/WEEK2_REPORT.md`, protocol | A/B. 530,07/129,16 giây; 100,24/99,30 ms. Chi phí gồm subprocess, kiểm ảnh, TSV; chưa cô lập tải máy. |
-| 24 mẫu lỗi và 10/7/1/3/3 nhóm nhận định | `outputs/ocr/week2/goal1_20261105/error_review/review_cases.json`, `review_summary.json` | A/B. Đếm nhóm khớp summary. Review lịch sử, không xem lại pixel hay gán tác giả review. Trạng thái phân xử vẫn chờ xác nhận. |
+| 24 mẫu lỗi và 10/7/1/3/3 nhóm nhận định | `outputs/ocr/week2/goal1_20261105/error_review/review_cases.json`, `review_summary.json` | A/B. Đếm nhóm khớp summary. Đã đối chiếu lại 24 crop; quyết định giữ GT được xác nhận ngày 06/11. Hồ sơ hiện hành: `outputs/ocr/week2/goal1_20261106_review_final/`. Đóng 24 ca: 15 ca ghi nhận quan sát, 9 ca chưa đủ bằng chứng sửa nhãn. Không chứng nhận mọi nhãn đúng; bảng nhóm nguyên nhân vẫn là chẩn đoán lịch sử. |
 | Goal 1: 134 tests, 80 checks | `outputs/ocr/week2/goal1_20261105/pytest.txt`, `verification.json`; `docs/WEEK2_REPORT.md` | A/B. Là lịch sử thực thi ngày 05/11, không phải suite chạy ngày 06/11. |
 | Parser và 8.408/104/4.265/4.039 vùng | `docs/PSM_CORRECTED_PROTOCOL.md`; `outputs/ocr/week2/goal2_20261105_corrected/annotation_source_audit.json` | A/B. Sửa text GT không sửa predictions; manifest gốc giữ nguyên. Không dùng CER/WER sai GT để tính cải thiện. |
 | Bảng corrected, hai phạm vi coverage | `outputs/ocr/week2/goal2_20261105_corrected/comparison.csv`, `psm*/metrics.json` | A. Mẫu số 56.619 ký tự/11.584 token; kiểm tỷ số trong bảng. Text scope 4.265; geometry scope 8.304. |
@@ -64,3 +70,5 @@ Tài liệu lịch sử ghi các lượt cuối tuần tự trên CPU sau vấn 
 - `qa/`: log build, ảnh render của bản cuối và text được trích xuất.
 
 Hai biểu đồ trong PDF chỉ dùng số đo tổng hợp hoặc metric của các ca đã lưu. Không đưa ảnh hóa đơn/transcript raw vào PDF do điều kiện chia sẻ nguồn chưa được xác minh; các minh họa định lượng và diễn giải dựa trên review thật. Không tạo lại gallery, sửa nhãn hoặc làm mới benchmark.
+
+Cập nhật Goal 1 ngày 06/11: đóng 24/24 ca theo quyết định giữ GT; 15 ca ghi nhận quan sát, 9 ca chưa đủ bằng chứng sửa nhãn. Hồ sơ ngày 05/11 và benchmark không đổi. Hai tài liệu docs/WEEK2_REPORT.md và docs/WEEK2_HANDOFF.md được cập nhật có chủ đích; các tệp khác trong mốc bảo vệ giữ nguyên. ZIP v3 thay thế bản FINAL cũ khi nộp.
