@@ -16,8 +16,9 @@ def test_vietocr_adapter_returns_whole_crop_text(tmp_path):
             assert return_prob is True
             return " CỬA HÀNG ", 0.9
 
-    engine = VietOCRBaseline(model_path=model, backend=Backend())
+    engine = VietOCRBaseline(model_path=model, backend=Backend(), device="cuda:0")
     assert engine.predict(image) == [{"text": "CỬA HÀNG", "confidence": 0.9}]
+    assert engine.device == "cuda:0"
     assert engine.model_sha256 == hashlib.sha256(b"model").hexdigest()
 
 

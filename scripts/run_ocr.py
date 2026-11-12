@@ -11,7 +11,9 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
 
+from docucheck.ocr.hybrid import run_hybrid_batch  # noqa: E402
 from docucheck.ocr.inference import load_manifest, run_batch  # noqa: E402
+from docucheck.ocr.detectors import PHOCRTextDetector, PaddleOCRTextDetector  # noqa: E402
 from docucheck.ocr.recognizers import PaddleOCRBaseline, VietOCRBaseline  # noqa: E402
 
 
@@ -23,8 +25,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", default="outputs/ocr/tesseract")
     parser.add_argument("--tessdata-dir", default="outputs/ocr/tessdata_fast")
     parser.add_argument("--tesseract", default=None, help="Tesseract executable path, otherwise use PATH")
-    parser.add_argument("--engine", choices=("tesseract", "vietocr", "paddleocr"), default="tesseract")
-    parser.add_argument("--model-path", default=None, help="VietOCR model file or PaddleOCR model directory")
+    parser.add_argument(
+        "--engine",
+        choices=("tesseract", "vietocr", "paddleocr", "paddle-vietocr", "phocr-vietocr"),
+        default="tesseract",
+    )
+    parser.add_argument("--device", choices=("cpu", "cuda:0"), default="cpu", help="Inference device for optional OCR engines")
+    parser.add_argument("--model-path", default=None, help="VietOCR model file or PaddleOCR recognition model directory")
+    parser.add_argument("--detector-model-dir", default=None, help="PaddleOCR text-detector model directory for paddle-vietocr")
+    parser.add_argument("--phocr-model-path", default=None, help="PHOCR ONNX detector model for phocr-vietocr")
     parser.add_argument("--psm", type=int, choices=range(14), default=6, help="Tesseract page segmentation mode")
     parser.add_argument("--limit", type=int, default=None, help="Process only the first N sorted records (smoke run)")
     return parser
@@ -35,7 +44,12 @@ def main(argv: list[str] | None = None) -> int:
     manifest_path = Path(args.manifest)
     if not manifest_path.is_absolute():
         manifest_path = REPOSITORY_ROOT / manifest_path
-    output_dir = Path(args.output_dir)
+    default_outputs = {
+        "paddle-vietocr": "outputs/ocr/paddle_vietocr",
+        "phocr-vietocr": "outputs/ocr/phocr_vietocr",
+    }
+    output_name = default_outputs.get(args.engine, args.output_dir) if args.output_dir == "outputs/ocr/tesseract" else args.output_dir
+    output_dir = Path(output_name)
     if not output_dir.is_absolute():
         output_dir = REPOSITORY_ROOT / output_dir
     if not manifest_path.is_file():
@@ -47,29 +61,87 @@ def main(argv: list[str] | None = None) -> int:
             print(f"No records found for split {args.split!r}", file=sys.stderr)
             return 2
         engine = None
-        if args.engine != "tesseract":
+        if args.engine in {"paddle-vietocr", "phocr-vietocr"}:
+            selected = [record for record in records if record.get("split") == args.split]
+            if any(record.get("source_subset") == "text_recognition" for record in selected):
+                print(
+                    "Hybrid receipt inference does not accept recognition-crop records; "
+                    "use data/processed/manifest.jsonl",
+                    file=sys.stderr,
+                )
+                return 2
+            if args.engine == "phocr-vietocr":
+                detector = PHOCRTextDetector(
+                    **({"model_path": args.phocr_model_path} if args.phocr_model_path else {}),
+                    device=args.device,
+                )
+            else:
+                detector = PaddleOCRTextDetector(
+                    **({"model_dir": args.detector_model_dir} if args.detector_model_dir else {}),
+                    device=args.device,
+                )
+            recognizer = VietOCRBaseline(
+                **({"model_path": args.model_path} if args.model_path else {}),
+                device=args.device,
+            )
+            metadata = run_hybrid_batch(
+                records,
+                dataset_root=args.dataset_root,
+                split=args.split,
+                output_dir=output_dir,
+                limit=args.limit,
+                detector=detector,
+                recognizer=recognizer,
+                merge_lines=args.engine == "phocr-vietocr",
+            )
+        elif args.engine != "tesseract":
             selected = [record for record in records if record.get("split") == args.split]
             if any(record.get("source_subset") != "text_recognition" for record in selected):
                 print(f"Engine {args.engine!r} supports recognition-crop records only", file=sys.stderr)
                 return 2
             if args.engine == "vietocr":
-                engine = VietOCRBaseline(**({"model_path": args.model_path} if args.model_path else {}))
+                engine = VietOCRBaseline(
+                    **({"model_path": args.model_path} if args.model_path else {}),
+                    device=args.device,
+                )
             else:
-                engine = PaddleOCRBaseline(**({"model_dir": args.model_path} if args.model_path else {}))
-        metadata = run_batch(
-            records,
-            dataset_root=args.dataset_root,
-            split=args.split,
-            output_dir=output_dir,
-            limit=args.limit,
-            tessdata_dir=args.tessdata_dir,
-            psm=args.psm,
-            executable=args.tesseract,
-            engine=engine,
-        )
+                engine = PaddleOCRBaseline(
+                    **({"model_dir": args.model_path} if args.model_path else {}),
+                    device=args.device,
+                )
+            metadata = run_batch(
+                records,
+                dataset_root=args.dataset_root,
+                split=args.split,
+                output_dir=output_dir,
+                limit=args.limit,
+                tessdata_dir=args.tessdata_dir,
+                psm=args.psm,
+                executable=args.tesseract,
+                engine=engine,
+            )
+        else:
+            metadata = run_batch(
+                records,
+                dataset_root=args.dataset_root,
+                split=args.split,
+                output_dir=output_dir,
+                limit=args.limit,
+                tessdata_dir=args.tessdata_dir,
+                psm=args.psm,
+                executable=args.tesseract,
+                engine=engine,
+            )
     except Exception as error:
         print(f"OCR run failed: {type(error).__name__}: {error}", file=sys.stderr)
         return 1
+    if args.engine in {"paddle-vietocr", "phocr-vietocr"}:
+        print(json.dumps({key: metadata[key] for key in (
+            "pipeline", "detector", "detector_version", "recognizer", "recognizer_version",
+            "split", "detector_device", "recognizer_device", "manifest_record_count", "images_succeeded", "images_partial", "images_failed",
+            "detected_candidates", "recognized_candidates", "candidate_failures", "receipt_failures",
+        )}, indent=2))
+        return 0 if not metadata["candidate_failures"] and not metadata["receipt_failures"] else 1
     print(json.dumps({key: metadata[key] for key in (
         "engine", "engine_version", "model_names", "model_sha256", "device",
         "split", "manifest_record_count", "images_succeeded", "images_failed",

@@ -81,6 +81,90 @@ def test_ocr_cli_defaults_to_psm_6_and_accepts_explicit_mode():
     assert cli.build_parser().parse_args([]).psm == 6
     assert cli.build_parser().parse_args([]).engine == "tesseract"
     assert cli.build_parser().parse_args(["--psm", "11"]).psm == 11
+    assert cli.build_parser().parse_args(["--engine", "paddle-vietocr"]).engine == "paddle-vietocr"
+    assert cli.build_parser().parse_args(["--engine", "phocr-vietocr"]).engine == "phocr-vietocr"
+    assert cli.build_parser().parse_args(["--device", "cuda:0"]).device == "cuda:0"
+
+
+def test_ocr_cli_rejects_missing_manifest(tmp_path):
+    assert cli.main(["--manifest", str(tmp_path / "missing.jsonl")]) == 2
+
+
+def test_ocr_cli_reports_missing_hybrid_model(tmp_path, capsys):
+    manifest = tmp_path / "manifest.jsonl"
+    manifest.write_text(json.dumps({"image_id": "receipt", "image_path": "receipt.png", "split": "internal_dev"}) + "\n")
+
+    assert cli.main([
+        "--engine", "paddle-vietocr", "--manifest", str(manifest),
+        "--dataset-root", str(tmp_path), "--detector-model-dir", str(tmp_path / "missing-model"),
+    ]) == 1
+    assert "PaddleOCR detector model not found" in capsys.readouterr().err
+
+
+def test_ocr_cli_rejects_recognition_manifest_for_hybrid(tmp_path, capsys):
+    manifest = tmp_path / "recognition_manifest.jsonl"
+    manifest.write_text(json.dumps({
+        "image_id": "crop", "image_path": "crop.png", "split": "official_val",
+        "source_subset": "text_recognition",
+    }) + "\n")
+
+    assert cli.main([
+        "--engine", "paddle-vietocr", "--manifest", str(manifest), "--split", "official_val",
+    ]) == 2
+    assert "does not accept recognition-crop records" in capsys.readouterr().err
+
+
+def test_ocr_cli_reports_missing_phocr_model(tmp_path, capsys):
+    manifest = tmp_path / "manifest.jsonl"
+    manifest.write_text(json.dumps({"image_id": "receipt", "image_path": "receipt.png", "split": "internal_dev"}) + "\n")
+
+    assert cli.main([
+        "--engine", "phocr-vietocr", "--manifest", str(manifest),
+        "--dataset-root", str(tmp_path), "--phocr-model-path", str(tmp_path / "missing.onnx"),
+    ]) == 1
+    assert "PHOCR detector model not found" in capsys.readouterr().err
+
+
+def test_ocr_cli_selects_phocr_hybrid_and_enables_merge(tmp_path, monkeypatch):
+    manifest = tmp_path / "manifest.jsonl"
+    manifest.write_text(json.dumps({"image_id": "receipt", "image_path": "receipt.png", "split": "internal_dev"}) + "\n")
+    calls = {}
+
+    class Detector:
+        pass
+
+    class Recognizer:
+        pass
+
+    def fake_detector(**kwargs):
+        calls["detector"] = kwargs
+        return Detector()
+
+    def fake_recognizer(**kwargs):
+        calls["recognizer"] = kwargs
+        return Recognizer()
+
+    monkeypatch.setattr(cli, "PHOCRTextDetector", fake_detector)
+    monkeypatch.setattr(cli, "VietOCRBaseline", fake_recognizer)
+
+    def fake_run(records, **kwargs):
+        calls["run"] = kwargs
+        return {
+            "pipeline": "phocr-detector-vietocr", "detector": "PHOCRTextDetection", "detector_version": "test",
+            "recognizer": "VietOCR", "recognizer_version": "test", "split": "internal_dev",
+            "detector_device": "cuda:0", "recognizer_device": "cuda:0", "manifest_record_count": 1,
+            "images_succeeded": 1, "images_partial": 0, "images_failed": 0, "detected_candidates": 1,
+            "recognized_candidates": 1, "candidate_failures": 0, "receipt_failures": 0,
+        }
+
+    monkeypatch.setattr(cli, "run_hybrid_batch", fake_run)
+    assert cli.main([
+        "--engine", "phocr-vietocr", "--manifest", str(manifest), "--device", "cuda:0",
+        "--phocr-model-path", "detector.onnx", "--model-path", "vietocr.pth",
+    ]) == 0
+    assert calls["detector"] == {"model_path": "detector.onnx", "device": "cuda:0"}
+    assert calls["recognizer"] == {"model_path": "vietocr.pth", "device": "cuda:0"}
+    assert calls["run"]["merge_lines"] is True
 
 
 def test_batch_runtime_records_explicit_engine_psm(tmp_path):

@@ -27,6 +27,10 @@ recognition_manifest.jsonl --> run_ocr.py --psm 7 --> evaluate_ocr.py --mode cro
                                                         |
                                                         +--> metrics.json
                                                         +--> per_crop_metrics.jsonl
+
+manifest.jsonl --> run_ocr.py --engine phocr-vietocr --> PHOCR detector + merge-line + VietOCR
+                                                         |
+                                                         +--> candidate predictions/failures/runtime
 ```
 
 ## 1. Prepare manifests
@@ -96,6 +100,112 @@ uv run python scripts/run_ocr.py \
 This reads `data/processed/manifest.jsonl` and source receipt images, using `outputs/ocr/tessdata_fast` for the model by default. It writes word-level predictions to `predictions.jsonl`, execution failures to `failures.jsonl`, and model/runtime details to `runtime.json`.
 
 PSM 6 remains the default. Use `--psm` to compare another Tesseract page segmentation assumption; the selected value is recorded in `runtime.json`.
+
+### Optional hybrid receipt OCR
+
+The selected receipt hybrid is `phocr-vietocr`: PHOCR supplies text polygons, the runner merges compatible detector candidates into deterministic line candidates, and VietOCR recognizes one perspective crop per line. It is optional and does not change the default Tesseract path or the recognition-crop benchmark.
+
+PHOCR `1.0.3` requires NumPy `<2`, while the core project requires NumPy `>=2`; keep this stack isolated and do not add it to the core extras. The following versions are the GPU setup used for the benchmark:
+
+```bash
+PHOCR_VENV=/tmp/docucheck-phocr-vietocr-venv
+uv venv "$PHOCR_VENV" --python 3.12
+uv pip install --python "$PHOCR_VENV/bin/python" \
+  --index https://pypi.org/simple \
+  numpy==1.26.4 phocr==1.0.3 onnxruntime-gpu==1.31.1 \
+  vietocr==0.3.13 requests==2.32.4 setuptools==78.1.0
+uv pip install --python "$PHOCR_VENV/bin/python" \
+  --torch-backend cu129 \
+  --index https://download.pytorch.org/whl/cu129 \
+  --index https://pypi.org/simple --upgrade \
+  torch==2.13.0 torchvision==0.28.0
+uv pip install --python "$PHOCR_VENV/bin/python" \
+  --index https://pypi.org/simple numpy==1.26.4 pillow==10.2.0
+```
+
+If the ONNX Runtime wheel cannot find CUDA libraries on the host, expose the CUDA library directory from the tested PyTorch environment before the smoke check. Do not install the project with `-e .` in this environment because that would reintroduce the core NumPy constraint.
+
+Verify the isolated imports and CUDA providers:
+
+```bash
+PHOCR_VENV=/tmp/docucheck-phocr-vietocr-venv
+GPU_LIB_ROOT=/tmp/docucheck-gpu-venv.xwgOpW/lib/python3.12/site-packages
+export LD_LIBRARY_PATH="$GPU_LIB_ROOT/nvidia/cu13/lib:$GPU_LIB_ROOT/nvidia/cudnn/lib:$GPU_LIB_ROOT/nvidia/cuda_runtime/lib:$LD_LIBRARY_PATH"
+"$PHOCR_VENV/bin/python" -c \
+  "import importlib.metadata as m, onnxruntime as ort, torch, vietocr; print(m.version('phocr'), m.version('vietocr'), ort.get_available_providers(), torch.cuda.is_available())"
+```
+
+Download the PHOCR detector and VietOCR weights into ignored local output paths:
+
+```bash
+"$PHOCR_VENV/bin/python" scripts/download_recognition_models.py --engine phocr-detector
+"$PHOCR_VENV/bin/python" scripts/download_recognition_models.py --engine vietocr
+```
+
+Run it on the receipt manifest, not `recognition_manifest.jsonl`:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 "$PHOCR_VENV/bin/python" scripts/run_ocr.py \
+  --engine phocr-vietocr --device cuda:0 \
+  --manifest data/processed/manifest.jsonl \
+  --split internal_dev \
+  --output-dir outputs/ocr/phocr_vietocr_gpu_internal_dev
+```
+
+The default model paths are `outputs/ocr/models/vietocr/vgg_transformer.pth` and `outputs/ocr/models/phocr/official_models/ch_PP-OCRv5_server_det.onnx`; override them with `--model-path` and `--phocr-model-path`. The detector adapter invokes PHOCR detection only; PH-OCRv1 recognition is not used. The output contains deterministic `predictions.jsonl`, `failures.jsonl`, and `runtime.json`: prediction rows retain the receipt ID, line polygon, merged `source_candidate_ids`, detector confidence when available, recognized text, recognition confidence, and statuses. Runtime metadata records detector/recognizer versions, model checksums, devices, pre/post-merge counts, crop latency, and the no-padding preprocessing choice.
+
+Line merging uses vertical overlap `>= 0.30` or center distance `<= 0.50 * min(height)`, plus horizontal gap `<= 2.5 * max(height)`. Multi-member lines use their axis-aligned union polygon; single-member lines preserve the detector quadrilateral. The selected path applies no crop padding; the rejected 5% padding experiment remains benchmark-only. This path produces text evidence for later layout-aware/KIE stages, not semantic field labels or business-validation results. A nonzero exit means at least one candidate or receipt failed.
+
+The existing `paddle-vietocr` engine remains available as a comparison path. It detects with PaddleOCR and recognizes each unmerged source-image crop with VietOCR:
+
+```bash
+uv sync --extra vietocr --extra paddleocr
+uv run --extra vietocr python scripts/download_recognition_models.py --engine vietocr
+uv run --extra paddleocr python scripts/download_recognition_models.py --engine paddleocr-detector
+```
+
+Run it on the receipt manifest, not `recognition_manifest.jsonl`:
+
+```bash
+uv run --extra vietocr --extra paddleocr python scripts/run_ocr.py \
+  --engine paddle-vietocr \
+  --manifest data/processed/manifest.jsonl \
+  --split internal_dev \
+  --output-dir outputs/ocr/paddle_vietocr
+```
+
+The CLI defaults match the documented local model paths: `outputs/ocr/models/vietocr/vgg_transformer.pth` for VietOCR and `outputs/ocr/models/paddleocr/official_models/PP-OCRv6_medium_det` for the PaddleOCR detector. Override them with `--model-path` and `--detector-model-dir` when needed. The hybrid output contains deterministic `predictions.jsonl`, `failures.jsonl`, and `runtime.json`: prediction rows retain the receipt ID, source polygon, candidate ID, detector confidence, recognized text, recognition confidence, and statuses; failures distinguish candidate-stage errors from receipt-stage errors; runtime metadata records both engines, model identities/checksums, preprocessing, split, counts, and latency.
+
+This path only produces text evidence for the later layout-aware/KIE stages. It does not assign field labels, modify either manifest, or provide KIE/business-validation metrics. A nonzero exit means at least one candidate or receipt failed.
+
+The checked-in optional extras intentionally keep the default environment CPU-only. For a local NVIDIA GPU environment, use a separate virtualenv so Paddle's CUDA runtime and PyTorch's CUDA runtime do not overwrite the CPU stack:
+
+```bash
+uv venv /tmp/docucheck-gpu-venv --python 3.12
+uv pip install --python /tmp/docucheck-gpu-venv/bin/python -e .
+uv pip install --python /tmp/docucheck-gpu-venv/bin/python \
+  --index https://pypi.org/simple paddleocr==3.7.0 vietocr==0.3.13 setuptools==78.1.0
+uv pip install --python /tmp/docucheck-gpu-venv/bin/python \
+  --index https://www.paddlepaddle.org.cn/packages/stable/cu129/ \
+  --index https://pypi.org/simple paddlepaddle-gpu==3.3.1
+uv pip install --python /tmp/docucheck-gpu-venv/bin/python \
+  --torch-backend cu129 \
+  --index https://download.pytorch.org/whl/cu129 \
+  --index https://pypi.org/simple --upgrade \
+  torch==2.13.0 torchvision==0.28.0
+```
+
+Verify both runtimes before inference, then pass `--device cuda:0`:
+
+```bash
+/tmp/docucheck-gpu-venv/bin/python -c \
+  "import torch, paddle; print(torch.cuda.is_available(), paddle.device.is_compiled_with_cuda())"
+CUDA_VISIBLE_DEVICES=0 /tmp/docucheck-gpu-venv/bin/python scripts/run_ocr.py \
+  --engine paddle-vietocr --device cuda:0 \
+  --split internal_dev --output-dir outputs/ocr/paddle_vietocr_gpu_internal_dev
+```
+
+The Paddle detector records `gpu:0` and VietOCR records `cuda:0` in `runtime.json`. The CUDA environment tested locally used an RTX 4060 with driver 595.99.02; choose matching wheels for another host.
 
 On Windows, `--tesseract "C:\Program Files\Tesseract-OCR\tesseract.exe"` selects
 an executable outside PATH. The controlled PSM comparison and a discovered

@@ -33,6 +33,10 @@ def _sha256_path(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _paddle_device(device: str) -> str:
+    return device.replace("cuda", "gpu", 1) if device.startswith("cuda") else device
+
+
 def _image(path: str | Path) -> Image.Image:
     try:
         return Image.open(path).convert("RGB")
@@ -52,10 +56,12 @@ class VietOCRBaseline:
         self,
         *,
         model_path: str | Path = "outputs/ocr/models/vietocr/vgg_transformer.pth",
+        device: str = "cpu",
         backend: Any | None = None,
     ):
         started = time.perf_counter()
         self.model_path = _local_path(model_path)
+        self.device = device
         if not self.model_path.is_file():
             raise FileNotFoundError(
                 f"VietOCR model not found at {self.model_path}; run scripts/download_recognition_models.py --engine vietocr"
@@ -67,6 +73,11 @@ class VietOCRBaseline:
                 from vietocr.tool.predictor import Predictor
             except ImportError as error:
                 raise RuntimeError("VietOCR dependencies are missing; run uv sync --extra vietocr") from error
+            if self.device.startswith("cuda"):
+                import torch
+
+                if not torch.cuda.is_available():
+                    raise RuntimeError("VietOCR CUDA requested but the installed PyTorch has no CUDA support")
             config = Cfg.load_config_from_name(self.model_name)
             config["weights"] = str(self.model_path)
             config["device"] = self.device
@@ -102,10 +113,12 @@ class PaddleOCRBaseline:
         self,
         *,
         model_dir: str | Path = "outputs/ocr/models/paddleocr/official_models/latin_PP-OCRv5_mobile_rec",
+        device: str = "cpu",
         backend: Any | None = None,
     ):
         started = time.perf_counter()
         self.model_dir = _local_path(model_dir)
+        self.device = _paddle_device(device)
         if not self.model_dir.is_dir():
             raise FileNotFoundError(
                 f"PaddleOCR model not found at {self.model_dir}; run scripts/download_recognition_models.py --engine paddleocr"
@@ -115,6 +128,11 @@ class PaddleOCRBaseline:
                 from paddleocr import TextRecognition
             except ImportError as error:
                 raise RuntimeError("PaddleOCR dependencies are missing; run uv sync --extra paddleocr") from error
+            if self.device.startswith("gpu"):
+                import paddle
+
+                if not paddle.device.is_compiled_with_cuda():
+                    raise RuntimeError("Paddle GPU requested but the installed PaddlePaddle has no CUDA support")
             backend = TextRecognition(model_name=self.model_name, model_dir=str(self.model_dir), device=self.device)
         self.backend = backend
         self.engine_version = importlib.metadata.version("paddleocr") if backend.__class__.__module__.startswith(("paddleocr", "paddlex")) else "test"

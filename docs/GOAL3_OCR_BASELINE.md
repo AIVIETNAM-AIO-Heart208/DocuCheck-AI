@@ -27,6 +27,12 @@ Goal 3 đo một **OCR baseline** trên ảnh biên lai và khảo sát nơi ph�
                                            per_region_alignment.jsonl
                                            │
                                            └─ notebook 04: biểu đồ, overlay và xem ca lỗi
+
+Luồng thử nghiệm riêng cho receipt OCR là `run_ocr.py --engine paddle-vietocr`: PaddleOCR
+chỉ phát hiện polygon trên ảnh receipt, sau đó VietOCR nhận dạng từng crop. Luồng này ghi
+candidate evidence vào thư mục riêng và không gán nhãn KIE, không dùng
+`recognition_manifest.jsonl`, cũng không thay đổi baseline Tesseract. Có thể chọn `--device
+cuda:0` trong một virtualenv GPU riêng; CPU vẫn là mặc định của project.
 ```
 
 1. `scripts/prepare_dataset.py` tạo `data/processed/manifest.jsonl`. Mỗi ảnh có `split`; một phần ảnh train có `ocr_regions` từ sidecar transcript toàn trang. Các vùng này khác nhãn KIE trong `regions`. `internal_dev` là tập dev nội bộ, không phải official validation.
