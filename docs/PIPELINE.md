@@ -28,7 +28,7 @@ recognition_manifest.jsonl --> run_ocr.py --psm 7 --> evaluate_ocr.py --mode cro
                                                         +--> metrics.json
                                                         +--> per_crop_metrics.jsonl
 
-manifest.jsonl --> run_ocr.py --engine phocr-vietocr --> PHOCR detector + merge-line + VietOCR
+manifest.jsonl --> run_ocr.py --engine phocr-vietocr --> PHOCR detector + VietOCR per candidate
                                                          |
                                                          +--> candidate predictions/failures/runtime
 ```
@@ -103,7 +103,7 @@ PSM 6 remains the default. Use `--psm` to compare another Tesseract page segment
 
 ### Optional hybrid receipt OCR
 
-The selected receipt hybrid is `phocr-vietocr`: PHOCR supplies text polygons, the runner merges compatible detector candidates into deterministic line candidates, and VietOCR recognizes one perspective crop per line. It is optional and does not change the default Tesseract path or the recognition-crop benchmark.
+The selected receipt hybrid is `phocr-vietocr`: PHOCR supplies text polygons and VietOCR recognizes one perspective crop per validated detector candidate. It is optional and does not change the default Tesseract path or the recognition-crop benchmark.
 
 PHOCR `1.0.3` requires NumPy `<2`, while the core project requires NumPy `>=2`; keep this stack isolated and do not add it to the core extras. The following versions are the GPU setup used for the benchmark:
 
@@ -152,9 +152,9 @@ CUDA_VISIBLE_DEVICES=0 "$PHOCR_VENV/bin/python" scripts/run_ocr.py \
   --output-dir outputs/ocr/phocr_vietocr_gpu_internal_dev
 ```
 
-The default model paths are `outputs/ocr/models/vietocr/vgg_transformer.pth` and `outputs/ocr/models/phocr/official_models/ch_PP-OCRv5_server_det.onnx`; override them with `--model-path` and `--phocr-model-path`. The detector adapter invokes PHOCR detection only; PH-OCRv1 recognition is not used. The output contains deterministic `predictions.jsonl`, `failures.jsonl`, and `runtime.json`: prediction rows retain the receipt ID, line polygon, merged `source_candidate_ids`, detector confidence when available, recognized text, recognition confidence, and statuses. Runtime metadata records detector/recognizer versions, model checksums, devices, pre/post-merge counts, crop latency, and the no-padding preprocessing choice.
+The default model paths are `outputs/ocr/models/vietocr/vgg_transformer.pth` and `outputs/ocr/models/phocr/official_models/ch_PP-OCRv5_server_det.onnx`; override them with `--model-path` and `--phocr-model-path`. The detector adapter invokes PHOCR detection only; PH-OCRv1 recognition is not used. The output contains deterministic `predictions.jsonl`, `failures.jsonl`, and `runtime.json`: prediction rows retain the receipt ID, detector candidate polygon and ID, detector confidence when available, recognized text, recognition confidence, and statuses. Runtime metadata records detector/recognizer versions, model checksums, devices, direct candidate counts, crop latency, and the no-padding preprocessing choice.
 
-Line merging uses vertical overlap `>= 0.30` or center distance `<= 0.50 * min(height)`, plus horizontal gap `<= 2.5 * max(height)`. Multi-member lines use their axis-aligned union polygon; single-member lines preserve the detector quadrilateral. The selected path applies no crop padding; the rejected 5% padding experiment remains benchmark-only. This path produces text evidence for later layout-aware/KIE stages, not semantic field labels or business-validation results. A nonzero exit means at least one candidate or receipt failed.
+Each validated detector candidate is cropped and recognized independently. The selected path applies no crop padding; the rejected 5% padding experiment remains benchmark-only. This path produces text evidence for later layout-aware/KIE stages, not semantic field labels or business-validation results. A nonzero exit means at least one candidate or receipt failed.
 
 The existing `paddle-vietocr` engine remains available as a comparison path. It detects with PaddleOCR and recognizes each unmerged source-image crop with VietOCR:
 

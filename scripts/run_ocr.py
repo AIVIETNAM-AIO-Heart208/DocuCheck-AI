@@ -92,7 +92,6 @@ def main(argv: list[str] | None = None) -> int:
                 limit=args.limit,
                 detector=detector,
                 recognizer=recognizer,
-                merge_lines=args.engine == "phocr-vietocr",
             )
         elif args.engine != "tesseract":
             selected = [record for record in records if record.get("split") == args.split]

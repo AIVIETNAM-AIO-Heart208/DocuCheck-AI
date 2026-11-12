@@ -2,7 +2,7 @@ import json
 
 from PIL import Image
 
-from docucheck.ocr.hybrid import merge_line_candidates, run_hybrid_batch
+from docucheck.ocr.hybrid import run_hybrid_batch
 
 
 class FakeDetector:
@@ -47,35 +47,6 @@ class FakeRecognizer:
         if self.empty:
             return []
         return [{"text": "TỔNG CỘNG 39.000", "confidence": 0.8}]
-
-
-def _candidate(candidate_id, polygon, confidence=None):
-    return {
-        "candidate_id": candidate_id,
-        "polygon": polygon,
-        "confidence": confidence,
-    }
-
-
-def test_merge_line_preserves_single_polygon_and_orders_lines():
-    single = [[12.0, 10.0], [42.0, 12.0], [40.0, 22.0], [10.0, 20.0]]
-    merged = merge_line_candidates([
-        _candidate("b", [[50, 40], [70, 40], [70, 50], [50, 50]], 0.8),
-        _candidate("a", single, 0.9),
-    ])
-    assert [row["source_candidate_ids"] for row in merged] == [["a"], ["b"]]
-    assert merged[0]["polygon"] == single
-
-
-def test_merge_line_unions_same_line_and_keeps_separate_line():
-    merged = merge_line_candidates([
-        _candidate("right", [[35, 10], [55, 10], [55, 20], [35, 20]], 0.8),
-        _candidate("left", [[5, 10], [25, 10], [25, 20], [5, 20]], 0.9),
-        _candidate("below", [[5, 35], [25, 35], [25, 45], [5, 45]], 0.7),
-    ])
-    assert [row["source_candidate_ids"] for row in merged] == [["left", "right"], ["below"]]
-    assert merged[0]["polygon"] == [[5.0, 10.0], [55.0, 10.0], [55.0, 20.0], [5.0, 20.0]]
-    assert merged[0]["confidence"] == 0.8
 
 
 def _records(tmp_path):
@@ -154,7 +125,7 @@ def test_hybrid_batch_records_empty_recognition_as_successful_candidate(tmp_path
     assert (output / "failures.jsonl").read_text(encoding="utf-8") == ""
 
 
-def test_hybrid_batch_merge_line_preserves_members_and_disables_padding(tmp_path):
+def test_hybrid_batch_preserves_direct_candidates_and_disables_padding(tmp_path):
     image = tmp_path / "images" / "receipt.png"
     image.parent.mkdir()
     Image.new("RGB", (80, 50), "white").save(image)
@@ -179,14 +150,17 @@ def test_hybrid_batch_merge_line_preserves_members_and_disables_padding(tmp_path
         output_dir=tmp_path / "out",
         detector=Detector(),
         recognizer=FakeRecognizer(),
-        merge_lines=True,
     )
     prediction = json.loads((tmp_path / "out" / "predictions.jsonl").read_text(encoding="utf-8"))
-    candidate = prediction["predictions"][0]
-    assert candidate["candidate_id"] == "receipt:line-0001"
-    assert candidate["source_candidate_ids"] == ["receipt:candidate-0001", "receipt:candidate-0002"]
-    assert metadata["pre_merge_candidates"] == 2
-    assert metadata["post_merge_candidates"] == 1
+    candidates = prediction["predictions"]
+    assert [candidate["candidate_id"] for candidate in candidates] == [
+        "receipt:candidate-0001", "receipt:candidate-0002",
+    ]
+    assert all("source_candidate_ids" not in candidate for candidate in candidates)
+    assert metadata["detected_candidates"] == 2
+    assert metadata["recognized_candidates"] == 2
+    assert "line_merge" not in metadata
+    assert "pre_merge_candidates" not in metadata
     assert metadata["preprocessing"]["crop"]["padding_percent"] == 0
 
 

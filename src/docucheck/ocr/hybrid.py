@@ -10,8 +10,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
 from docucheck.data.loader import resolve_dataset_root
 from docucheck.ocr.detectors import crop_polygon
 
@@ -50,76 +48,6 @@ def _failure(
     return row
 
 
-def merge_line_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Group detector candidates into deterministic line-level crops."""
-    items = []
-    for index, candidate in enumerate(candidates):
-        points = np.asarray(candidate["polygon"], dtype=np.float32)
-        x1, y1 = points.min(axis=0)
-        x2, y2 = points.max(axis=0)
-        items.append({
-            "index": index,
-            "candidate": candidate,
-            "candidate_id": candidate.get("candidate_id", f"candidate-{index + 1:04d}"),
-            "x1": float(x1),
-            "y1": float(y1),
-            "x2": float(x2),
-            "y2": float(y2),
-            "cy": float((y1 + y2) / 2),
-            "height": max(1.0, float(y2 - y1)),
-        })
-    items.sort(key=lambda item: (item["cy"], item["x1"], item["index"]))
-    groups: list[dict[str, Any]] = []
-    for item in items:
-        selected = None
-        for group in groups:
-            min_height = min(item["height"], group["height"])
-            overlap = max(0.0, min(item["y2"], group["y2"]) - max(item["y1"], group["y1"])) / min_height
-            center_gap = abs(item["cy"] - group["cy"])
-            horizontal_gap = max(0.0, item["x1"] - group["x2"], group["x1"] - item["x2"])
-            if (overlap >= 0.30 or center_gap <= 0.50 * min_height) and horizontal_gap <= 2.5 * max(item["height"], group["height"]):
-                selected = group
-                break
-        if selected is None:
-            selected = {
-                "items": [],
-                "x1": item["x1"],
-                "y1": item["y1"],
-                "x2": item["x2"],
-                "y2": item["y2"],
-                "cy": item["cy"],
-                "height": item["height"],
-            }
-            groups.append(selected)
-        selected["items"].append(item)
-        selected["x1"] = min(selected["x1"], item["x1"])
-        selected["y1"] = min(selected["y1"], item["y1"])
-        selected["x2"] = max(selected["x2"], item["x2"])
-        selected["y2"] = max(selected["y2"], item["y2"])
-        selected["cy"] = sum(member["cy"] for member in selected["items"]) / len(selected["items"])
-        selected["height"] = selected["y2"] - selected["y1"]
-    groups.sort(key=lambda group: (group["y1"], group["x1"]))
-
-    merged = []
-    for ordinal, group in enumerate(groups, 1):
-        members = sorted(group["items"], key=lambda item: (item["x1"], item["index"]))
-        member_candidates = [member["candidate"] for member in members]
-        polygon = (
-            member_candidates[0]["polygon"]
-            if len(member_candidates) == 1
-            else [[group["x1"], group["y1"]], [group["x2"], group["y1"]], [group["x2"], group["y2"]], [group["x1"], group["y2"]]]
-        )
-        confidences = [candidate.get("confidence") for candidate in member_candidates if candidate.get("confidence") is not None]
-        merged.append({
-            "line_index": ordinal,
-            "polygon": polygon,
-            "confidence": min(confidences) if confidences else None,
-            "source_candidate_ids": [member["candidate_id"] for member in members],
-            "region_index": member_candidates[0].get("region_index"),
-        })
-    return merged
-
-
 def run_hybrid_batch(
     records: list[dict[str, Any]],
     *,
@@ -129,7 +57,6 @@ def run_hybrid_batch(
     limit: int | None = None,
     detector: Any,
     recognizer: Any,
-    merge_lines: bool = False,
 ) -> dict[str, Any]:
     """Run a text detector followed by VietOCR on receipt records."""
     if limit is not None and limit <= 0:
@@ -178,21 +105,16 @@ def run_hybrid_batch(
                     image_failures.append(issue_failure)
                     candidate_failures += 1
 
-                candidates = []
-                for ordinal, candidate in enumerate(detected_candidates, 1):
-                    candidates.append({
+                candidates = [
+                    {
                         **candidate,
                         "candidate_id": f"{image_id}:candidate-{ordinal:04d}",
-                    })
-                if merge_lines:
-                    candidates = merge_line_candidates(candidates)
+                    }
+                    for ordinal, candidate in enumerate(detected_candidates, 1)
+                ]
 
                 for ordinal, candidate in enumerate(candidates, 1):
-                    candidate_id = (
-                        f"{image_id}:line-{ordinal:04d}"
-                        if merge_lines
-                        else candidate["candidate_id"]
-                    )
+                    candidate_id = candidate["candidate_id"]
                     candidate_count += 1
                     crop_path = Path(crop_dir) / f"{len(predictions):06d}-{ordinal:04d}.png"
                     try:
@@ -232,8 +154,6 @@ def run_hybrid_batch(
                             "recognition_status": recognition_status,
                             "status": "ok",
                         })
-                        if merge_lines:
-                            image_predictions[-1]["source_candidate_ids"] = candidate["source_candidate_ids"]
                         recognized_count += 1
                     except Exception as error:  # Preserve candidate failures separately from empty text.
                         image_failures.append(_failure(
@@ -288,12 +208,6 @@ def run_hybrid_batch(
         "recognizer_device": recognizer.device,
         "preprocessing": {
             "detector": detector.preprocessing,
-            "line_merge": {
-                "enabled": merge_lines,
-                "vertical_overlap_threshold": 0.30,
-                "center_gap_height_ratio": 0.50,
-                "horizontal_gap_height_ratio": 2.5,
-            },
             "crop": {
                 "mode": "perspective-rectify",
                 "output": "temporary PNG",
@@ -313,17 +227,8 @@ def run_hybrid_batch(
         "images_failed": receipt_failures,
         "detected_candidates": candidate_count,
         "source_detected_candidates": detected_candidate_count,
-        "pre_merge_candidates": detected_candidate_count,
-        "post_merge_candidates": candidate_count,
         "recognized_candidates": recognized_count,
         "empty_hypotheses": empty_hypotheses,
-        "merged_candidates": candidate_count if merge_lines else None,
-        "line_merge": {
-            "enabled": merge_lines,
-            "vertical_overlap_threshold": 0.30,
-            "center_gap_height_ratio": 0.50,
-            "horizontal_gap_height_ratio": 2.5,
-        },
         "candidate_failures": candidate_failures,
         "receipt_failures": receipt_failures,
         "detector_model_load_seconds": detector.model_load_seconds,
