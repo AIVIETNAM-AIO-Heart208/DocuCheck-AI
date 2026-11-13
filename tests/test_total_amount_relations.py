@@ -89,6 +89,38 @@ def test_specific_discount_precedes_generic_total():
     assert role("Phải trả sau đặt cọc") == "balance_due"
 
 
+@pytest.mark.parametrize("reverse,slope", [(False, 0), (True, -0.06)])
+def test_fragmented_labels_form_phrases_without_crossing_rows(reverse, slope):
+    mapping = {}
+    for row, fragments in enumerate(
+        [
+            [("TỔNG", 10, 45), ("TIẾN", 60, 45), ("PHẢI T. TOÁN", 110, 115)],
+            [("TỔNG", 10, 45), ("TIỀN", 60, 45), ("Ã GIẢM", 110, 65)],
+            [("TIỀN", 10, 45), ("KHÁCH", 60, 60), ("TRẢ", 125, 40)],
+        ]
+    ):
+        for i, (text, x, width) in enumerate(fragments):
+            mapping[f"L{row}_{i}"] = region(
+                text, x, 100 + row * 25 + slope * x, width, slope
+            )
+        mapping[f"V{row}"] = region(
+            ["6.000", "0", "10.000"][row], 350, 100 + row * 25 + slope * 350, 65, slope
+        )
+    if reverse:
+        mapping = dict(reversed(list(mapping.items())))
+    groups = build({"mapping": mapping})
+    annotate(groups)
+    total = next(
+        k for k, c in groups["total_amount"].items() if c["parsed_amount"] == 6000
+    )
+    discount = next(
+        c for c in groups["total_amount"].values() if c["parsed_amount"] == 0
+    )
+    assert groups["total_amount"][total]["label_phrase"] == "TỔNG TIẾN PHẢI T. TOÁN"
+    assert discount["role"] == "discount"
+    assert guard({"total_amount": total}, groups)[0]["total_amount"] == total
+
+
 def test_cash_change_contradiction_abstains_without_inventing_amount():
     mapping = {}
     for i, (label, amount) in enumerate(

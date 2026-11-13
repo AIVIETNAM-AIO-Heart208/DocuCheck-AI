@@ -4,7 +4,10 @@ import re
 import unicodedata
 from itertools import pairwise
 
+from .datetime_parser import dates as find_dates
+from .datetime_parser import times as find_times
 from .money import TOKEN
+from .reading_order import order_regions
 from .relations import labels as related_labels
 
 
@@ -39,10 +42,15 @@ def build(adapted: dict) -> dict:
         text = r["text"]
         add("seller_name", [span(key, 0, len(text))])
         for match in re.finditer(TOKEN, text):
+            if any(d.start() <= match.start() < d.end() for d in find_dates(text)):
+                continue
             labels = related_labels(regions, key, match)
             add("total_amount", [span(key, *match.span())], labels)
-        dates = list(re.finditer(r"(?<!\d)\d{1,2}[/-]\d{1,2}[/-]\d{4}(?!\d)", text))
-        times = list(re.finditer(r"(?<!\d)\d{1,2}:\d{2}(?::\d{2})?(?!\d)", text))
+            groups["total_amount"][next(reversed(groups["total_amount"]))][
+                "value_bbox"
+            ] = r["bbox"]
+        dates = find_dates(text)
+        times = find_times(text)
         for date in dates:
             nearby = [
                 t
@@ -101,6 +109,7 @@ def resolve(selection: dict, groups: dict, adapted: dict, normalize) -> dict:
     output = {}
     for field in expected:
         chosen = selection[field]
+        reading_order = None
         if field == "seller_address":
             if (
                 not isinstance(chosen, list)
@@ -111,6 +120,7 @@ def resolve(selection: dict, groups: dict, adapted: dict, normalize) -> dict:
                 or len(set(chosen)) != len(chosen)
             ):
                 raise ValueError("Invalid address IDs")
+            reading_order = order_regions(adapted["mapping"], chosen)
             spans = [
                 {
                     "region_id": k,
@@ -118,7 +128,7 @@ def resolve(selection: dict, groups: dict, adapted: dict, normalize) -> dict:
                     "end": len(adapted["mapping"][k]["text"]),
                     "text": adapted["mapping"][k]["text"],
                 }
-                for k in chosen
+                for k in reading_order.region_ids
             ]
             labels = []
         else:
@@ -138,10 +148,17 @@ def resolve(selection: dict, groups: dict, adapted: dict, normalize) -> dict:
             ):
                 raise ValueError("Invalid exact span")
         ids = list(dict.fromkeys(s["region_id"] for s in spans))
-        raw = ("\n" if field in ("seller_address", "seller_name") else " ").join(
-            s["text"] for s in spans
-        ) or None
+        raw = (
+            reading_order.text(adapted["mapping"])
+            if reading_order is not None
+            else ("\n" if field == "seller_name" else " ").join(
+                s["text"] for s in spans
+            )
+            or None
+        )
         value, issues = normalize(field, raw) if raw else (None, [])
+        if reading_order is not None and reading_order.ambiguous:
+            issues.append("ambiguous_address_reading_order")
         precision = None
         display = raw
         if field == "transaction_datetime" and value:
@@ -152,6 +169,9 @@ def resolve(selection: dict, groups: dict, adapted: dict, normalize) -> dict:
                 if ":" in raw
                 else "date"
             )
+            from .datetime_parser import parse as parse_datetime
+
+            _, precision, _ = parse_datetime(raw)
             if precision == "minute":
                 value = value[:16]
             display = " ".join(s["text"] for s in spans)
@@ -180,4 +200,6 @@ def resolve(selection: dict, groups: dict, adapted: dict, normalize) -> dict:
             if issues
             else "ok",
         }
+        if reading_order is not None:
+            output[field]["reading_order"] = reading_order.audit(chosen)
     return output

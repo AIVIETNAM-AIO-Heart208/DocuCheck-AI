@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import datetime as dt
 import html
 import json
 import math
@@ -14,6 +13,7 @@ from typing import Any
 
 from docucheck.extraction.candidates import build, resolve, schema
 from docucheck.extraction.invoice_total import annotate, guard
+from docucheck.extraction.reading_order import order_regions
 
 RUNTIME_CONFIG = json.loads(
     (Path(__file__).resolve().parents[3] / "configs/qwen3_4b_q4_k_m.json").read_text()
@@ -142,21 +142,13 @@ def normalize(field: str, raw: str) -> tuple[Any, list[str]]:
             (value, []) if value is not None else (None, ["ambiguous_amount_separator"])
         )
     if field == "transaction_datetime":
-        dates = re.findall(r"(?<!\d)(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?!\d)", text)
-        times = re.findall(r"(?<!\d)(\d{1,2}):(\d{2})(?::(\d{2}))?(?!\d)", text)
-        if len(dates) != 1 or len(times) > 1:
-            return None, ["ambiguous_datetime"]
-        try:
-            day, month, year = map(int, dates[0])
-            date = dt.date(year, month, day)
-            if not times:
-                return date.isoformat(), ["time_missing"]
-            hour, minute, second = times[0]
-            return dt.datetime.combine(
-                date, dt.time(int(hour), int(minute), int(second or 0))
-            ).isoformat(), []
-        except ValueError:
-            return None, ["invalid_datetime"]
+        from .datetime_parser import parse as parse_datetime
+
+        value, precision, issues = parse_datetime(text)
+        # Preserve legacy normalize API; resolver retains actual source precision.
+        if value and precision == "minute":
+            value += ":00"
+        return value, issues
     return text, []
 
 
@@ -177,9 +169,22 @@ def validate(selection: dict, adapted: dict) -> dict:
             raise ValueError(f"Invalid/duplicate region IDs: {field}")
         if any(k not in adapted["mapping"] for k in ids):
             raise ValueError(f"Unknown region ID: {field}")
+        reading_order = (
+            order_regions(adapted["mapping"], ids)
+            if field == "seller_address"
+            else None
+        )
+        if reading_order is not None:
+            ids = reading_order.region_ids
         evidence = [adapted["mapping"][key] for key in ids]
-        raw = "\n".join(e["text"] for e in evidence) or None
+        raw = (
+            reading_order.text(adapted["mapping"])
+            if reading_order is not None
+            else "\n".join(e["text"] for e in evidence) or None
+        )
         normalized, issues = normalize(field, raw) if raw else (None, [])
+        if reading_order is not None and reading_order.ambiguous:
+            issues.append("ambiguous_address_reading_order")
         if adapted["ocr_status"] != "ok":
             issues.append("partial_ocr")
         if any(
@@ -202,6 +207,8 @@ def validate(selection: dict, adapted: dict) -> dict:
             else None,
             "selection_confidence": None,
         }
+        if reading_order is not None:
+            result[field]["reading_order"] = reading_order.audit(entry["region_ids"])
     return result
 
 
@@ -334,7 +341,9 @@ def render_demo(results: list[dict], directory: Path, images: dict[str, str]) ->
             )
             for field in FIELDS:
                 v = row["fields"][field]
-                label = "total_amount (Tổng hóa đơn)" if field == "total_amount" else field
+                label = (
+                    "total_amount (Tổng hóa đơn)" if field == "total_amount" else field
+                )
                 display = v.get("display_value", v["value_raw"])
                 display = "Chưa xác định" if display is None else str(display)
                 score = (
@@ -348,7 +357,12 @@ def render_demo(results: list[dict], directory: Path, images: dict[str, str]) ->
             (f"receipts/{identity}.json", "JSON 4 field"),
             (images.get(identity, ""), "Ảnh gốc"),
             ("ocr/predictions.jsonl", "OCR JSON"),
-            (f"responses/{identity}.json", "Qwen JSON"),
+            (
+                f"responses/{identity}.json"
+                if (directory / "responses" / f"{identity}.json").exists()
+                else f"responses/{identity}.error.json",
+                "Qwen JSON" if row["status"] == "ok" else "Chi tiết lỗi",
+            ),
             ("extractions.jsonl", "Kết quả JSON"),
             ("report.md", "Đánh giá"),
         ]

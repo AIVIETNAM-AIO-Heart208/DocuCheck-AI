@@ -68,7 +68,7 @@ def audit(directory, gpu=False):
                     str(target),
                     "--reuse-ocr",
                 ],
-                check=True,
+                check=False,
                 cwd=ROOT,
             )
         after = (
@@ -87,7 +87,17 @@ def audit(directory, gpu=False):
             )
             groups = build(adapted)
             annotate(groups)
-            selection = dict(before["raw_model_selection"])
+            selection = dict(
+                before.get(
+                    "raw_model_selection",
+                    {
+                        "seller_name": None,
+                        "seller_address": [],
+                        "transaction_datetime": None,
+                        "total_amount": None,
+                    },
+                )
+            )
             chosen = selection["total_amount"]
             matches = (
                 [
@@ -104,7 +114,18 @@ def audit(directory, gpu=False):
                 "value_normalized"
             ]
             raw_before = resolve(
-                before["raw_model_selection"], old, adapted, normalize
+                before.get(
+                    "raw_model_selection",
+                    {
+                        "seller_name": None,
+                        "seller_address": [],
+                        "transaction_datetime": None,
+                        "total_amount": None,
+                    },
+                ),
+                old,
+                adapted,
+                normalize,
             )["total_amount"]["value_normalized"]
             truth, annotations = expected(records[key])
             current = after.get(key, {})
@@ -120,7 +141,7 @@ def audit(directory, gpu=False):
                     "before": v["value_normalized"],
                     "after": current_fields.get(f, {}).get("value_normalized"),
                 }
-                for f, v in before["fields"].items()
+                for f, v in before.get("fields", {}).items()
                 if f != "total_amount"
                 and current
                 and v["value_normalized"]
@@ -132,7 +153,9 @@ def audit(directory, gpu=False):
                 "expected": truth,
                 "annotations": annotations,
                 "baseline_raw": raw_before,
-                "baseline_final": before["fields"]["total_amount"]["value_normalized"],
+                "baseline_final": before.get("fields", {})
+                .get("total_amount", {})
+                .get("value_normalized"),
                 "replay": replay,
                 "replay_decision": decision,
                 "remap_unique": chosen is None or len(matches) == 1,

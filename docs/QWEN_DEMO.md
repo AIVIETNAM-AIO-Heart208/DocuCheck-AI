@@ -1,5 +1,30 @@
 # OCR → Qwen local
 
+Parser tiền hiện nhận phân nhóm bằng dấu cách thường/NBSP/narrow NBSP và đơn
+vị gắn liền như `12.000đ`, `12.000d`, `12.000VND`. Ngày DMY dùng dấu chấm và
+giờ dạng `08.29` được nhận khi đi cùng ngày; giá bán dạng `12.50` đứng riêng
+không được coi là giờ. Dữ liệu thập phân không hỗ trợ vẫn cần rà soát.
+
+Audit parser/guard mới:
+`outputs/ocr_to_qwen/parser_guard_refactor/run_20261113/`.
+`review.md` chấm tiền/ngày giờ bằng expected sidecar độc lập, `performance.json`
+đo build/annotate, `new10/` giữ lượt mở rộng đầu và `final/` giữ lượt kiểm tra
+lại sau sửa đơn vị tiền. Tập new10 đã dùng để sửa nên được xem là dev.
+
+```powershell
+.\.venv\Scripts\python.exe scripts/review_parser_run.py outputs/ocr_to_qwen/parser_guard_refactor/run_20261113
+```
+
+Lệnh trên chỉ chấm artifacts đã có, không chạy lại model. CLI một ảnh bên dưới
+vẫn là lệnh sử dụng chính; JSON công khai không thêm metadata.
+
+Nhãn tiền bị detector tách thành nhiều vùng (ví dụ `TỔNG` / `TIỀN` /
+`PHẢI T.TOÁN`) được ghép theo hàng trước khi xác định vai trò. Các mảnh vẫn
+giữ source ID và span trong `label_evidence`; cụm ghép nằm ở `label_phrase`
+trong candidates. Chỉ ghép mảnh gần nhau và thẳng hàng với nhãn gốc để hạn chế
+lan sang hàng giảm giá/khách trả. Audit ca validation `mcocr_val_145115vmgii.jpg`
+và 15 ảnh hồi quy nằm ở `outputs/ocr_to_qwen/fragmented_label_fix/`.
+
 ## Một ảnh → JSON bốn field
 
 Chạy trong repository root:
@@ -117,6 +142,27 @@ nhiều region ID. `value_raw` chỉ chứa các value spans; `evidence` giữ t
 OCR gốc. HTML hiển thị `display_value`. Context hiện tại 8192 do payload ứng
 viên đầy đủ vượt 4096; Qwen vẫn offload 37/37 layers CUDA. Confidence substring
 kế thừa điểm OCR vùng, không phải confidence riêng cho ký tự.
+
+### Thứ tự các mảnh địa chỉ
+
+Sau khi Qwen chọn các vùng `seller_address`, resolver dùng polygon gốc để
+ước lượng độ nghiêng, gom các mảnh cùng dòng và sắp trái → phải trong dòng,
+trên → dưới giữa các dòng. `value_raw`/`display_value` nối bằng khoảng trắng
+trong một dòng và xuống dòng giữa các dòng; JSON bốn field vẫn trả địa chỉ
+trên một dòng. Bước này giữ nguyên toàn bộ text/span/ID đã chọn.
+
+`raw_model_selection` và `final_selection` giữ danh sách ID mà model/guard
+trả về. Thứ tự dùng để ghép kết quả nằm ở
+`fields.seller_address.reading_order.ordered_region_ids`; `line_region_ids`
+ghi các nhóm dòng, `selected_region_ids` giữ thứ tự đầu vào. Vì vậy có thể
+đối chiếu thay đổi thứ tự mà không nhầm thành model chọn vùng khác.
+Các vùng chồng lấn nhiều hoặc có nhiều cách ghép dòng được gắn
+`ambiguous_address_reading_order` để review; không xóa vùng để che lỗi.
+
+Đây là bộ sắp xếp một khối địa chỉ có chữ gần ngang. Nó không sửa chữ OCR,
+không bổ sung vùng Qwen bỏ sót, không loại nhãn/chi nhánh chọn nhầm và chưa
+được xác minh cho nhiều cột, chữ dọc, giấy cong hoặc các dòng nghiêng khác nhau.
+Demo và audit: `outputs/ocr_to_qwen/address_reading_order_fix/run_20261113/`.
 
 Demo đã chạy:
 `outputs/ocr_to_qwen/field_selection_fix/run_20261113/index.html`.

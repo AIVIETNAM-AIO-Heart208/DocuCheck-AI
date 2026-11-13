@@ -21,15 +21,18 @@ def role(text: str) -> str:
         ("change", r"tra lai|tien thua"),
         ("deposit", r"dat coc|dat hang|tam ung"),
         ("paid_amount", r"da thanh toan|da tra|khach thanh toan"),
-        ("tendered_amount", r"khach dua|tien mat|tien the"),
+        ("tendered_amount", r"khach dua"),
+        ("payment_component", r"tien mat|tien the"),
         ("discount", r"chiet khau|giam gia|(?:da |a )?giam"),
-        ("subtotal", r"(?:tong|cong) tien hang|tam tinh"),
+        ("subtotal", r"(?:tong|cong) tien hang|tam tinh|thanh tien"),
         (
             "invoice_total",
             r"(?:tong\s+(?:so\s+)?(?:phai tra|thanh toan|cong|tien(?:\s+phai)?)|khach phai tra)\b",
         ),
         ("tax_fee", r"thue|vat|phi dich vu"),
     ]
+    if re.fullmatch(r"\s*thanh toan\s*:?\s*", text):
+        return "invoice_total"
     return next(
         (name for name, pattern in patterns if re.search(pattern, text)), "unknown"
     )
@@ -39,7 +42,11 @@ def annotate(groups: dict) -> None:
     for candidate in groups["total_amount"].values():
         raw = "".join(s["text"] for s in candidate["value_spans"])
         valid = parse(raw) is not None
-        roles = {role(v["text"]) for v in candidate["label_evidence"]} - {"unknown"}
+        # Linked fragments are an ordered phrase, not independent competing roles.
+        # Preserve each fragment's exact source span in label_evidence.
+        phrase = " ".join(v["text"] for v in candidate["label_evidence"])
+        candidate["label_phrase"] = phrase
+        roles = {role(phrase)} - {"unknown"}
         candidate["role"] = (
             next(iter(roles)) if len(roles) == 1 and valid else "unknown"
         )
@@ -56,19 +63,16 @@ def annotate(groups: dict) -> None:
     by_label = {}
     for key, c in groups["total_amount"].items():
         if c["role"] == "invoice_total" and c["label_evidence"]:
-            label = c["label_evidence"][0].get("region_id")
+            label = tuple(v.get("region_id") for v in c["label_evidence"])
             if label is not None:
                 by_label.setdefault(label, []).append((key, c))
     for alternatives in by_label.values():
         if len(alternatives) > 1:
-            formatted = [
-                (k, c)
-                for k, c in alternatives
-                if re.search(r"[.,]", c["value_spans"][0]["text"])
-            ]
-            if len(formatted) == 1:
+            positioned = [(k, c) for k, c in alternatives if c.get("value_bbox")]
+            if len(positioned) == len(alternatives):
+                rightmost = max(positioned, key=lambda pair: pair[1]["value_bbox"][2])
                 for key, c in alternatives:
-                    if key != formatted[0][0]:
+                    if key != rightmost[0]:
                         c["role"] = "unknown"
                         c["role_issue"] = "competing_quantity_column"
 
@@ -94,7 +98,13 @@ def guard(selection: dict, groups: dict) -> tuple[dict, dict]:
     ):
         reason = "subtotal_without_adjustments"
     elif totals and len({values[k]["parsed_amount"] for k in totals}) == 1:
-        result["total_amount"] = totals[0]
+        result["total_amount"] = min(
+            totals,
+            key=lambda k: tuple(
+                (v.get("region_id", ""), v.get("start", 0), v.get("end", 0))
+                for v in values[k]["value_spans"]
+            ),
+        )
         reason = "unique_direct_invoice_total"
     else:
         result["total_amount"] = None
