@@ -324,10 +324,18 @@ def crop_polygon(
     image_path: str | Path,
     polygon: list[list[float]],
     output_path: str | Path,
+    *,
+    padding_percent: float = 0,
 ) -> Path:
     """Perspective-rectify a detector quadrilateral into a local crop."""
     source_path = Path(image_path)
     destination_path = Path(output_path)
+    try:
+        padding_percent = float(padding_percent)
+    except (TypeError, ValueError) as error:
+        raise ValueError("padding_percent must be a finite non-negative number") from error
+    if not np.isfinite(padding_percent) or padding_percent < 0:
+        raise ValueError("padding_percent must be a finite non-negative number")
     with Image.open(source_path) as source:
         source = source.convert("RGB")
         width, height = source.size
@@ -335,6 +343,14 @@ def crop_polygon(
         if issue:
             raise ValueError(f"Cannot crop invalid polygon: {issue}")
         points = np.asarray(polygon, dtype=np.float32)
+        if padding_percent:
+            center = points.mean(axis=0)
+            points = center + (points - center) * (1 + padding_percent / 100)
+            points[:, 0] = np.clip(points[:, 0], 0, width)
+            points[:, 1] = np.clip(points[:, 1], 0, height)
+            issue = validate_polygon(points.tolist(), width, height)
+            if issue:
+                raise ValueError(f"Cannot crop invalid padded polygon: {issue}")
         top_width = np.linalg.norm(points[1] - points[0])
         bottom_width = np.linalg.norm(points[2] - points[3])
         left_height = np.linalg.norm(points[3] - points[0])

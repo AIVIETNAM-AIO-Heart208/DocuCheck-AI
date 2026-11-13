@@ -103,7 +103,7 @@ PSM 6 remains the default. Use `--psm` to compare another Tesseract page segment
 
 ### Optional hybrid receipt OCR
 
-The selected receipt hybrid is `phocr-vietocr`: PHOCR supplies text polygons and VietOCR recognizes one perspective crop per validated detector candidate. It is optional and does not change the default Tesseract path or the recognition-crop benchmark.
+The selected receipt hybrid is `phocr-vietocr`: PHOCR supplies text polygons and VietOCR recognizes one perspective crop per validated detector candidate. It is optional and does not change the default Tesseract path or the recognition-crop benchmark. Hybrid E0 remains the default; pass `--scale-factor 2` to run E1 on each detector crop.
 
 PHOCR `1.0.3` requires NumPy `<2`, while the core project requires NumPy `>=2`; keep this stack isolated and do not add it to the core extras. The following versions are the GPU setup used for the benchmark:
 
@@ -146,15 +146,22 @@ Run it on the receipt manifest, not `recognition_manifest.jsonl`:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 "$PHOCR_VENV/bin/python" scripts/run_ocr.py \
-  --engine phocr-vietocr --device cuda:0 \
+  --engine phocr-vietocr --device cuda:0 --scale-factor 2 \
   --manifest data/processed/manifest.jsonl \
   --split internal_dev \
-  --output-dir outputs/ocr/phocr_vietocr_gpu_internal_dev
+  --output-dir outputs/ocr/phocr_vietocr_e1_gpu_internal_dev
+
+# E0 rollback: omit --scale-factor or pass --scale-factor 1.
+CUDA_VISIBLE_DEVICES=0 "$PHOCR_VENV/bin/python" scripts/run_ocr.py \
+  --engine phocr-vietocr --device cuda:0 --scale-factor 1 \
+  --manifest data/processed/manifest.jsonl \
+  --split internal_dev \
+  --output-dir outputs/ocr/phocr_vietocr_e0_gpu_internal_dev
 ```
 
-The default model paths are `outputs/ocr/models/vietocr/vgg_transformer.pth` and `outputs/ocr/models/phocr/official_models/ch_PP-OCRv5_server_det.onnx`; override them with `--model-path` and `--phocr-model-path`. The detector adapter invokes PHOCR detection only; PH-OCRv1 recognition is not used. The output contains deterministic `predictions.jsonl`, `failures.jsonl`, and `runtime.json`: prediction rows retain the receipt ID, detector candidate polygon and ID, detector confidence when available, recognized text, recognition confidence, and statuses. Runtime metadata records detector/recognizer versions, model checksums, devices, direct candidate counts, crop latency, and the no-padding preprocessing choice.
+The default model paths are `outputs/ocr/models/vietocr/vgg_transformer.pth` and `outputs/ocr/models/phocr/official_models/ch_PP-OCRv5_server_det.onnx`; override them with `--model-path` and `--phocr-model-path`. The detector adapter invokes PHOCR detection only; PH-OCRv1 recognition is not used. The output contains deterministic `predictions.jsonl`, `failures.jsonl`, and `runtime.json`: prediction rows retain the receipt ID, detector candidate polygon and ID, detector confidence when available, recognized text, recognition confidence, and statuses. Runtime metadata records detector/recognizer versions, model checksums, devices, direct candidate counts, crop latency, the selected experiment/scale/resampling, and the 10% PHOCR crop-padding setting.
 
-Each validated detector candidate is cropped and recognized independently. The selected path applies no crop padding; the rejected 5% padding experiment remains benchmark-only. This path produces text evidence for later layout-aware/KIE stages, not semantic field labels or business-validation results. A nonzero exit means at least one candidate or receipt failed.
+Each validated detector candidate is cropped and recognized independently. The `phocr-vietocr` path expands each source candidate crop by 10% before perspective rectification, while `paddle-vietocr` retains zero padding for comparison. The original detector polygon remains unchanged in prediction artifacts. This path produces text evidence for later layout-aware/KIE stages, not semantic field labels or business-validation results. A nonzero exit means at least one candidate or receipt failed.
 
 The existing `paddle-vietocr` engine remains available as a comparison path. It detects with PaddleOCR and recognizes each unmerged source-image crop with VietOCR:
 
@@ -329,6 +336,70 @@ to `compare_ocr_engines.py`. Choose models and tune parameters on development
 data drawn from training; keep official validation for fixed-configuration evaluation.
 
 These are recognition-only results on supplied crops, not full-page detection or KIE scores. The source transcripts may contain annotation noise. Mean latency remains in the artifact for provenance, but model threading and host load were not controlled tightly enough to claim a speed ranking.
+
+### VietOCR crop scaling
+
+Production recognition-crop inference uses E1 (2x Lanczos) when `--engine vietocr`
+is selected without `--scale-factor`. Use `--scale-factor 1` for the E0 rollback.
+These settings apply only to recognition crops; Tesseract, PaddleOCR, and the
+`paddle-vietocr`/`phocr-vietocr` receipt-hybrid paths remain unchanged.
+
+Production E1 and explicit E0 rollback commands:
+
+```bash
+uv run --extra vietocr python scripts/run_ocr.py \
+  --engine vietocr \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --split official_val \
+  --output-dir outputs/ocr/vietocr_production_official_val
+
+uv run --extra vietocr python scripts/run_ocr.py \
+  --engine vietocr \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --split official_val \
+  --scale-factor 1 \
+  --output-dir outputs/ocr/vietocr_e0_official_val
+```
+
+For controlled comparisons, use fresh output directories and the same recognition
+manifest for all variants:
+
+```bash
+uv run --extra vietocr python scripts/run_ocr.py \
+  --engine vietocr \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --split official_val \
+  --scale-factor 2 \
+  --output-dir outputs/ocr/vietocr_e1_official_val
+
+uv run python scripts/evaluate_ocr.py \
+  --mode crop \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --predictions outputs/ocr/vietocr_e1_official_val/predictions.jsonl \
+  --split official_val \
+  --output-dir outputs/ocr/vietocr_e1_official_val
+
+uv run --extra vietocr python scripts/run_ocr.py \
+  --engine vietocr \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --split official_val \
+  --scale-factor 4 \
+  --output-dir outputs/ocr/vietocr_e2_official_val
+
+uv run python scripts/evaluate_ocr.py \
+  --mode crop \
+  --manifest data/processed/recognition_manifest.jsonl \
+  --predictions outputs/ocr/vietocr_e2_official_val/predictions.jsonl \
+  --split official_val \
+  --output-dir outputs/ocr/vietocr_e2_official_val
+```
+
+Run `official_train` first for diagnostics, then compare E0, E1, and E2 separately
+on `official_val`. Runtime metadata records the experiment label, scale factor,
+Lanczos setting, model checksum, manifest checksum, split, failures, and latency.
+E1 is the production recognition-crop default; E2 remains an isolated benchmark
+variant and is not applied to receipt-hybrid OCR. Do not pool train and validation
+scores.
 
 ## Optional notebooks and code entry points
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -36,6 +37,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--phocr-model-path", default=None, help="PHOCR ONNX detector model for phocr-vietocr")
     parser.add_argument("--psm", type=int, choices=range(14), default=6, help="Tesseract page segmentation mode")
     parser.add_argument("--limit", type=int, default=None, help="Process only the first N sorted records (smoke run)")
+    parser.add_argument(
+        "--scale-factor", type=int, choices=(1, 2, 4), default=None,
+        help="VietOCR scale: omitted=E1 for recognition crops/E0 for hybrid, 1=E0, 2=E1, 4=E2",
+    )
     return parser
 
 
@@ -55,6 +60,11 @@ def main(argv: list[str] | None = None) -> int:
     if not manifest_path.is_file():
         print(f"Manifest not found: {manifest_path}", file=sys.stderr)
         return 2
+    scale_factor = args.scale_factor if args.scale_factor is not None else (2 if args.engine == "vietocr" else 1)
+    if scale_factor != 1 and args.engine not in {"vietocr", "phocr-vietocr"}:
+        print("--scale-factor 2/4 is supported only with --engine vietocr or --engine phocr-vietocr", file=sys.stderr)
+        return 2
+    manifest_sha256 = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
     try:
         records = load_manifest(manifest_path)
         if not any(record.get("split") == args.split for record in records):
@@ -80,10 +90,10 @@ def main(argv: list[str] | None = None) -> int:
                     **({"model_dir": args.detector_model_dir} if args.detector_model_dir else {}),
                     device=args.device,
                 )
-            recognizer = VietOCRBaseline(
-                **({"model_path": args.model_path} if args.model_path else {}),
-                device=args.device,
-            )
+            recognizer_kwargs = {"model_path": args.model_path} if args.model_path else {}
+            if args.engine == "phocr-vietocr" and scale_factor != 1:
+                recognizer_kwargs["scale_factor"] = scale_factor
+            recognizer = VietOCRBaseline(**recognizer_kwargs, device=args.device)
             metadata = run_hybrid_batch(
                 records,
                 dataset_root=args.dataset_root,
@@ -92,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
                 limit=args.limit,
                 detector=detector,
                 recognizer=recognizer,
+                crop_padding_percent=10 if args.engine == "phocr-vietocr" else 0,
             )
         elif args.engine != "tesseract":
             selected = [record for record in records if record.get("split") == args.split]
@@ -102,6 +113,7 @@ def main(argv: list[str] | None = None) -> int:
                 engine = VietOCRBaseline(
                     **({"model_path": args.model_path} if args.model_path else {}),
                     device=args.device,
+                    scale_factor=scale_factor,
                 )
             else:
                 engine = PaddleOCRBaseline(
@@ -117,6 +129,7 @@ def main(argv: list[str] | None = None) -> int:
                 tessdata_dir=args.tessdata_dir,
                 psm=args.psm,
                 executable=args.tesseract,
+                manifest_sha256=manifest_sha256,
                 engine=engine,
             )
         else:
@@ -129,6 +142,7 @@ def main(argv: list[str] | None = None) -> int:
                 tessdata_dir=args.tessdata_dir,
                 psm=args.psm,
                 executable=args.tesseract,
+                manifest_sha256=manifest_sha256,
                 engine=engine,
             )
     except Exception as error:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import platform
 import tempfile
@@ -57,10 +58,17 @@ def run_hybrid_batch(
     limit: int | None = None,
     detector: Any,
     recognizer: Any,
+    crop_padding_percent: float = 0,
 ) -> dict[str, Any]:
     """Run a text detector followed by VietOCR on receipt records."""
     if limit is not None and limit <= 0:
         raise ValueError("limit must be a positive integer")
+    try:
+        crop_padding_percent = float(crop_padding_percent)
+    except (TypeError, ValueError) as error:
+        raise ValueError("crop_padding_percent must be a finite non-negative number") from error
+    if not math.isfinite(crop_padding_percent) or crop_padding_percent < 0:
+        raise ValueError("crop_padding_percent must be a finite non-negative number")
     root = resolve_dataset_root(dataset_root)
     selected = [record for record in records if record.get("split") == split]
     if any(record.get("source_subset") == "text_recognition" for record in selected):
@@ -119,7 +127,12 @@ def run_hybrid_batch(
                     crop_path = Path(crop_dir) / f"{len(predictions):06d}-{ordinal:04d}.png"
                     try:
                         try:
-                            crop_polygon(image_path, candidate["polygon"], crop_path)
+                            crop_polygon(
+                                image_path,
+                                candidate["polygon"],
+                                crop_path,
+                                padding_percent=crop_padding_percent,
+                            )
                         except Exception as error:
                             image_failures.append(_failure(
                                 image_id=image_id,
@@ -211,7 +224,7 @@ def run_hybrid_batch(
             "crop": {
                 "mode": "perspective-rectify",
                 "output": "temporary PNG",
-                "padding_percent": 0,
+                "padding_percent": crop_padding_percent,
             },
             "recognizer": recognizer.preprocessing,
         },

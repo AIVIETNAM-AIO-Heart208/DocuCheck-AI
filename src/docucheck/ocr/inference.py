@@ -30,6 +30,7 @@ def run_batch(
     tessdata_dir: str | Path = "outputs/ocr/tessdata_fast",
     psm: int = 6,
     executable: str | None = None,
+    manifest_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Run predictions on one declared manifest split, recording per-image failures."""
     if limit is not None and limit <= 0:
@@ -96,6 +97,7 @@ def run_batch(
         "language": engine.language,
         "device": engine.device,
         "preprocessing": engine.preprocessing,
+        "manifest_sha256": manifest_sha256,
         "split": split,
         "manifest_record_count": len(selected),
         "images_succeeded": len(predictions),

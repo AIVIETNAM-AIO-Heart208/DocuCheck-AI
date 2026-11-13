@@ -69,6 +69,30 @@ def test_crop_polygon_preserves_a_rectified_source_region(tmp_path):
         assert crop.mode == "RGB"
 
 
+def test_crop_polygon_expands_and_clips_padding(tmp_path):
+    image = tmp_path / "receipt.png"
+    output = tmp_path / "crop.png"
+    Image.new("RGB", (100, 80), "white").save(image)
+
+    crop_polygon(image, [[1, 10], [41, 10], [41, 30], [1, 30]], output, padding_percent=5)
+
+    with Image.open(output) as crop:
+        assert crop.size == (42, 21)
+
+
+def test_crop_polygon_rejects_invalid_padding(tmp_path):
+    image = tmp_path / "receipt.png"
+    output = tmp_path / "crop.png"
+    Image.new("RGB", (100, 80), "white").save(image)
+
+    try:
+        crop_polygon(image, [[10, 10], [40, 10], [40, 30], [10, 30]], output, padding_percent=-1)
+    except ValueError as error:
+        assert "padding_percent" in str(error)
+    else:
+        raise AssertionError("Expected negative padding to fail")
+
+
 def test_phocr_detector_normalizes_optional_scores_without_recognizing(tmp_path):
     model = tmp_path / "detector.onnx"
     model.write_bytes(b"model")

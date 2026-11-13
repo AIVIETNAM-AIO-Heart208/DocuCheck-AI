@@ -1,8 +1,10 @@
+import hashlib
 import json
 
 from PIL import Image
 
 from docucheck.ocr.hybrid import run_hybrid_batch
+from docucheck.ocr.recognizers import VietOCRBaseline
 
 
 class FakeDetector:
@@ -186,3 +188,44 @@ def test_hybrid_batch_rejects_recognition_manifest_records(tmp_path):
         assert "recognition-crop" in str(error)
     else:
         raise AssertionError("Expected recognition manifest rejection")
+
+
+def test_hybrid_batch_applies_e1_and_preserves_input_provenance(tmp_path):
+    records = _records(tmp_path)[:1]
+    source = tmp_path / "images" / "b.png"
+    manifest = tmp_path / "manifest.jsonl"
+    manifest.write_text(json.dumps(records[0]) + "\n", encoding="utf-8")
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    manifest_hash = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    model = tmp_path / "model.pth"
+    model.write_bytes(b"model")
+    seen_sizes = []
+
+    class Backend:
+        def predict(self, image, return_prob=False):
+            seen_sizes.append(image.size)
+            return "MẪU", 0.9
+
+    recognizer = VietOCRBaseline(model_path=model, backend=Backend(), scale_factor=2)
+    output = tmp_path / "out"
+    metadata = run_hybrid_batch(
+        records,
+        dataset_root=tmp_path,
+        split="internal_dev",
+        output_dir=output,
+        detector=FakeDetector(),
+        recognizer=recognizer,
+        crop_padding_percent=5,
+    )
+
+    assert seen_sizes == [(84, 32)]
+    prediction = json.loads((output / "predictions.jsonl").read_text(encoding="utf-8"))
+    assert prediction["predictions"][0]["polygon"] == [
+        [5.0, 5.0], [45.0, 5.0], [45.0, 20.0], [5.0, 20.0],
+    ]
+    assert metadata["preprocessing"]["recognizer"]["experiment"] == "E1"
+    assert metadata["preprocessing"]["recognizer"]["scale_factor"] == 2
+    assert metadata["preprocessing"]["recognizer"]["resampling"] == "LANCZOS"
+    assert metadata["preprocessing"]["crop"]["padding_percent"] == 5
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == source_hash
+    assert hashlib.sha256(manifest.read_bytes()).hexdigest() == manifest_hash

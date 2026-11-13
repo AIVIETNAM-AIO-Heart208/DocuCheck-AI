@@ -57,11 +57,22 @@ class VietOCRBaseline:
         *,
         model_path: str | Path = "outputs/ocr/models/vietocr/vgg_transformer.pth",
         device: str = "cpu",
+        scale_factor: int = 1,
         backend: Any | None = None,
     ):
         started = time.perf_counter()
+        if scale_factor not in (1, 2, 4):
+            raise ValueError("VietOCR scale_factor must be 1, 2, or 4")
         self.model_path = _local_path(model_path)
         self.device = device
+        self.scale_factor = scale_factor
+        self.preprocessing = {
+            "mode": "recognition-only",
+            "output": "whole-crop text",
+            "experiment": {1: "E0", 2: "E1", 4: "E2"}[scale_factor],
+            "scale_factor": scale_factor,
+            "resampling": "none" if scale_factor == 1 else "LANCZOS",
+        }
         if not self.model_path.is_file():
             raise FileNotFoundError(
                 f"VietOCR model not found at {self.model_path}; run scripts/download_recognition_models.py --engine vietocr"
@@ -92,6 +103,11 @@ class VietOCRBaseline:
 
     def predict(self, image_path: str | Path) -> list[dict[str, Any]]:
         with _image(image_path) as image:
+            if self.scale_factor != 1:
+                image = image.resize(
+                    (image.width * self.scale_factor, image.height * self.scale_factor),
+                    Image.Resampling.LANCZOS,
+                )
             text, confidence = self.backend.predict(image, return_prob=True)
         text = str(text).strip()
         if not text:
