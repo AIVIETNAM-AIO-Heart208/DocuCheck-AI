@@ -17,9 +17,14 @@ def main():
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--image-id", action="append")
     parser.add_argument("--base-url", default="http://127.0.0.1:8097")
+    parser.add_argument("--extraction-mode", choices=("baseline", "refined"), default="baseline")
     args = parser.parse_args()
     directory = Path(args.output_dir)
     directory.mkdir(parents=True, exist_ok=True)
+    if (directory / "extractions.jsonl").exists():
+        raise ValueError("Use a new directory; extractions already exist")
+    from docucheck.extraction.refinement_provenance import capture
+    write_json(directory / "provenance.json", capture(args.extraction_mode, Path(args.ocr), Path(args.manifest)))
     manifest = {
         r["image_id"]: r
         for r in map(
@@ -33,8 +38,14 @@ def main():
         try:
             record = manifest[row["image_id"]]
             adapted = adapt(row, record["image_width"], record["image_height"])
+            if args.extraction_mode == "refined":
+                adapted["image_dimensions"] = {"width": record["image_width"], "height": record["image_height"]}
             write_json(directory / "inputs" / f"{row['image_id']}.json", adapted)
-            result = QwenClient(args.base_url).extract(adapted, directory)
+            print(f"[{row['image_id']}] extraction mode={args.extraction_mode}", file=sys.stderr)
+            result = QwenClient(args.base_url, extraction_mode=args.extraction_mode).extract(adapted, directory)
+            review = [key for key, value in result["fields"].items() if value["status"] == "needs_review"]
+            if review:
+                print(f"Review {review}; diagnostics: {directory / 'extractions.jsonl'}", file=sys.stderr)
         except (OSError, ValueError, KeyError, TypeError) as error:
             result = {
                 "image_id": row["image_id"],

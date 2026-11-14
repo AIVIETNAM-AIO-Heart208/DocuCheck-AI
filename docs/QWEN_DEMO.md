@@ -1,5 +1,37 @@
 # OCR → Qwen local
 
+## OCR sau pull ngày 15/11/2026
+
+Entry Qwen hiện gọi PHOCR–VietOCR CUDA với `--scale-factor 2` (E1/Lanczos),
+crop padding 10% có fallback 0% khi chạm vùng bên cạnh, theo commit `168c1a7`
+và `baf232c`. `merged_predictions` là ghép text sau OCR, không đọc lại ảnh.
+Cả baseline/refined nhận nhóm ghép như gợi ý tham chiếu về region gốc; không
+nhét cả raw và merged thành hai bản bằng chứng lặp, không ép group thành tên.
+Giữ polygon gốc vì union box của group không bảo toàn độ nghiêng từng dòng.
+
+Chạy ảnh mới để dùng OCR mới (các lệnh dưới do người dùng tự chạy):
+
+```powershell
+.\.venv\Scripts\python.exe scripts/extract_receipt.py "data/mcocr/val_images/val_images/mcocr_val_145114ixmyt.jpg" --extraction-mode refined --output outputs/bill_refined.json
+```
+
+Baseline vẫn mặc định khi bỏ `--extraction-mode refined`; cả hai mode đều gọi
+OCR E1 mới. Do thay OCR/payload, kết quả không còn là baseline OCR cũ cố định.
+`--reuse-ocr` chỉ nhận runtime đúng profile E1/guarded-padding/merge hiện tại;
+cache E0 cũ cần chạy OCR lại. Kiểm tra `ocr/runtime.json`, `ocr/predictions.jsonl`
+(`merged_predictions`), và `inputs/<id>.json` (`ocr_merge_hints`, excluded merges).
+Không có group ghép vẫn hợp lệ; không phải ảnh nào cũng cần merge.
+
+Đã đọc diff và nối code; chưa chạy test/OCR/Qwen để xác nhận độ đúng, tốc độ
+hoặc VRAM sau cập nhật. Test adapter/profile: `tests/test_qwen_latest_ocr_contract.py`.
+Một hạn chế OCR upstream: same-line merge dùng overlap y, có thể ghép nhầm các
+dòng trên ảnh nghiêng; vì vậy Qwen chỉ dùng như gợi ý và giữ nguyên nguồn raw.
+
+Xem [hướng dẫn refined](QWEN_GUARD_LAYOUT_REFINEMENT.md) để bật
+`--extraction-mode refined`, dùng bbox/polygon và chọn source spans cho tên/địa chỉ.
+Baseline vẫn mặc định. Code refined và test mới chưa được chạy kiểm chứng;
+các kết quả audit lịch sử bên dưới không xác nhận chất lượng của refined.
+
 Parser tiền hiện nhận phân nhóm bằng dấu cách thường/NBSP/narrow NBSP và đơn
 vị gắn liền như `12.000đ`, `12.000d`, `12.000VND`. Ngày DMY dùng dấu chấm và
 giờ dạng `08.29` được nhận khi đi cùng ngày; giá bán dạng `12.50` đứng riêng

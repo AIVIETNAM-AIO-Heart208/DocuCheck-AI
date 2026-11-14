@@ -112,11 +112,15 @@ def adapt(row: dict, width: int, height: int) -> dict:
             excluded.append({"index": index, "source": region, "reason": reason})
     valid.sort(key=lambda r: (r["bbox"][1], r["bbox"][0], r["source_candidate_id"]))
     mapping = {f"R{i:03d}": region for i, region in enumerate(valid, 1)}
+    from .ocr_contract import merge_hints
+    merged, excluded_merges = merge_hints(row, mapping)
     return {
         "image_id": row["image_id"],
         "ocr_status": row["status"],
         "mapping": mapping,
         "excluded": excluded,
+        "ocr_merge_hints": merged,
+        "excluded_ocr_merges": excluded_merges,
         "regions": [
             {
                 "id": key,
@@ -213,7 +217,11 @@ def validate(selection: dict, adapted: dict) -> dict:
 
 
 class QwenClient:
-    def __init__(self, base_url="http://127.0.0.1:8097", context=None, timeout=180):
+    def __init__(self, base_url="http://127.0.0.1:8097", context=None, timeout=180,
+                 extraction_mode="baseline"):
+        if extraction_mode not in {"baseline", "refined"}:
+            raise ValueError("Unknown extraction mode")
+        self.extraction_mode = extraction_mode
         self.base_url, self.context, self.timeout = (
             base_url,
             context if context is not None else RUNTIME_CONFIG["context"],
@@ -232,6 +240,10 @@ class QwenClient:
             return json.load(response)
 
     def extract(self, adapted: dict, directory: Path) -> dict:
+        if self.extraction_mode == "refined":
+            from .refined import extract
+
+            return extract(self, adapted, directory)
         identity = adapted["image_id"]
         groups = build(adapted)
         annotate(groups)
@@ -259,13 +271,16 @@ TOTAL_AMOUNT means total payable for the entire invoice, NOT paid cash, deposit,
 remaining balance or change. Read the attached labels carefully. Select 'Tong phai tra'
 over 'Khach thanh toan' or 'Con lai'. Same numeric values on different rows are
 separate roles. Never choose all identical amounts. Transaction datetime excludes
-invoice IDs, expiry and printing dates. Only choose supplied IDs."""
+invoice IDs, expiry and printing dates. Only choose supplied IDs.
+ocr_merge_hints are optional raw-region groupings, not field labels or guaranteed
+reading order. A group can mix name/address: select appropriate original IDs."""
         messages = [
             {"role": "system", "content": instructions},
             {
                 "role": "user",
                 "content": json.dumps(
-                    {"regions": adapted["regions"], "candidates": compact},
+                    {"regions": adapted["regions"], "candidates": compact,
+                     "ocr_merge_hints": adapted.get("ocr_merge_hints", [])},
                     ensure_ascii=False,
                     separators=(",", ":"),
                 ),
@@ -366,6 +381,12 @@ def render_demo(results: list[dict], directory: Path, images: dict[str, str]) ->
             ("extractions.jsonl", "Kết quả JSON"),
             ("report.md", "Đánh giá"),
         ]
+        if row.get("extraction_mode") == "refined":
+            links.extend([
+                (f"layout/{identity}.json", "Dòng/khối OCR"),
+                (f"coverage/{identity}.json", "Coverage và budget"),
+                (f"decisions/{identity}.json", "Guard diagnostics"),
+            ])
         content.append(
             "<p>"
             + " ".join(

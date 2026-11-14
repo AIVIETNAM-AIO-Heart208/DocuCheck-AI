@@ -17,6 +17,7 @@ from docucheck.extraction.qwen import (
     render_demo,
     write_json,
 )
+from docucheck.extraction.ocr_contract import PROFILE, validate_runtime
 
 
 def main():
@@ -27,6 +28,7 @@ def main():
         help="Preselected receipt manifest (at most three records)",
     )
     parser.add_argument("--output-dir", required=True, help="New run directory")
+    parser.add_argument("--extraction-mode", choices=("baseline", "refined"), default="baseline")
     parser.add_argument(
         "--reuse-ocr",
         action="store_true",
@@ -60,6 +62,10 @@ def main():
         snapshots.append({"time": time.time(), "used_free_MiB": value})
         return value
 
+    if args.reuse_ocr:
+        cached_runtime = json.loads((directory / "ocr/runtime.json").read_text(encoding="utf-8"))
+        validate_runtime(cached_runtime)
+        print(f"Reusing OCR profile: {PROFILE}", file=sys.stderr)
     gpu()
     if not args.reuse_ocr:
         with (logs / "ocr.log").open("w", encoding="utf-8") as log:
@@ -71,6 +77,8 @@ def main():
                     "phocr-vietocr",
                     "--device",
                     "cuda:0",
+                    "--scale-factor",
+                    "2",
                     "--manifest",
                     str(Path(args.manifest).resolve()),
                     "--split",
@@ -87,6 +95,8 @@ def main():
         runtime = json.loads((directory / "ocr/runtime.json").read_text())
         if runtime["images_failed"] or runtime["candidate_failures"]:
             raise RuntimeError(f"OCR failed, exit={completed.returncode}")
+        validate_runtime(runtime)
+        print(f"OCR ready: {PROFILE}; merged groups={runtime.get('merged_groups', 0)}", file=sys.stderr)
     gpu()
     binary = next((ROOT / "outputs/runtime/llama-b12345").rglob("llama-server.exe"))
     model = (
@@ -152,6 +162,8 @@ def main():
                     str(Path(args.manifest).resolve()),
                     "--output-dir",
                     str(directory),
+                    "--extraction-mode",
+                    args.extraction_mode,
                 ],
                 cwd=ROOT,
             )
@@ -179,6 +191,8 @@ def main():
                         int(s["used_free_MiB"].split(",")[0]) for s in snapshots
                     ),
                     "ocr_reused": args.reuse_ocr,
+                    "ocr_profile": PROFILE,
+                    "extraction_mode": args.extraction_mode,
                     "confidence_policy": "minimum recognition confidence; null if any missing",
                     "exit_code": result_code,
                 },
