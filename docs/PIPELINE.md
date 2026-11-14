@@ -103,7 +103,7 @@ PSM 6 remains the default. Use `--psm` to compare another Tesseract page segment
 
 ### Optional hybrid receipt OCR
 
-The selected receipt hybrid is `phocr-vietocr`: PHOCR supplies text polygons and VietOCR recognizes one perspective crop per validated detector candidate. It is optional and does not change the default Tesseract path or the recognition-crop benchmark. Hybrid E0 remains the default; pass `--scale-factor 2` to run E1 on each detector crop.
+The selected receipt hybrid is `phocr-vietocr`: PHOCR supplies text polygons and VietOCR recognizes one perspective crop per validated detector candidate. It is optional and does not change the default Tesseract path or the recognition-crop benchmark. Hybrid E1 (2x Lanczos) is the production default; pass `--scale-factor 1` for the E0 rollback.
 
 PHOCR `1.0.3` requires NumPy `<2`, while the core project requires NumPy `>=2`; keep this stack isolated and do not add it to the core extras. The following versions are the GPU setup used for the benchmark:
 
@@ -151,7 +151,7 @@ CUDA_VISIBLE_DEVICES=0 "$PHOCR_VENV/bin/python" scripts/run_ocr.py \
   --split internal_dev \
   --output-dir outputs/ocr/phocr_vietocr_e1_gpu_internal_dev
 
-# E0 rollback: omit --scale-factor or pass --scale-factor 1.
+# E0 rollback: pass --scale-factor 1.
 CUDA_VISIBLE_DEVICES=0 "$PHOCR_VENV/bin/python" scripts/run_ocr.py \
   --engine phocr-vietocr --device cuda:0 --scale-factor 1 \
   --manifest data/processed/manifest.jsonl \
@@ -159,9 +159,9 @@ CUDA_VISIBLE_DEVICES=0 "$PHOCR_VENV/bin/python" scripts/run_ocr.py \
   --output-dir outputs/ocr/phocr_vietocr_e0_gpu_internal_dev
 ```
 
-The default model paths are `outputs/ocr/models/vietocr/vgg_transformer.pth` and `outputs/ocr/models/phocr/official_models/ch_PP-OCRv5_server_det.onnx`; override them with `--model-path` and `--phocr-model-path`. The detector adapter invokes PHOCR detection only; PH-OCRv1 recognition is not used. The output contains deterministic `predictions.jsonl`, `failures.jsonl`, and `runtime.json`: prediction rows retain the receipt ID, detector candidate polygon and ID, detector confidence when available, recognized text, recognition confidence, and statuses. Runtime metadata records detector/recognizer versions, model checksums, devices, direct candidate counts, crop latency, the selected experiment/scale/resampling, and the 10% PHOCR crop-padding setting.
+The default model paths are `outputs/ocr/models/vietocr/vgg_transformer.pth` and `outputs/ocr/models/phocr/official_models/ch_PP-OCRv5_server_det.onnx`; override them with `--model-path` and `--phocr-model-path`. The detector adapter invokes PHOCR detection only; PH-OCRv1 recognition is not used. The output contains deterministic `predictions.jsonl`, `failures.jsonl`, and `runtime.json`: prediction rows retain the receipt ID, detector candidate polygon and ID, detector confidence when available, recognized text, recognition confidence, and statuses. Runtime metadata records detector/recognizer versions, model checksums, devices, direct candidate counts, crop latency, selected experiment/scale/resampling, the 10% PHOCR crop-padding setting, and post-OCR merged-group counts.
 
-Each validated detector candidate is cropped and recognized independently. The `phocr-vietocr` path attempts to expand each source candidate crop by 10% before perspective rectification; if that expansion would overlap or touch another detector candidate, that candidate falls back to zero padding. `paddle-vietocr` retains zero padding for comparison. The original detector polygon remains unchanged in prediction artifacts, and each candidate records its effective crop padding. This path produces text evidence for later layout-aware/KIE stages, not semantic field labels or business-validation results. A nonzero exit means at least one candidate or receipt failed.
+Each validated detector candidate is cropped and recognized independently. The `phocr-vietocr` path attempts to expand each source candidate crop by 10% before perspective rectification; if that expansion would overlap or touch another detector candidate, that candidate falls back to zero padding. Raw candidate predictions remain unchanged. When same-line candidates collide horizontally under the requested padding, the output additionally contains `merged_predictions` with left-to-right source IDs, joined text, union geometry, and aggregate confidence; this is assembled after OCR without a second recognition call. `paddle-vietocr` retains zero padding and raw-only output for comparison. The original detector polygon remains unchanged in prediction artifacts, and each candidate records its effective crop padding. This path produces text evidence for later layout-aware/KIE stages, not semantic field labels or business-validation results. A nonzero exit means at least one candidate or receipt failed.
 
 The existing `paddle-vietocr` engine remains available as a comparison path. It detects with PaddleOCR and recognizes each unmerged source-image crop with VietOCR:
 
@@ -342,7 +342,7 @@ These are recognition-only results on supplied crops, not full-page detection or
 Production recognition-crop inference uses E1 (2x Lanczos) when `--engine vietocr`
 is selected without `--scale-factor`. Use `--scale-factor 1` for the E0 rollback.
 These settings apply only to recognition crops; Tesseract, PaddleOCR, and the
-`paddle-vietocr`/`phocr-vietocr` receipt-hybrid paths remain unchanged.
+`paddle-vietocr` remains unchanged; `phocr-vietocr` uses E1 by default and supports explicit E0 rollback with `--scale-factor 1`.
 
 Production E1 and explicit E0 rollback commands:
 

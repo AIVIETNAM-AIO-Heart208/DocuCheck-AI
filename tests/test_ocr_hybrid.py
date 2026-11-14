@@ -276,3 +276,128 @@ def test_hybrid_batch_disables_padding_when_expansion_touches_neighbor(tmp_path)
     assert [candidate["crop_padding_percent"] for candidate in prediction["predictions"]] == [0, 0]
     assert metadata["preprocessing"]["crop"]["padding_percent"] == 10
     assert metadata["preprocessing"]["crop"]["padding_fallback_candidates"] == 2
+
+
+def test_phocr_batch_adds_post_ocr_merge_without_reinvoking_recognizer(tmp_path):
+    image = tmp_path / "images" / "receipt.png"
+    image.parent.mkdir()
+    Image.new("RGB", (80, 40), "white").save(image)
+    records = [{
+        "image_id": "receipt",
+        "image_path": "images/receipt.png",
+        "source_split": "train",
+        "split": "internal_dev",
+    }]
+
+    class Detector(FakeDetector):
+        engine_name = "PHOCRTextDetection"
+
+        def predict(self, image_path):
+            return [
+                {"region_index": 0, "polygon": [[5, 8], [25, 8], [25, 18], [5, 18]], "confidence": 0.9},
+                {"region_index": 1, "polygon": [[26, 3], [46, 3], [46, 13], [26, 13]], "confidence": 0.8},
+            ]
+
+    class Recognizer(FakeRecognizer):
+        def __init__(self):
+            super().__init__()
+            self.calls = 0
+
+        def predict(self, image_path):
+            self.calls += 1
+            return [{"text": "A" if self.calls == 1 else "B", "confidence": 0.8 + self.calls / 100}]
+
+    recognizer = Recognizer()
+    metadata = run_hybrid_batch(
+        records,
+        dataset_root=tmp_path,
+        split="internal_dev",
+        output_dir=tmp_path / "out",
+        detector=Detector(),
+        recognizer=recognizer,
+        crop_padding_percent=10,
+    )
+
+    prediction = json.loads((tmp_path / "out" / "predictions.jsonl").read_text(encoding="utf-8"))
+    assert recognizer.calls == 2
+    assert len(prediction["predictions"]) == 2
+    assert len(prediction["merged_predictions"]) == 1
+    merged = prediction["merged_predictions"][0]
+    assert merged["source_candidate_ids"] == [
+        "receipt:candidate-0001", "receipt:candidate-0002",
+    ]
+    assert merged["polygon"] == [[5.0, 3.0], [46.0, 3.0], [46.0, 18.0], [5.0, 18.0]]
+    assert merged["text"] == "A B"
+    assert merged["recognition_confidence"] == 0.81
+    assert metadata["merged_groups"] == 1
+    assert metadata["merged_candidates"] == 2
+
+
+def test_phocr_batch_keeps_merged_output_empty_without_horizontal_collision(tmp_path):
+    image = tmp_path / "images" / "receipt.png"
+    image.parent.mkdir()
+    Image.new("RGB", (100, 40), "white").save(image)
+    records = [{
+        "image_id": "receipt",
+        "image_path": "images/receipt.png",
+        "source_split": "train",
+        "split": "internal_dev",
+    }]
+
+    class Detector(FakeDetector):
+        engine_name = "PHOCRTextDetection"
+
+        def predict(self, image_path):
+            return [
+                {"region_index": 0, "polygon": [[5, 5], [25, 5], [25, 15], [5, 15]], "confidence": 0.9},
+                {"region_index": 1, "polygon": [[50, 5], [70, 5], [70, 15], [50, 15]], "confidence": 0.8},
+            ]
+
+    metadata = run_hybrid_batch(
+        records,
+        dataset_root=tmp_path,
+        split="internal_dev",
+        output_dir=tmp_path / "out",
+        detector=Detector(),
+        recognizer=FakeRecognizer(),
+        crop_padding_percent=10,
+    )
+
+    prediction = json.loads((tmp_path / "out" / "predictions.jsonl").read_text(encoding="utf-8"))
+    assert prediction["merged_predictions"] == []
+    assert metadata["merged_groups"] == 0
+
+
+def test_phocr_batch_does_not_merge_adjacent_vertical_lines(tmp_path):
+    image = tmp_path / "images" / "receipt.png"
+    image.parent.mkdir()
+    Image.new("RGB", (100, 40), "white").save(image)
+    records = [{
+        "image_id": "receipt",
+        "image_path": "images/receipt.png",
+        "source_split": "train",
+        "split": "internal_dev",
+    }]
+
+    class Detector(FakeDetector):
+        engine_name = "PHOCRTextDetection"
+
+        def predict(self, image_path):
+            return [
+                {"region_index": 0, "polygon": [[5, 5], [25, 5], [25, 15], [5, 15]], "confidence": 0.9},
+                {"region_index": 1, "polygon": [[10, 12], [30, 12], [30, 22], [10, 22]], "confidence": 0.8},
+            ]
+
+    metadata = run_hybrid_batch(
+        records,
+        dataset_root=tmp_path,
+        split="internal_dev",
+        output_dir=tmp_path / "out",
+        detector=Detector(),
+        recognizer=FakeRecognizer(),
+        crop_padding_percent=10,
+    )
+
+    prediction = json.loads((tmp_path / "out" / "predictions.jsonl").read_text(encoding="utf-8"))
+    assert prediction["merged_predictions"] == []
+    assert metadata["merged_groups"] == 0

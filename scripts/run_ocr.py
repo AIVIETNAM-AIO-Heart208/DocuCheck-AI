@@ -39,7 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit", type=int, default=None, help="Process only the first N sorted records (smoke run)")
     parser.add_argument(
         "--scale-factor", type=int, choices=(1, 2, 4), default=None,
-        help="VietOCR scale: omitted=E1 for recognition crops/E0 for hybrid, 1=E0, 2=E1, 4=E2",
+        help="VietOCR scale: omitted=E1, 1=E0, 2=E1, 4=E2",
     )
     return parser
 
@@ -60,7 +60,9 @@ def main(argv: list[str] | None = None) -> int:
     if not manifest_path.is_file():
         print(f"Manifest not found: {manifest_path}", file=sys.stderr)
         return 2
-    scale_factor = args.scale_factor if args.scale_factor is not None else (2 if args.engine == "vietocr" else 1)
+    scale_factor = args.scale_factor if args.scale_factor is not None else (
+        2 if args.engine in {"vietocr", "phocr-vietocr"} else 1
+    )
     if scale_factor != 1 and args.engine not in {"vietocr", "phocr-vietocr"}:
         print("--scale-factor 2/4 is supported only with --engine vietocr or --engine phocr-vietocr", file=sys.stderr)
         return 2

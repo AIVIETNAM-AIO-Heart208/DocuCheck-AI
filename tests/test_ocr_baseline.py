@@ -211,7 +211,7 @@ def test_ocr_cli_reports_missing_phocr_model(tmp_path, capsys):
     assert "PHOCR detector model not found" in capsys.readouterr().err
 
 
-def test_ocr_cli_selects_phocr_hybrid_without_merge_option(tmp_path, monkeypatch):
+def test_ocr_cli_selects_phocr_hybrid_with_e1_and_padding(tmp_path, monkeypatch):
     manifest = tmp_path / "manifest.jsonl"
     manifest.write_text(json.dumps({"image_id": "receipt", "image_path": "receipt.png", "split": "internal_dev"}) + "\n")
     calls = {}
@@ -249,7 +249,9 @@ def test_ocr_cli_selects_phocr_hybrid_without_merge_option(tmp_path, monkeypatch
         "--phocr-model-path", "detector.onnx", "--model-path", "vietocr.pth",
     ]) == 0
     assert calls["detector"] == {"model_path": "detector.onnx", "device": "cuda:0"}
-    assert calls["recognizer"] == {"model_path": "vietocr.pth", "device": "cuda:0"}
+    assert calls["recognizer"] == {
+        "model_path": "vietocr.pth", "device": "cuda:0", "scale_factor": 2,
+    }
     assert calls["run"]["crop_padding_percent"] == 10
     assert "merge_lines" not in calls["run"]
 
