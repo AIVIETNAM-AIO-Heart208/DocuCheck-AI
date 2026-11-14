@@ -11,6 +11,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from docucheck.data.loader import resolve_dataset_root
 from docucheck.ocr.detectors import crop_polygon
 
@@ -47,6 +49,31 @@ def _failure(
         row["error_type"] = type(error).__name__
         row["error_message"] = str(error)
     return row
+
+
+def _polygons_touch(first: list[list[float]], second: list[list[float]]) -> bool:
+    """Treat overlap or boundary contact between convex detector boxes as a collision."""
+    first_points = np.asarray(first, dtype=np.float64)
+    second_points = np.asarray(second, dtype=np.float64)
+    for polygon in (first_points, second_points):
+        for index, point in enumerate(polygon):
+            edge = polygon[(index + 1) % len(polygon)] - point
+            axis = np.asarray([-edge[1], edge[0]])
+            first_projection = first_points @ axis
+            second_projection = second_points @ axis
+            separated = (
+                first_projection.max() < second_projection.min()
+                or second_projection.max() < first_projection.min()
+            )
+            if separated:
+                return False
+    return True
+
+
+def _expanded_polygon(polygon: list[list[float]], padding_percent: float) -> list[list[float]]:
+    points = np.asarray(polygon, dtype=np.float64)
+    center = points.mean(axis=0)
+    return (center + (points - center) * (1 + padding_percent / 100)).tolist()
 
 
 def run_hybrid_batch(
@@ -90,6 +117,7 @@ def run_hybrid_batch(
     empty_hypotheses = 0
     candidate_failures = 0
     receipt_failures = 0
+    padding_fallback_candidates = 0
     started = time.perf_counter()
 
     with tempfile.TemporaryDirectory(prefix="docucheck-hybrid-") as crop_dir:
@@ -120,6 +148,19 @@ def run_hybrid_batch(
                     }
                     for ordinal, candidate in enumerate(detected_candidates, 1)
                 ]
+                effective_padding: dict[str, float] = {}
+                for candidate in candidates:
+                    padding = crop_padding_percent
+                    if padding:
+                        expanded = _expanded_polygon(candidate["polygon"], padding)
+                        if any(
+                            other is not candidate
+                            and _polygons_touch(expanded, other["polygon"])
+                            for other in candidates
+                        ):
+                            padding = 0
+                            padding_fallback_candidates += 1
+                    effective_padding[candidate["candidate_id"]] = padding
 
                 for ordinal, candidate in enumerate(candidates, 1):
                     candidate_id = candidate["candidate_id"]
@@ -131,7 +172,7 @@ def run_hybrid_batch(
                                 image_path,
                                 candidate["polygon"],
                                 crop_path,
-                                padding_percent=crop_padding_percent,
+                                padding_percent=effective_padding[candidate_id],
                             )
                         except Exception as error:
                             image_failures.append(_failure(
@@ -161,6 +202,7 @@ def run_hybrid_batch(
                             "candidate_id": candidate_id,
                             "region_index": candidate.get("region_index"),
                             "polygon": candidate["polygon"],
+                            "crop_padding_percent": effective_padding[candidate_id],
                             "detector_confidence": candidate.get("confidence"),
                             "text": text,
                             "recognition_confidence": confidence,
@@ -225,6 +267,8 @@ def run_hybrid_batch(
                 "mode": "perspective-rectify",
                 "output": "temporary PNG",
                 "padding_percent": crop_padding_percent,
+                "padding_fallback_percent": 0,
+                "padding_fallback_candidates": padding_fallback_candidates,
             },
             "recognizer": recognizer.preprocessing,
         },

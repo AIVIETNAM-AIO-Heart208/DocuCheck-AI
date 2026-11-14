@@ -215,10 +215,10 @@ def test_hybrid_batch_applies_e1_and_preserves_input_provenance(tmp_path):
         output_dir=output,
         detector=FakeDetector(),
         recognizer=recognizer,
-        crop_padding_percent=5,
+        crop_padding_percent=10,
     )
 
-    assert seen_sizes == [(84, 32)]
+    assert seen_sizes == [(88, 32)]
     prediction = json.loads((output / "predictions.jsonl").read_text(encoding="utf-8"))
     assert prediction["predictions"][0]["polygon"] == [
         [5.0, 5.0], [45.0, 5.0], [45.0, 20.0], [5.0, 20.0],
@@ -226,6 +226,53 @@ def test_hybrid_batch_applies_e1_and_preserves_input_provenance(tmp_path):
     assert metadata["preprocessing"]["recognizer"]["experiment"] == "E1"
     assert metadata["preprocessing"]["recognizer"]["scale_factor"] == 2
     assert metadata["preprocessing"]["recognizer"]["resampling"] == "LANCZOS"
-    assert metadata["preprocessing"]["crop"]["padding_percent"] == 5
+    assert metadata["preprocessing"]["crop"]["padding_percent"] == 10
+    assert metadata["preprocessing"]["crop"]["padding_fallback_candidates"] == 0
     assert hashlib.sha256(source.read_bytes()).hexdigest() == source_hash
     assert hashlib.sha256(manifest.read_bytes()).hexdigest() == manifest_hash
+
+
+def test_hybrid_batch_disables_padding_when_expansion_touches_neighbor(tmp_path):
+    image = tmp_path / "images" / "receipt.png"
+    image.parent.mkdir()
+    Image.new("RGB", (80, 40), "white").save(image)
+    records = [{
+        "image_id": "receipt",
+        "image_path": "images/receipt.png",
+        "source_split": "train",
+        "split": "internal_dev",
+    }]
+
+    class Detector(FakeDetector):
+        def predict(self, image_path):
+            return [
+                {"region_index": 0, "polygon": [[5, 5], [25, 5], [25, 15], [5, 15]], "confidence": 0.9},
+                {"region_index": 1, "polygon": [[26, 5], [46, 5], [46, 15], [26, 15]], "confidence": 0.8},
+            ]
+
+    class Recognizer(FakeRecognizer):
+        def __init__(self):
+            super().__init__()
+            self.seen_sizes = []
+
+        def predict(self, image_path):
+            with Image.open(image_path) as crop:
+                self.seen_sizes.append(crop.size)
+            return super().predict(image_path)
+
+    recognizer = Recognizer()
+    metadata = run_hybrid_batch(
+        records,
+        dataset_root=tmp_path,
+        split="internal_dev",
+        output_dir=tmp_path / "out",
+        detector=Detector(),
+        recognizer=recognizer,
+        crop_padding_percent=10,
+    )
+
+    prediction = json.loads((tmp_path / "out" / "predictions.jsonl").read_text(encoding="utf-8"))
+    assert recognizer.seen_sizes == [(20, 10), (20, 10)]
+    assert [candidate["crop_padding_percent"] for candidate in prediction["predictions"]] == [0, 0]
+    assert metadata["preprocessing"]["crop"]["padding_percent"] == 10
+    assert metadata["preprocessing"]["crop"]["padding_fallback_candidates"] == 2
