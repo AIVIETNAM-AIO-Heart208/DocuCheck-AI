@@ -201,7 +201,7 @@ def test_refined_id_schema_and_successful_full_region_selection(tmp_path):
     a = receipt([("STORE",0,0,80),("22 Road",0,25,100),("TOTAL 35,000",0,60,180)])
     by_text = {r["text"]:key for key,r in a["mapping"].items()}
     selected = {"seller_name":[by_text["STORE"]],"seller_address":[by_text["22 Road"]],
-                "total_amount":"M001","transaction_datetime":None}
+                "total_amount":None,"transaction_datetime":None}
     class Client(QwenClient):
         def request(self, endpoint, payload=None):
             if endpoint == "/apply-template":
@@ -211,12 +211,25 @@ def test_refined_id_schema_and_successful_full_region_selection(tmp_path):
             schema = payload["response_format"]["json_schema"]["schema"]
             assert schema["properties"]["seller_name"]["items"]["enum"]
             data = json.loads(payload["messages"][1]["content"])
-            assert data["candidates"]["total_amount"][0]["text"] == "35,000"
-            assert "spans" not in data["candidates"]["total_amount"][0]
+            money = data["candidates"]["total_amount"]
+            totals = [candidate for candidate in money
+                      if candidate["text"] == "35,000"
+                      and candidate["regions"] == [by_text["TOTAL 35,000"]]]
+            assert len(totals) == 1
+            total = totals[0]
+            assert "spans" not in total
+            assert total["id"] in schema["properties"]["total_amount"]["enum"]
+            # The number in the address is a separate candidate, not the total.
+            assert any(candidate["text"] == "22"
+                       and candidate["regions"] == [by_text["22 Road"]]
+                       and candidate["id"] != total["id"] for candidate in money)
+            selected["total_amount"] = total["id"]
             assert "start" not in json.dumps(schema["properties"]["seller_name"])
             return {"choices":[{"finish_reason":"stop","message":{"content":json.dumps(selected)}}]}
     result = Client(extraction_mode="refined").extract(a,tmp_path)
     assert result["fields"]["seller_name"]["value_normalized"] == "STORE"
     assert result["fields"]["seller_address"]["value_normalized"] == "22 Road"
     assert result["fields"]["total_amount"]["value_normalized"] == 35000
+    assert result["fields"]["total_amount"]["evidence_region_ids"] == [by_text["TOTAL 35,000"]]
+    assert result["raw_model_selection"]["total_amount"] == selected["total_amount"]
     assert "model_abstained" in result["fields"]["transaction_datetime"]["issues"]
