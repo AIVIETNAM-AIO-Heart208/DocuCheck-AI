@@ -1,0 +1,58 @@
+services:
+  web:
+    image: docucheck-ai:demo-v1
+    build:
+      context: .
+      args:
+        BUILD_REVISION: ${BUILD_REVISION:-unknown}
+    init: true
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8000}:8000"
+    environment:
+      MODEL_DIR: /models
+      STORAGE_DIR: /var/lib/docucheck
+      EXTRACTION_MODE: ${EXTRACTION_MODE:-refined}
+      GPU_POLICY: ${GPU_POLICY:-exclusive}
+      RESIDENT_VALIDATED: ${RESIDENT_VALIDATED:-false}
+      RESIDENT_FREE_MIB: ${RESIDENT_FREE_MIB:-7000}
+      MIN_FREE_MIB: ${MIN_FREE_MIB:-512}
+      QUEUE_SIZE: ${QUEUE_SIZE:-4}
+      PER_SESSION: ${PER_SESSION:-2}
+      CPU_THREADS: ${CPU_THREADS:-4}
+      MAX_BYTES: ${MAX_BYTES:-15728640}
+      MAX_PIXELS: ${MAX_PIXELS:-25000000}
+      DISK_BYTES: ${DISK_BYTES:-2147483648}
+      TTL_SECONDS: ${TTL_SECONDS:-86400}
+      STARTUP_TIMEOUT: ${STARTUP_TIMEOUT:-180}
+      OCR_TIMEOUT: ${OCR_TIMEOUT:-180}
+      EXTRACTION_TIMEOUT: ${EXTRACTION_TIMEOUT:-180}
+      JOB_TIMEOUT: ${JOB_TIMEOUT:-600}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      OMP_NUM_THREADS: ${CPU_THREADS:-4}
+    volumes:
+      - type: bind
+        source: ${MODEL_BUNDLE:-./models}
+        target: /models
+        read_only: true
+        bind:
+          create_host_path: false
+      - web-data:/var/lib/docucheck
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    mem_limit: 10g
+    cpus: 4.0
+    stop_grace_period: 150s
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  web-data:

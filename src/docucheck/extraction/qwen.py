@@ -16,7 +16,7 @@ from docucheck.extraction.invoice_total import annotate, guard
 from docucheck.extraction.reading_order import order_regions
 
 RUNTIME_CONFIG = json.loads(
-    (Path(__file__).resolve().parents[3] / "configs/qwen3_4b_q4_k_m.json").read_text()
+    (Path(__file__).resolve().parents[3] / "configs/qwen3_4b_q4_k_m.json").read_text(encoding="utf-8")
 )
 
 FIELDS = ("seller_name", "seller_address", "transaction_datetime", "total_amount")

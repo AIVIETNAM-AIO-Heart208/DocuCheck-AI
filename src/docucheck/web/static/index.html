@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DocuCheck AI — Đọc biên lai</title>
+<link rel="stylesheet" href="/static/style.css"><script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="/"><span class="brand-icon">D</span>DocuCheck<span class="brand-ai">AI</span></a><span class="local-badge"><span class="dot"></span>Demo xử lý tại máy chủ của nhóm</span></header>
+<main>
+<section class="intro"><span class="eyebrow">TỪ CHỨNG TỪ ĐẾN DỮ LIỆU</span><h1>Đọc biên lai.<br><span>Giữ lại điều quan trọng.</span></h1><p>Tải một ảnh lên, kiểm tra thông tin được trích xuất và tải bản ghi của bạn.</p></section>
+<section class="workspace" aria-label="Trích xuất thông tin biên lai">
+<div class="image-column">
+<div class="section-heading"><h2><span class="step">01</span> Biên lai</h2><button id="change" class="text-button" type="button">Đổi ảnh</button></div>
+<input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+<button id="drop" class="dropzone" type="button"><span class="upload-icon" aria-hidden="true">↑</span><strong>Thả ảnh biên lai vào đây</strong><span>hoặc nhấn để chọn ảnh</span><small id="limits">JPG, PNG, WebP · tối đa 15 MB</small></button>
+<div id="preview" class="preview" hidden><div class="image-wrap"><img id="image" alt="Ảnh biên lai đang xử lý"><canvas id="overlay" aria-hidden="true"></canvas></div></div>
+<p id="image-note" class="caption">Một biên lai mỗi lần. Ảnh rõ, đủ góc giúp đọc thông tin tốt hơn.</p>
+<button id="submit" class="button primary" type="button" disabled>Trích xuất thông tin →</button>
+<button id="cancel" class="button secondary" type="button" hidden>Hủy tác vụ</button>
+</div>
+<div class="results-column">
+<div class="section-heading"><h2><span class="step">02</span> Thông tin trích xuất</h2><span id="result-status" class="badge neutral">Chưa có kết quả</span></div>
+<div id="progress" class="progress" role="status" aria-live="polite"><span id="spinner" class="spinner" hidden></span><div><strong id="stage">Đang chuẩn bị dịch vụ…</strong><p id="stage-description">Bạn có thể chọn ảnh trong lúc chờ.</p></div></div>
+<p id="error" class="error" role="alert" hidden></p>
+<form id="review-form"><fieldset id="fields" disabled>
+<div class="field-group"><div class="field-heading"><button type="button" class="field-label" data-field="seller_name">Tên người bán ↗</button><span id="status-seller_name" class="field-status"></span></div><input id="seller_name" aria-label="Tên người bán" placeholder="Chưa xác định" maxlength="2000"><p id="issue-seller_name" class="field-note"></p></div>
+<div class="field-group"><div class="field-heading"><button type="button" class="field-label" data-field="seller_address">Địa chỉ ↗</button><span id="status-seller_address" class="field-status"></span></div><textarea id="seller_address" aria-label="Địa chỉ người bán" placeholder="Chưa xác định" maxlength="2000" rows="3"></textarea><p id="issue-seller_address" class="field-note"></p></div>
+<div class="field-group"><div class="field-heading"><button type="button" class="field-label" data-field="transaction_datetime">Ngày / giờ giao dịch ↗</button><span id="status-transaction_datetime" class="field-status"></span></div><div class="date-time"><input type="date" id="date" aria-label="Ngày giao dịch"><input type="time" step="1" id="time" aria-label="Giờ giao dịch"></div><p id="issue-transaction_datetime" class="field-note"></p></div>
+<div class="field-group"><div class="field-heading"><button type="button" class="field-label" data-field="total_amount">Tổng tiền ↗</button><span id="status-total_amount" class="field-status"></span></div><input id="total_amount" inputmode="numeric" aria-label="Tổng tiền dạng số nguyên" placeholder="Chưa xác định"><p id="amount-display" class="amount-display"></p><p id="issue-total_amount" class="field-note"></p></div>
+</fieldset>
+<p id="review-note" class="caption">Kết quả AI là đề xuất. Nhấn tên trường để xem vùng chữ làm bằng chứng trên ảnh.</p>
+<div class="review-actions"><button id="save" class="button secondary" type="submit" disabled>Lưu bản sửa</button><button id="confirm" class="button primary" type="button" disabled>Xác nhận thông tin</button></div></form>
+<div class="download-actions"><button id="download-ai" class="text-button" type="button" disabled>↓ JSON từ AI</button><button id="download-reviewed" class="text-button" type="button" disabled>↓ JSON đã xác nhận</button></div>
+<details><summary>Chi tiết xử lý</summary><p id="confidence-note">Độ tin cậy OCR phản ánh khả năng đọc chữ, không phải xác suất lựa chọn đúng của AI.</p><p id="timing" class="caption"></p><p id="runtime" class="caption"></p></details>
+</div></section>
+<footer><span>DocuCheck AI · Demo biên lai một trang</span><span id="retention">Ảnh và kết quả được lưu tạm trên máy chủ.</span></footer>
+</main></body></html>

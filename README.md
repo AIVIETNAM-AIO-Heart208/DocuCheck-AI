@@ -4,7 +4,19 @@ DocuCheck AI nghiên cứu cách trích xuất và rà soát thông tin trên �
 
 ## Trạng thái
 
-Dự án đang ở giai đoạn chuẩn bị dữ liệu và nghiên cứu. Định hướng sản phẩm mới là đề xuất; OCR, trích xuất thông tin, kiểm tra và ứng dụng cho người dùng chưa được xem là tính năng đã triển khai.
+Đã có luồng CLI OCR PHOCR/VietOCR CUDA → Qwen3-4B Q4_K_M → bốn field JSON,
+cùng source web demo upload, review/xác nhận và đóng gói Docker Linux GPU.
+Web/Docker mới được triển khai, **chưa chạy kiểm thử, inference hoặc build Docker
+để xác minh**. Không dùng số benchmark Tesseract lịch sử dưới đây làm chất lượng
+của hệ thống Qwen hiện tại.
+
+- [Web demo: setup Windows/Docker, hướng dẫn sử dụng và giới hạn](docs/WEB_DEMO.md).
+- [Đóng gói nộp online/offline và điều kiện máy chấm](docs/DOCKER_SUBMISSION.md).
+- [CLI một ảnh → JSON và OCR mới nhất](docs/QWEN_DEMO.md).
+
+Web mặc định refined + GPU exclusive để bảo thủ VRAM; resident là tùy chọn cần
+kiểm chứng. CLI giữ mặc định baseline. Đọc tài liệu web trước khi cài môi trường
+GPU; lệnh core/Tesseract phía dưới phục vụ workflow nghiên cứu riêng.
 
 Ngày 05/11/2026 đã chạy **Week 2 — Goal 1: benchmark recognition trên 6.585 crop**.
 Validation đạt CER **20,65%**, WER **56,18%**, exact-match **23,69%** với cấu hình

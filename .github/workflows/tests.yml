@@ -10,6 +10,32 @@ permissions:
   contents: read
 
 jobs:
+  web-tests:
+    name: Web contracts (no inference)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+      - name: Install isolated web test dependencies
+        run: |
+          uv venv --python 3.12 .venv-web-ci
+          uv pip install --python .venv-web-ci/bin/python -r requirements/web.lock 'pytest>=8.3,<9'
+      - name: Require web dependencies and run contracts
+        env:
+          MC_OCR_ROOT: ${{ runner.temp }}/mcocr-not-present
+        run: |
+          .venv-web-ci/bin/python -c 'import fastapi, httpx'
+          .venv-web-ci/bin/python -m pytest -q tests/test_web_api.py tests/test_web_storage.py tests/test_web_engine_lifecycle.py tests/test_web_ipc.py tests/test_web_offline_config.py
+      - name: Run form state regression checks
+        run: node --test tests/web_review_state.test.cjs
   unit-tests:
     name: Unit tests (Python 3.12)
     runs-on: ubuntu-latest

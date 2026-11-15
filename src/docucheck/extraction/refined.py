@@ -375,8 +375,9 @@ Never infer a field's correctness from OCR confidence. Return four keys only."""
                        "type": "object", "properties": props, "required": list(FIELDS), "additionalProperties": False}}}}
     write_json(directory / "requests" / f"{identity}.json", payload)
     print(f"[{identity}] refined: context preflight", file=sys.stderr)
-    formatted = client.request("/apply-template", {"messages": payload["messages"]})
-    tokens = client.request("/tokenize", {"content": formatted["prompt"], "add_special": True})["tokens"]
+    from .context_budget import ContextBudgetExceeded, fit_request
+    tokens, context_attempts = fit_request(client, payload, data)
+    write_json(directory / "requests" / f"{identity}.json", payload)
     audit = {"mode": "refined", "input_sha256": hashlib.sha256(json.dumps(adapted, sort_keys=True, ensure_ascii=False).encode()).hexdigest(),
              "prompt_tokens": len(tokens), "reserved_output_tokens": payload["max_tokens"],
              "omitted_alternatives": geometry["omitted"], "original_regions_in_request": list(adapted["mapping"]),
@@ -387,14 +388,15 @@ Never infer a field's correctness from OCR confidence. Return four keys only."""
     audit["name_selection_representation"] = "text ID enum; offsets resolved in code; legacy N IDs not in request"
     audit["selectable_text_ids"] = list(texts)
     audit["serialization"] = {
-        "version": "readable_text_ids_v3", "character_offsets_in_prompt": False,
-        "scalar_and_scoped_label_text_explicit": True,
+        "version": context_attempts[-1]["version"], "character_offsets_in_prompt": False,
+        "scalar_and_scoped_label_text_explicit": context_attempts[-1]["version"] == "readable_text_ids_v3",
         "geometry_alternatives_in_ledger_only": geometry["alternatives"],
         "reason": "derived from lines/blocks; every original region remains selectable",
         "prompt_character_count": len(payload["messages"][1]["content"])}
+    audit["context_attempts"] = context_attempts
     write_json(directory / "coverage" / f"{identity}.json", audit)
     if len(tokens) + payload["max_tokens"] > client.context:
-        raise ValueError(f"Context exceeded in refined: {len(tokens)} + {payload['max_tokens']} > {client.context}; "
+        raise ContextBudgetExceeded(f"Context exceeded in refined: {len(tokens)} + {payload['max_tokens']} > {client.context}; "
                          "no truncation or baseline fallback")
     print(f"[{identity}] refined: Qwen selection", file=sys.stderr)
     response = client.request("/v1/chat/completions", payload)

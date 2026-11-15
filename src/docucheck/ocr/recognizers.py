@@ -59,6 +59,7 @@ class VietOCRBaseline:
         device: str = "cpu",
         scale_factor: int = 1,
         backend: Any | None = None,
+        config_path: str | Path | None = None,
     ):
         started = time.perf_counter()
         if scale_factor not in (1, 2, 4):
@@ -89,7 +90,10 @@ class VietOCRBaseline:
 
                 if not torch.cuda.is_available():
                     raise RuntimeError("VietOCR CUDA requested but the installed PyTorch has no CUDA support")
-            config = Cfg.load_config_from_name(self.model_name)
+            # Web/offline deployment supplies the merged base + model config.
+            # Existing CLI behavior remains unchanged when no local config is set.
+            config = (Cfg.load_config_from_file(str(_local_path(config_path)))
+                      if config_path is not None else Cfg.load_config_from_name(self.model_name))
             config["weights"] = str(self.model_path)
             config["device"] = self.device
             config["cnn"]["pretrained"] = False

@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv*/
+.tmp/
+.ruff_cache/
+.venv-web-ci/
 venv/
 *.egg-info/
 .env
@@ -34,6 +38,10 @@ Thumbs.db
 *.pdmodel
 logs/
 outputs/
+/models/
+/submission/
+/docucheck-ai.zip
+/.venv-web/
 
 # Spec-driven
 .agents/
