@@ -38,11 +38,16 @@ logs/
 outputs/
 /models/
 /submission/
+/dist/
 # Distribution archives belong outside Git; deliver through Drive/USB.
 *.zip
 *.tar
 *.tar.gz
 *.tgz
+
+# Publish only the final technical report; authoring files remain local
+/reports/*
+!/reports/DocuCheck_AI_Technical_Report.pdf
 
 # Spec-driven
 .agents/

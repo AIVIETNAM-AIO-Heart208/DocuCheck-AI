@@ -148,7 +148,7 @@ def main(argv=None):
     source_files = [
         "scripts/run_recognition_benchmark.py", "scripts/evaluate_ocr.py",
         "src/docucheck/ocr/baseline.py", "src/docucheck/ocr/inference.py",
-        "src/docucheck/evaluation/metrics.py", "docs/WEEK2_RECOGNITION_PROTOCOL.md",
+        "src/docucheck/evaluation/metrics.py", "docs/OCR_RECOGNITION_PROTOCOL.md",
     ]
     config = {
         "locked_at_utc": datetime.now(timezone.utc).isoformat(),

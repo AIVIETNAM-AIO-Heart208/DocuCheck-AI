@@ -15,10 +15,14 @@ data
 outputs
 models
 submission
+dist
 reports
 notebooks
 tests
 docs
+!docs/
+docs/**
+!docs/DOCKER_HUB.md
 *.tar
 *.zip
 *.gguf
