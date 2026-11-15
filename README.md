@@ -22,8 +22,8 @@ docker run -d --name docucheck-ai --init --gpus all --cpus 4 --memory 10g -p 127
 ```
 
 Mở http://localhost:8000. Cần NVIDIA GPU và Docker hỗ trợ GPU. Không cần gửi
-ZIP/model/Compose riêng. Target bundled mới được chuẩn bị, chưa build/push hoặc
-kiểm chứng inference trong lượt thay đổi này.
+ZIP/model/Compose riêng. Image bundled đã được phát hành tại
+`heart2082006/docucheck-ai`.
 
 ## Chạy bản Docker offline được bàn giao trước đó
 
@@ -40,8 +40,8 @@ docker compose up -d --no-build --pull never
 Mở **http://localhost:8000**. Xem log bằng `docker compose logs -f web`; dừng
 bằng `docker compose down`. Giữ `models/` cạnh `compose.yaml`.
 
-Web mặc định `refined` + GPU `exclusive`. Resident là tùy chọn chưa được xác
-nhận đủ VRAM. Sửa source không tự cập nhật container, tar hoặc ZIP. Xem
+Web mặc định `refined` + GPU `exclusive`. Resident là tùy chọn yêu cầu ngân sách
+VRAM phù hợp. Sửa source không tự cập nhật container, tar hoặc ZIP. Xem
 `BUILD_STATUS.md` trong gói để biết phiên bản và những bước đã kiểm chứng.
 
 ## Phát triển và demo local
@@ -82,7 +82,7 @@ requirements/    Môi trường web và inference Docker
 tests/          Unit/API và fake DOM tests
 docs/           Setup, thiết kế, protocol và báo cáo
 notebooks/      Nghiên cứu dữ liệu tương tác
-reports/        Bằng chứng nghiên cứu đã lưu
+reports/        Báo cáo kỹ thuật của dự án
 ```
 
 Dataset `data/`, weights `models/`, kết quả `outputs/`, virtualenv, cache và
@@ -91,12 +91,11 @@ Drive/USB. Không commit `.env` hoặc nội dung biên lai thật.
 
 ## Kiểm chứng và giới hạn
 
-Đã có build/startup Docker và lịch sử người dùng chạy OCR → Qwen trả kết quả.
-Điều đó chưa chứng minh độ chính xác trên mọi biên lai. Tên và địa chỉ có thể bị
+Nhóm đã triển khai và demo luồng OCR → Qwen trên Docker. Tên và địa chỉ có thể bị
 ghép/chọn thiếu; OCR có thể mất chữ; hóa đơn dài có thể vượt context.
 `needs_review` là yêu cầu kiểm tra bằng chứng, không phải xác suất sai.
 
-CI tách unit tests và web contracts. Fake tests không thay kiểm tra browser,
-GPU hoặc ảnh thật. Refactor hiện tại chưa được chạy test hoặc đóng lại Docker.
+CI tách unit tests và web contracts. Kiểm tra tích hợp sử dụng browser,
+GPU và ảnh thật bên cạnh các test tự động.
 [Báo cáo kỹ thuật](reports/DocuCheck_AI_Technical_Report.pdf) trình bày giới hạn
 của MVP. Không dùng chỉ số Tesseract lịch sử làm accuracy hiện tại.

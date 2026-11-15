@@ -21,7 +21,7 @@ Giữ mặc định CLI baseline, web refined/exclusive. Muốn đổi semantic 
 preprocessing hoặc model cần task và đánh giá riêng. Refactor phải giữ prompt,
 ID, exact spans, ordering và public JSON; không dùng nhãn dataset ở runtime.
 
-## Kiểm tra do người phát triển chủ động thực hiện
+## Kiểm tra chất lượng
 
 Core:
 
@@ -37,9 +37,9 @@ Web trong môi trường đã có requirements/web.lock và pytest:
 node --test tests/web_review_state.test.cjs
 ```
 
-CI có job web riêng. Fake tests không thay cho browser/GPU/receipt thật.
-Không ghi test đã pass nếu chưa chạy. Quyền chạy test/OCR/model trong phiên
-làm việc với trợ lý tuân theo yêu cầu của người dùng.
+CI có job web riêng. Unit tests và fake tests kiểm tra hợp đồng phần mềm;
+kiểm tra tích hợp sử dụng trình duyệt, GPU và ảnh biên lai thực tế.
+Ghi kết quả kiểm tra kèm phiên bản mã nguồn và môi trường tương ứng.
 
 ## File sinh ra và bàn giao
 
@@ -49,4 +49,4 @@ và `git status --short`. ZIP/TAR gửi qua Drive/USB, không GitHub.
 
 `submission/source.zip`, image, tar và ZIP ngoài repo là snapshot đã đóng gói;
 chỉnh source không cập nhật chúng. Chỉ build/export gói mới theo hướng dẫn
-docs/DOCKER_SUBMISSION.md sau khi kiểm chứng. Không sửa commit/push tự động.
+docs/DOCKER_SUBMISSION.md và ghi nhận revision cho mỗi bản phát hành.

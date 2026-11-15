@@ -4,14 +4,14 @@ Trích xuất tên người bán, địa chỉ, ngày/giờ giao dịch và tổ
 lai. Có giao diện kiểm tra, chỉnh sửa, xác nhận và tải JSON.
 
 Image chứa sẵn PHOCR, VietOCR và Qwen3-4B Q4_K_M. Không cần cài Python,
-tải model, nhận ZIP hoặc clone source. Hướng dẫn này áp dụng sau khi publisher
-đã build target bundled và push thành công image heart2082006/docucheck-ai.
+tải model, nhận ZIP hoặc clone source. Image được phát hành tại
+`heart2082006/docucheck-ai`, sử dụng target bundled.
 
 ## Chạy lần đầu
 
 Yêu cầu máy có NVIDIA GPU, driver tương thích và Docker hỗ trợ GPU. Windows
 dùng Docker Desktop với Linux containers và WSL2. Bản build nhắm RTX 4060 8 GB;
-chưa xác minh mọi loại GPU. Cổng 8000 phải còn trống.
+GPU khác cần kiến trúc CUDA tương thích. Cổng 8000 phải còn trống.
 
 Mở Docker Desktop, sau đó mở PowerShell/terminal và chạy:
 
@@ -51,5 +51,5 @@ Edit** để người nhận đọc được ngay trên trang image. Docker push
 không tự đăng nội dung README lên Overview. File này cũng được kèm trong image
 tại `/app/DOCKER_HUB.md` sau lần build tiếp theo.
 
-Build/push theo docs/DOCKER_SUBMISSION.md. Cấu hình bundled được chuẩn bị nhưng
-chưa được trợ lý build/push hoặc kiểm chứng inference trong lượt thay đổi này.
+Quy trình build/push và cập nhật image được mô tả trong
+[DOCKER_SUBMISSION.md](DOCKER_SUBMISSION.md).

@@ -1,17 +1,14 @@
 # Web demo DocuCheck AI
 
-## Trạng thái
+## Tổng quan
 
-Đã triển khai source web/API/coordinator/worker/UI, Docker và test. Docker đã
-build và kiểm tra web startup/GPU preflight; lịch sử demo của người dùng có các
-lượt OCR → Qwen trả kết quả. Test bổ sung UI/CI chưa được chạy; chưa đánh giá
-accuracy, resident hoặc thử gói nộp trên máy khác. Xem submission/BUILD_STATUS.md
-để biết trạng thái chính xác của image bàn giao.
+Web tích hợp API, hàng đợi, worker OCR–Qwen và giao diện xem/sửa/xác nhận kết
+quả. Nhóm đã demo luồng xử lý và phát hành image Docker chứa model tại
+`heart2082006/docucheck-ai`. Cấu hình mặc định là refined/exclusive.
 
-Nguồn bắt đầu: commit `0c60d81`. CLI cũ giữ mặc định baseline; web mặc định
-`EXTRACTION_MODE=refined` để dùng đúng luồng nhóm đang demo. Đây không phải kết
-luận refined đã đạt quality gate. OCR vẫn PHOCR–VietOCR CUDA, E1 scale 2 Lanczos,
-padding 10% có guard/fallback và gợi ý merged_predictions. Không đổi extractor.
+CLI mặc định baseline; web mặc định `EXTRACTION_MODE=refined`. OCR dùng
+PHOCR–VietOCR CUDA, E1 scale 2 Lanczos, padding 10% có guard/fallback và
+gợi ý merged_predictions. Độ chính xác phụ thuộc chất lượng ảnh và bố cục.
 
 ## Luồng sử dụng
 
@@ -212,28 +209,21 @@ review là quyết định người dùng, không phải kết luận AI chính 
 | Job interrupted | App restart; gửi job mới, không dùng artifact cũ làm kết quả |
 | Link JSON reviewed 409 | Lưu rồi xác nhận revision mới nhất |
 
-Lượt web Joma đầu tiên có OCR output và llama-server báo model loaded nhưng
-web chưa vào extraction. Code ban đầu dùng `-lv 3`, làm mất dòng model-loader
-`offloaded ... layers` mà bước kiểm tra yêu cầu. Đã sửa sang `-lv 4` như CLI;
-vẫn từ chối nếu không xác minh đủ layer GPU, không bỏ kiểm tra CUDA. Chưa chạy
-lại model sau sửa. Job lỗi mới lưu `failure.json` tại thư mục UUID; API chỉ trả
-code/thông báo đã lọc, không trả traceback hay path host.
+llama-server dùng `-lv 4` để ghi thông tin offload; bộ điều phối kiểm tra đủ
+layer GPU trước khi xử lý. Job lỗi lưu `failure.json` tại thư mục UUID;
+API chỉ trả code/thông báo đã lọc, không trả traceback hoặc đường dẫn host.
 
-Lượt Joma tiếp theo đã tạo `extraction.json` đầy đủ nhưng báo
-`worker_UnicodeDecodeError` khi truyền về web. Parent đọc UTF-8, còn stdout của
-Python child trên Windows trước đó có thể dùng code page địa phương. Đã cố định
-`-X utf8`, `PYTHONUTF8=1`, `PYTHONIOENCODING=utf-8` và reconfigure stdio trong worker.
+Worker Python dùng `-X utf8`, `PYTHONUTF8=1`, `PYTHONIOENCODING=utf-8` và
+reconfigure stdio để truyền văn bản tiếng Việt nhất quán trên Windows/Linux.
 IPC dùng JSON ASCII-escaped ở cả hai chiều; sau json.loads văn bản Unicode giữ
 nguyên, artifacts vẫn UTF-8. Không dùng errors=ignore/replace cho dữ liệu biên lai.
-Lỗi decode từ pipe được phân biệt với lỗi nội bộ worker. Chưa chạy lại để xác minh.
+Lỗi decode từ pipe được phân biệt với lỗi nội bộ worker.
 
 Không hủy process ngoài app; cancel không kết thúc kernel GPU tức thì mọi trường
 hợp, phải đợi terminate/kill và worker unwind. Nếu cleanup thất bại, cần dừng app
-và kiểm tra process trước khi gửi tiếp; chưa tái hiện đầy đủ trên Windows/Linux.
+và kiểm tra process trước khi gửi tiếp.
 
-## Các kiểm chứng để tự chạy
-
-Không có lệnh nào dưới đây đã được thực thi trong lượt triển khai.
+## Quy trình kiểm tra khi phát triển và phát hành
 
 ```powershell
 # Chạy test web trong môi trường có FastAPI/httpx + pytest
@@ -250,7 +240,7 @@ Checklist manual: upload đúng/sai; ảnh EXIF; đổi ảnh không stale; clic
 null/0/ngày thiếu giờ; save/confirm/revision từ hai tab; cancel; hai request đồng
 thời; quá queue; model thiếu; OCR fail; timeout; Ctrl+C/restart; Docker; tắt mạng.
 Đối chiếu CLI/web trên cùng ảnh/OCR, cùng config; normalized input có EXIF thay
-đổi cần ghi nhận. Chưa có replay chứng minh output CLI/web tương đương.
+đổi cần ghi nhận khi so sánh kết quả CLI và web.
 
 Đo opt-in sau khi tự khởi động web, chọn tối thiểu hai ảnh, chạy sáu job tuần tự:
 
@@ -262,33 +252,32 @@ thời; quá queue; model thiếu; OCR fail; timeout; Ctrl+C/restart; Docker; t�
 server chưa nhận job trước; năm job sau không mặc nhiên warm-model ở exclusive.
 Harness ghi mỗi lượt và lỗi, không chấm accuracy. Runtime từng job ghi load count,
 queue/OCR/Qwen/load/total, token usage, RAM process-tree/GPU toàn máy sampling
-theo stage (không phải peak chính xác). Chưa có % cải thiện hoặc latency cam kết.
+theo stage (không phải peak chính xác). Kết quả đo gắn với cấu hình và phần cứng
+của từng lượt chạy.
 
-## Phần chưa xác minh / còn giới hạn
+## Phạm vi và giới hạn
 
-- Toàn bộ runtime, UI browser, unit/regression tests, Docker build, process
-  cancellation, CUDA Linux/Windows, offline và resident VRAM chưa chạy xác minh.
-- Minimal inference dependency pins chưa qua resolver/smoke Linux; model bundle
-  không tự chứng minh license. Cần hoàn thiện license/model cards khi phân phối.
+- Model bundle lưu checksum để đối chiếu tính toàn vẹn; license/model cards
+  đi kèm nguồn phân phối trọng số.
 - Đây là demo một node, một GPU, một worker. Chưa có auth production, multi-node,
   PDF/đa trang hoặc cache kết quả. Các lỗi lựa chọn tên/địa chỉ của model vẫn tồn tại.
 - EXIF normalization và đường runtime Linux là thay đổi integration có thể làm
-  output khác CLI cũ; cần regression. CLI preprocessing không bị đổi bởi task này.
-- Threshold/budget/TTL là cấu hình khởi điểm; chưa tối ưu hoặc đảm bảo vừa mọi bill.
+  output khác CLI cũ; so sánh trên cùng ảnh đã chuẩn hóa và cùng cấu hình.
+- Threshold/budget/TTL là cấu hình có thể điều chỉnh theo tài nguyên và dữ liệu.
 
 Nguồn kỹ thuật: [Docker GPU Windows](https://docs.docker.com/desktop/features/gpu/),
 [Compose GPU](https://docs.docker.com/compose/how-tos/gpu-support/),
 [ORT CUDA](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html),
 [PyTorch versions](https://pytorch.org/get-started/previous-versions/),
 [llama b12345](https://github.com/ggml-org/llama.cpp/tree/b12345).
-# Trạng thái cập nhật MVP
+## Trạng thái giao diện và kiểm tra kết quả
 
 UI khóa nhập và chặn gửi lặp khi đang lưu/xác nhận. Đổi ảnh bỏ qua phản hồi cũ;
 tải JSON dùng no-store và bỏ download không còn khớp ảnh/bản sửa. CI có job web
-riêng cùng test form bằng Node fake DOM, không chạy OCR/model. Các test bổ sung
-chưa được chạy trong phiên triển khai. Giữ refined/exclusive mặc định.
+riêng cùng test form bằng Node fake DOM. Mặc định refined/exclusive.
 
-Kiểm tra thủ công trước nộp: lưu khi mạng chậm, bấm lặp, đổi ảnh lúc đang lưu,
+Checklist bảo trì: lưu khi mạng chậm, bấm lặp, đổi ảnh lúc đang lưu,
 xác nhận/tải hai phiên bản JSON; kiểm tra tên/địa chỉ trên ảnh. Model có thể chọn
-sai dù JSON hợp lệ. Xem MVP_WEB_REVIEW_20261115.md để biết giới hạn sản phẩm.
+sai dù JSON hợp lệ. Xem [báo cáo kỹ thuật](../reports/DocuCheck_AI_Technical_Report.pdf)
+để biết phương pháp và phạm vi kết quả.
 

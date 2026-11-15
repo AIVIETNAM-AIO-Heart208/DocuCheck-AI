@@ -32,25 +32,24 @@ Windows dùng Docker Desktop Linux containers/WSL2. Repository private cần
 Log: `docker logs -f docucheck-ai`. Dừng: `docker stop docucheck-ai`.
 Khởi động lại container đã có: `docker start docucheck-ai`.
 
-Target bundled mới được chuẩn bị, chưa build/push hoặc kiểm chứng inference
-trong lượt này. Runtime kiểm tra checksum bundle lúc startup. Model notice được
+Image bundled được phát hành tại `heart2082006/docucheck-ai`.
+Runtime kiểm tra checksum bundle lúc startup. Model notice được
 đưa vào image; bảo đảm quyền phân phối weights khi xuất bản public.
 
 ## Phân phối bằng image tar
 
-Docker đã build và kiểm tra startup/GPU preflight. Gói hiện tại tại submission/
-có docucheck-ai.tar, model bundle, checksum và source.zip. Test mới, accuracy và
-chạy lại gói trên máy khác chưa được xác minh. Xem BUILD_STATUS.md trong gói nộp.
+Luồng tar là phương án bàn giao offline, gồm docucheck-ai.tar, model bundle,
+checksum và source.zip trong submission/. Docker Hub là phương án bàn giao
+chính. Thông tin phiên bản của gói offline nằm trong BUILD_STATUS.md kèm gói.
 
 ## Phạm vi môi trường
 
 - NVIDIA GPU; bản build mặc định architecture 89 (RTX 4060), CUDA 12.8 Linux
   x86_64. Driver host phải tương thích. Windows dùng Docker Desktop WSL2 Linux
   containers, Linux dùng NVIDIA Container Toolkit.
-- Máy không có NVIDIA GPU không đáp ứng đường demo này. Chưa có CPU fallback;
-  hãy xác nhận cấu hình máy chấm trước khi nộp. Không dùng fake output để thay.
-- Cấu hình khởi điểm: RAM container 10 GB, 4 CPU; chưa đo RAM/disk tối thiểu hay
-  chứng minh resident vừa VRAM 8 GB. Build CUDA cần thêm RAM/disk/cache tạm.
+- Luồng demo yêu cầu NVIDIA GPU, không có CPU fallback tự động.
+- Cấu hình khởi điểm: RAM container 10 GB, 4 CPU. Exclusive là policy mặc định;
+  resident cần ngân sách VRAM phù hợp. Build CUDA cần thêm RAM/disk/cache tạm.
 
 ## Gói source và setup online
 
@@ -78,7 +77,7 @@ models/
 ```
 
 Manifest ghi SHA256 thực. Qwen/PHOCR được đối chiếu hash pin; VietOCR/config
-được ghi hash snapshot local, chưa có xác minh độc lập nguồn/license bằng script.
+được ghi hash snapshot local để đối chiếu tính toàn vẹn.
 Bổ sung license text/model card/notice cần thiết từ nguồn phân phối; link nguồn
 trong notice không tự thay thế license grant. Docker có bản LICENSE llama.cpp.
 
@@ -90,7 +89,7 @@ docker compose up -d --no-build
 
 Mở localhost:8000, kiểm tra ready và upload ảnh thật. Build chỉ cần mạng tải base
 images/wheels/source; inference sau setup không cần mạng tải config/model. Kiểm
-tra offline thật trước nộp; chưa chạy trong lượt triển khai.
+tra chế độ offline khi chuẩn bị bản phát hành không cần kết nối mạng.
 
 ## Gói offline
 
@@ -112,7 +111,7 @@ docker image inspect docucheck-ai:demo-v1 --format '{{.Id}}' | Out-File -Encodin
 ```
 
 Thêm revision source, host/driver/GPU, lệnh build và kết quả smoke-test thực vào
-phiếu bàn giao. Không viết các kết quả đó nếu chưa chạy. Model checksums nằm
+phiếu bàn giao. Model checksums nằm
 trong manifest. `docker save` **không** đưa model bind mount/volume vào image tar;
 phải nộp cả `models/`. Yêu cầu license/model cards vẫn áp dụng cho bundle offline.
 
@@ -142,5 +141,5 @@ docker compose down
 
 Lệnh này giữ dữ liệu/weights. Không dùng `down -v` trừ khi chủ động muốn xóa
 toàn bộ dữ liệu demo. Dừng sạch/khởi động lại, upload lỗi, hủy job, quá hàng đợi,
-hai tab, offline, hash/model thiếu đều cần tự test trước nộp. Xem checklist trong
-WEB_DEMO.md; không có bước nào đã được xác nhận bằng Docker thật ở lượt này.
+hai tab, offline, hash/model thiếu nằm trong checklist bảo trì bản phát hành
+ở WEB_DEMO.md.

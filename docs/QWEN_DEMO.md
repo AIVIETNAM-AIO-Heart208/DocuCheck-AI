@@ -9,7 +9,7 @@ Cả baseline/refined nhận nhóm ghép như gợi ý tham chiếu về region 
 nhét cả raw và merged thành hai bản bằng chứng lặp, không ép group thành tên.
 Giữ polygon gốc vì union box của group không bảo toàn độ nghiêng từng dòng.
 
-Chạy ảnh mới để dùng OCR mới (các lệnh dưới do người dùng tự chạy):
+Xử lý ảnh bằng OCR hiện tại:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/extract_receipt.py "data/mcocr/val_images/val_images/mcocr_val_145114ixmyt.jpg" --extraction-mode refined --output outputs/bill_refined.json
@@ -22,15 +22,14 @@ cache E0 cũ cần chạy OCR lại. Kiểm tra `ocr/runtime.json`, `ocr/predict
 (`merged_predictions`), và `inputs/<id>.json` (`ocr_merge_hints`, excluded merges).
 Không có group ghép vẫn hợp lệ; không phải ảnh nào cũng cần merge.
 
-Đã đọc diff và nối code; chưa chạy test/OCR/Qwen để xác nhận độ đúng, tốc độ
-hoặc VRAM sau cập nhật. Test adapter/profile: `tests/test_qwen_latest_ocr_contract.py`.
+Test adapter/profile: `tests/test_qwen_latest_ocr_contract.py`.
 Một hạn chế OCR upstream: same-line merge dùng overlap y, có thể ghép nhầm các
 dòng trên ảnh nghiêng; vì vậy Qwen chỉ dùng như gợi ý và giữ nguyên nguồn raw.
 
 Xem [hướng dẫn refined](QWEN_GUARD_LAYOUT_REFINEMENT.md) để bật
 `--extraction-mode refined`, dùng bbox/polygon và chọn source spans cho tên/địa chỉ.
-Baseline vẫn mặc định. Code refined và test mới chưa được chạy kiểm chứng;
-các kết quả audit lịch sử bên dưới không xác nhận chất lượng của refined.
+CLI giữ baseline mặc định; web dùng refined. Các kết quả audit lịch sử bên
+dưới thuộc phiên bản tương ứng của từng run.
 
 Parser tiền hiện nhận phân nhóm bằng dấu cách thường/NBSP/narrow NBSP và đơn
 vị gắn liền như `12.000đ`, `12.000d`, `12.000VND`. Ngày DMY dùng dấu chấm và

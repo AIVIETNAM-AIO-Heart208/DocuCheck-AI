@@ -48,4 +48,4 @@ Context hiện tại 8192 token, dự trữ đầu ra 512 token; quá budget có
 So sánh lựa chọn cần cùng OCR và nhãn tham chiếu đã chốt. Ví dụ đúng ở
 pipeline trước không tự xác nhận accuracy refined hiện tại. Tham khảo
 [báo cáo kỹ thuật](../reports/DocuCheck_AI_Technical_Report.pdf) để biết
-bằng chứng và phần chưa kiểm chứng.
+bằng chứng và phạm vi kết quả.
