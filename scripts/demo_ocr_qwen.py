@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+from docucheck.extraction.contracts import EXTRACTION_MODES
 from docucheck.extraction.qwen import (
     RUNTIME_CONFIG,
     QwenClient,
@@ -28,7 +29,7 @@ def main():
         help="Preselected receipt manifest (at most three records)",
     )
     parser.add_argument("--output-dir", required=True, help="New run directory")
-    parser.add_argument("--extraction-mode", choices=("baseline", "refined"), default="baseline")
+    parser.add_argument("--extraction-mode", choices=EXTRACTION_MODES, default="baseline")
     parser.add_argument(
         "--reuse-ocr",
         action="store_true",

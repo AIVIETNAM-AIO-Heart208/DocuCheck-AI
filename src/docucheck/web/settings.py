@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 
+from docucheck.extraction.contracts import EXTRACTION_MODES
+
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -35,7 +37,7 @@ class Settings:
     cookie_secure: bool = False
 
     def __post_init__(self):
-        if self.extraction_mode not in {"baseline", "refined"}:
+        if self.extraction_mode not in EXTRACTION_MODES:
             raise ValueError("Invalid EXTRACTION_MODE")
         if self.gpu_policy not in {"resident", "exclusive"}:
             raise ValueError("Invalid GPU_POLICY")

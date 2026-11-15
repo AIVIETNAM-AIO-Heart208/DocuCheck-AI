@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import traceback
 
+from docucheck.extraction.contracts import EXTRACTION_MODES
 from .ipc import configure_stdio, message_line
 
 
@@ -46,7 +47,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("role", choices=("ocr", "extract"))
     parser.add_argument("--models", type=Path, required=True)
-    parser.add_argument("--mode", choices=("baseline", "refined"), required=True)
+    parser.add_argument("--mode", choices=EXTRACTION_MODES, required=True)
     args = parser.parse_args()
     try:
         with redirect_stdout(sys.stderr):

@@ -1,82 +1,85 @@
 # DocuCheck AI
 
-DocuCheck AI nghiên cứu cách trích xuất và rà soát thông tin trên ảnh hóa đơn, biên lai bán lẻ tiếng Việt. Hệ thống hướng tới tạo bản ghi có cấu trúc, chỉ rõ vùng ảnh làm bằng chứng cho từng giá trị và để người dùng kiểm tra, xác nhận kết quả.
+Web demo trích xuất bốn trường từ ảnh biên lai: `seller_name`, `seller_address`,
+`transaction_datetime`, `total_amount`. Người dùng tải ảnh, kiểm tra bằng chứng,
+sửa/xác nhận và tải JSON. Kết quả AI cần được đối chiếu với biên lai.
 
-## Trạng thái
+Pipeline hiện tại: **PHOCR detector → VietOCR CUDA → Qwen3-4B-Instruct-2507
+Q4_K_M → JSON → review**. OCR dùng E1 scale 2 Lanczos và padding có guard.
+Tesseract là baseline nghiên cứu lịch sử, không phải engine của web demo.
 
-Đã có luồng CLI OCR PHOCR/VietOCR CUDA → Qwen3-4B Q4_K_M → bốn field JSON,
-cùng source web demo upload, review/xác nhận và đóng gói Docker Linux GPU.
-Web/Docker mới được triển khai, **chưa chạy kiểm thử, inference hoặc build Docker
-để xác minh**. Không dùng số benchmark Tesseract lịch sử dưới đây làm chất lượng
-của hệ thống Qwen hiện tại.
+## Chạy bản Docker được bàn giao
 
-- [Web demo: setup Windows/Docker, hướng dẫn sử dụng và giới hạn](docs/WEB_DEMO.md).
-- [Đóng gói nộp online/offline và điều kiện máy chấm](docs/DOCKER_SUBMISSION.md).
-- [CLI một ảnh → JSON và OCR mới nhất](docs/QWEN_DEMO.md).
+Yêu cầu NVIDIA GPU và Docker hỗ trợ GPU; Windows dùng Docker Desktop với Linux
+containers/WSL2. Bản build hiện tại nhắm RTX 4060 (architecture 89).
 
-Web mặc định refined + GPU exclusive để bảo thủ VRAM; resident là tùy chọn cần
-kiểm chứng. CLI giữ mặc định baseline. Đọc tài liệu web trước khi cài môi trường
-GPU; lệnh core/Tesseract phía dưới phục vụ workflow nghiên cứu riêng.
+Giải nén gói bàn giao, mở terminal trong `submission`:
 
-Ngày 05/11/2026 đã chạy **Week 2 — Goal 1: benchmark recognition trên 6.585 crop**.
-Validation đạt CER **20,65%**, WER **56,18%**, exact-match **23,69%** với cấu hình
-Tesseract PSM 7 cố định. Xem [báo cáo và giới hạn](docs/WEEK2_REPORT.md),
-[protocol](docs/WEEK2_RECOGNITION_PROTOCOL.md) và [cách chạy lại](docs/PIPELINE.md).
+```powershell
+docker load --input .\docucheck-ai.tar
+docker compose up -d --no-build --pull never
+```
 
-So sánh full-page PSM 6/4/11 đã chạy đủ 231 ảnh và đánh giá lại sau khi sửa
-parser transcript nguồn. PSM 11 có CER 0,6084 / WER 0,8160 trên phần GT có chữ;
-lợi thế so với PSM 6 còn nhỏ. Goal 2 đã hoàn tất đối chiếu 20 ca, giữ rõ các
-giới hạn và nhận xét chưa thống nhất, chưa đổi cấu hình production. Xem
-[báo cáo PSM và các giới hạn](docs/PSM_COMPARISON_REPORT.md).
+Mở **http://localhost:8000**. Xem log bằng `docker compose logs -f web`; dừng
+bằng `docker compose down`. Giữ `models/` cạnh `compose.yaml`.
 
-## Phạm vi ban đầu
+Web mặc định `refined` + GPU `exclusive`. Resident là tùy chọn chưa được xác
+nhận đủ VRAM. Sửa source không tự cập nhật container, tar hoặc ZIP. Xem
+`BUILD_STATUS.md` trong gói để biết phiên bản và những bước đã kiểm chứng.
 
-Nghiên cứu tập trung vào biên lai bán lẻ một trang, ưu tiên tiếng Việt. Các trường dự kiến gồm tên nơi bán, địa chỉ, ngày/giờ giao dịch và tổng tiền. Chỉ kiểm tra số học khi có đủ thành phần và quy tắc phù hợp; sai lệch là lý do để rà soát, không phải bằng chứng gian lận.
+## Phát triển và demo local
 
-Xem [product brief](docs/idea.md) để biết giả định về người dùng và nguyên tắc sản phẩm. Kết quả thực tế của Week 1 nằm trong [báo cáo](docs/WEEK1_REPORT.md), [schema dữ liệu](docs/DATA_SCHEMA.md) và [bàn giao Week 2](docs/WEEK2_HANDOFF.md).
+- [Setup web, bundle model, cấu hình và cách dùng](docs/WEB_DEMO.md).
+- [Build/export Docker và gửi người khác](docs/DOCKER_SUBMISSION.md).
+- [CLI một ảnh → JSON, batch và OCR cache](docs/QWEN_DEMO.md).
+- [Mục lục tài liệu hiện tại và nghiên cứu lịch sử](docs/README.md).
+- [Mục lục scripts theo chức năng](scripts/README.md).
+- [Hướng dẫn phát triển, kiểm tra và bàn giao](CONTRIBUTING.md).
+
+Python yêu cầu phiên bản 3.12. Web, OCR GPU và nghiên cứu core có dependency
+khác nhau, đặc biệt NumPy/Torch. Cài môi trường theo tài liệu tương ứng; không
+chạy `uv sync --all-extras` trong môi trường web đang hoạt động.
+
+CLI khi môi trường GPU đã setup:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/extract_receipt.py "receipt.jpg" --extraction-mode refined --output outputs/receipt.json
+```
+
+CLI giữ default `baseline`; truyền `--extraction-mode refined` khi muốn so với
+web. JSON public chỉ có bốn trường, audit và bằng chứng được lưu riêng.
 
 ## Cấu trúc repository
 
 ```text
-docs/       Tài liệu dự án
-data/       Dataset cục bộ (không commit)
-notebooks/  Phân tích dữ liệu tương tác
-src/        Mã nguồn dùng lại
-scripts/    Quy trình chạy qua dòng lệnh
-tests/      Kiểm thử tự động
-outputs/    Kết quả sinh cục bộ (không commit)
+src/docucheck/
+  web/           API, UI, hàng đợi và quản lý worker/GPU
+  extraction/    OCR adapter, Qwen, parser, evidence và JSON
+  ocr/           Detector/recognizer và pipeline OCR
+  data/          Dataset, annotation, preprocessing và split
+  evaluation/    Chỉ số và so sánh OCR
+  visualization/ Công cụ hiển thị bằng chứng
+scripts/         CLI; xem scripts/README.md
+configs/         Cấu hình model và baseline nghiên cứu
+requirements/    Môi trường web và inference Docker
+tests/          Unit/API và fake DOM tests
+docs/           Setup, thiết kế, protocol và báo cáo
+notebooks/      Nghiên cứu dữ liệu tương tác
+reports/        Bằng chứng nghiên cứu đã lưu
 ```
 
-## Môi trường phát triển
+Dataset `data/`, weights `models/`, kết quả `outputs/`, virtualenv, cache và
+`submission/` là tài nguyên local. ZIP/TAR không đưa lên Git; gửi gói Docker qua
+Drive/USB. Không commit `.env` hoặc nội dung biên lai thật.
 
-Yêu cầu Python 3.12 và Tesseract 5. Cài Tesseract bằng trình quản lý gói của hệ điều hành (ví dụ `sudo apt install tesseract-ocr`). Tạo môi trường Python và cài các dependency đã khóa trong `uv.lock`:
+## Kiểm chứng và giới hạn
 
-```bash
-uv sync --all-extras
-source .venv/bin/activate
-uv run pytest
-jupyter lab
-```
+Đã có build/startup Docker và lịch sử người dùng chạy OCR → Qwen trả kết quả.
+Điều đó chưa chứng minh độ chính xác trên mọi biên lai. Tên và địa chỉ có thể bị
+ghép/chọn thiếu; OCR có thể mất chữ; hóa đơn dài có thể vượt context.
+`needs_review` là yêu cầu kiểm tra bằng chứng, không phải xác suất sai.
 
-Dataset mặc định nằm ở `data/mcocr`; khi đặt ở vị trí khác, truyền `--dataset-root` cho CLI hoặc đặt biến `MC_OCR_ROOT`.
-
-Để tải MC-OCR từ Kaggle, cài Kaggle CLI và cấu hình thông tin xác thực Kaggle (`~/.kaggle/kaggle.json` hoặc `KAGGLE_API_TOKEN`), sau đó chạy từ thư mục gốc repository:
-
-```bash
-uv tool install kaggle
-kaggle datasets download \
-  -d domixi1989/vietnamese-receipts-mc-ocr-2021 \
-  -p data/mcocr --unzip
-```
-
-Dataset được giải nén vào `data/mcocr`, thư mục local bị Git ignore. Kiểm tra điều khoản dataset trên Kaggle trước khi sử dụng hoặc phân phối lại.
-
-## Luồng dữ liệu và OCR
-
-Sau khi tải dataset và cài môi trường, làm theo [hướng dẫn pipeline](docs/PIPELINE.md) để tạo manifest, audit dữ liệu (tùy chọn), chạy OCR và đánh giá. Hướng dẫn này liệt kê đầu vào, đầu ra và thứ tự của từng bước.
-
-Định nghĩa manifest nằm trong [schema dữ liệu](docs/DATA_SCHEMA.md); chi tiết audit annotation ở [protocol review](docs/ANNOTATION_AUDIT.md); quy tắc baseline và chỉ số OCR ở [Goal 3](docs/GOAL3_OCR_BASELINE.md).
-
-## Dữ liệu và quyền riêng tư
-
-Không commit ảnh biên lai thật, nội dung biên lai, thông tin cá nhân, dữ liệu bị giới hạn phân phối, model checkpoint hoặc bí mật truy cập. Kiểm tra điều khoản dataset trước khi sử dụng hoặc phân phối lại. Mọi cảnh báo trong tương lai chỉ hỗ trợ rà soát, không thay thế xác minh pháp lý hay kết luận gian lận.
+CI tách unit tests và web contracts. Fake tests không thay kiểm tra browser,
+GPU hoặc ảnh thật. Refactor hiện tại chưa được chạy test hoặc đóng lại Docker.
+[Báo cáo MVP](docs/MVP_WEB_REVIEW_20261115.md) mô tả rủi ro và phạm vi demo so
+với sản phẩm public. Không dùng chỉ số Tesseract lịch sử làm accuracy hiện tại.

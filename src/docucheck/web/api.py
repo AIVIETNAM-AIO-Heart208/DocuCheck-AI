@@ -18,6 +18,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, StrictInt, field_validator
 
+from docucheck.extraction.contracts import FIELDS
+
 from .coordinator import Coordinator
 from .body_limit import BodyLimit
 from .engine import InferenceEngine
@@ -26,7 +28,6 @@ from .storage import Capacity, Conflict, Store
 from .uploads import normalize_upload
 
 STATIC = Path(__file__).with_name("static")
-FIELDS = ("seller_name", "seller_address", "transaction_datetime", "total_amount")
 
 
 class ReceiptValues(BaseModel):

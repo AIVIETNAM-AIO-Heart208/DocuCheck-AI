@@ -1,11 +1,9 @@
 # Python
 __pycache__/
 *.py[cod]
-.venv/
 .venv*/
 .tmp/
 .ruff_cache/
-.venv-web-ci/
 venv/
 *.egg-info/
 .env
@@ -40,8 +38,11 @@ logs/
 outputs/
 /models/
 /submission/
-/docucheck-ai.zip
-/.venv-web/
+# Distribution archives belong outside Git; deliver through Drive/USB.
+*.zip
+*.tar
+*.tar.gz
+*.tgz
 
 # Spec-driven
 .agents/

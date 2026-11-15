@@ -16,6 +16,8 @@ import sys
 from .candidates import build, resolve
 from .invoice_total import fold, role
 from .reading_order import _skew, order_regions
+from .artifacts import write_json
+from .contracts import FIELDS
 
 
 def source_span(regions: dict, key: str, start: int = 0, end: int | None = None) -> dict:
@@ -305,7 +307,7 @@ def resolve_text(field: str, selected: list, adapted: dict, geometry: dict, norm
 
 
 def extract(client, adapted: dict, directory) -> dict:
-    from .qwen import FIELDS, normalize, write_json
+    from .qwen import normalize
 
     identity = adapted["image_id"]
     if not adapted["mapping"]:

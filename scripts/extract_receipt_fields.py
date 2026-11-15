@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from docucheck.extraction.contracts import EXTRACTION_MODES
 from docucheck.extraction.qwen import QwenClient, adapt, write_json
 from docucheck.extraction.export import export_receipts
 
@@ -17,7 +18,7 @@ def main():
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--image-id", action="append")
     parser.add_argument("--base-url", default="http://127.0.0.1:8097")
-    parser.add_argument("--extraction-mode", choices=("baseline", "refined"), default="baseline")
+    parser.add_argument("--extraction-mode", choices=EXTRACTION_MODES, default="baseline")
     args = parser.parse_args()
     directory = Path(args.output_dir)
     directory.mkdir(parents=True, exist_ok=True)

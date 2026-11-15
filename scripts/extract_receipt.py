@@ -11,13 +11,16 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from docucheck.extraction.contracts import EXTRACTION_MODES
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("image", type=Path, help="Receipt image path")
     parser.add_argument("--output", type=Path, help="Also save the four-field JSON here")
-    parser.add_argument("--extraction-mode", choices=("baseline", "refined"), default="baseline")
+    parser.add_argument("--extraction-mode", choices=EXTRACTION_MODES, default="baseline")
     args = parser.parse_args()
     try:
         image = args.image.resolve(strict=True)
