@@ -1,4 +1,4 @@
-# Week 2 — Goal 1 recognition protocol
+# OCR recognition benchmark protocol
 
 Protocol fixed on 2026-11-05 (Asia/Saigon), before this run's inference.
 Review-attribution wording was revised after inference on the same date;

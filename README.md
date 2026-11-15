@@ -8,7 +8,24 @@ Pipeline hiện tại: **PHOCR detector → VietOCR CUDA → Qwen3-4B-Instruct-2
 Q4_K_M → JSON → review**. OCR dùng E1 scale 2 Lanczos và padding có guard.
 Tesseract là baseline nghiên cứu lịch sử, không phải engine của web demo.
 
-## Chạy bản Docker được bàn giao
+[Đọc báo cáo kỹ thuật](reports/DocuCheck_AI_Technical_Report.pdf)
+về phương pháp, kết quả và giới hạn của hệ thống.
+
+## Docker Hub: pull và chạy, không cần model riêng
+
+Sau khi publisher build target `bundled` và push theo
+[hướng dẫn Docker Hub](docs/DOCKER_SUBMISSION.md), người nhận chạy:
+
+```powershell
+docker pull heart2082006/docucheck-ai
+docker run -d --name docucheck-ai --init --gpus all --cpus 4 --memory 10g -p 127.0.0.1:8000:8000 -v docucheck-data:/var/lib/docucheck -e EXTRACTION_MODE=refined -e GPU_POLICY=exclusive heart2082006/docucheck-ai
+```
+
+Mở http://localhost:8000. Cần NVIDIA GPU và Docker hỗ trợ GPU. Không cần gửi
+ZIP/model/Compose riêng. Target bundled mới được chuẩn bị, chưa build/push hoặc
+kiểm chứng inference trong lượt thay đổi này.
+
+## Chạy bản Docker offline được bàn giao trước đó
 
 Yêu cầu NVIDIA GPU và Docker hỗ trợ GPU; Windows dùng Docker Desktop với Linux
 containers/WSL2. Bản build hiện tại nhắm RTX 4060 (architecture 89).
@@ -32,7 +49,7 @@ nhận đủ VRAM. Sửa source không tự cập nhật container, tar hoặc Z
 - [Setup web, bundle model, cấu hình và cách dùng](docs/WEB_DEMO.md).
 - [Build/export Docker và gửi người khác](docs/DOCKER_SUBMISSION.md).
 - [CLI một ảnh → JSON, batch và OCR cache](docs/QWEN_DEMO.md).
-- [Mục lục tài liệu hiện tại và nghiên cứu lịch sử](docs/README.md).
+- [Mục lục hướng dẫn và protocol nghiên cứu](docs/README.md).
 - [Mục lục scripts theo chức năng](scripts/README.md).
 - [Hướng dẫn phát triển, kiểm tra và bàn giao](CONTRIBUTING.md).
 
@@ -81,5 +98,5 @@ ghép/chọn thiếu; OCR có thể mất chữ; hóa đơn dài có thể vư�
 
 CI tách unit tests và web contracts. Fake tests không thay kiểm tra browser,
 GPU hoặc ảnh thật. Refactor hiện tại chưa được chạy test hoặc đóng lại Docker.
-[Báo cáo MVP](docs/MVP_WEB_REVIEW_20261115.md) mô tả rủi ro và phạm vi demo so
-với sản phẩm public. Không dùng chỉ số Tesseract lịch sử làm accuracy hiện tại.
+[Báo cáo kỹ thuật](reports/DocuCheck_AI_Technical_Report.pdf) trình bày giới hạn
+của MVP. Không dùng chỉ số Tesseract lịch sử làm accuracy hiện tại.

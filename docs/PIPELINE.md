@@ -217,10 +217,10 @@ The Paddle detector records `gpu:0` and VietOCR records `cuda:0` in `runtime.jso
 On Windows, `--tesseract "C:\Program Files\Tesseract-OCR\tesseract.exe"` selects
 an executable outside PATH. The controlled PSM comparison and a discovered
 full-page transcript parsing defect are documented in
-[PSM_COMPARISON_REPORT.md](PSM_COMPARISON_REPORT.md). Historical full-page CER/WER
+[corrected evaluation protocol](PSM_CORRECTED_PROTOCOL.md). Historical full-page CER/WER
 used incorrectly parsed GT. The corrected comparison uses a separate manifest;
 the original `data/processed/manifest.jsonl` is intentionally preserved. Use the
-corrected manifest explicitly for full-page evaluation, as documented in the report.
+corrected manifest explicitly for full-page evaluation, as documented in that protocol.
 
 ## 5. Evaluate OCR recognition
 
@@ -232,7 +232,7 @@ uv run python scripts/evaluate_ocr.py \
   --output-dir outputs/ocr/evaluation
 ```
 
-The default prediction path is `outputs/ocr/tesseract_internal_dev/predictions.jsonl`, matching the full run above. The evaluation writes `metrics.json`, `per_image_metrics.jsonl`, and `per_region_alignment.jsonl`. A three-image smoke run is not a substitute for the full split. See [Goal 3 OCR baseline](GOAL3_OCR_BASELINE.md) for alignment rules and metric limits.
+The default prediction path is `outputs/ocr/tesseract_internal_dev/predictions.jsonl`, matching the full run above. The evaluation writes `metrics.json`, `per_image_metrics.jsonl`, and `per_region_alignment.jsonl`. A three-image smoke run is not a substitute for the full split. See the corrected protocol above for evaluation scope; full-page recognition metrics do not measure KIE field accuracy.
 
 ## 6. Evaluate the recognition crops directly
 
@@ -272,7 +272,7 @@ preserved. Metrics include CER/WER, normalized exact match, exclusions and cover
 The verifier recomputes all scores from saved predictions without repeating OCR.
 Open the local `error_review/index.html`, inspect each crop and fill review notes;
 selection groups alone do not constitute a completed review. See the
-[recognition protocol](WEEK2_RECOGNITION_PROTOCOL.md) for split and failure policies.
+[recognition protocol](OCR_RECOGNITION_PROTOCOL.md) for split and failure policies.
 
 The verifier checks the source hashes recorded for that run. After changing the
 OCR implementation, use the run's matching source revision or saved source snapshot
@@ -328,7 +328,7 @@ uv run python scripts/compare_ocr_engines.py \
 The comparison writes `comparison.json` and `per_crop_comparison.jsonl`. It rejects failed or mismatched runs instead of ranking different crop sets. On the recorded 1,300-crop `official_val` comparison run, VietOCR reached CER 0.0959 / WER 0.3387, PaddleOCR CER 0.1744 / WER 0.6303, and Tesseract 5.3.4 PSM 7 CER 0.1951 / WER 0.5549. All three used 23,739 reference characters and 4,815 reference whitespace tokens with zero inference failures.
 
 That comparison uses a different Tesseract run from the 5.5.3.20260724 baseline
-in [the recognition benchmark report](WEEK2_REPORT.md), which reports validation
+in [the technical report](../reports/DocuCheck_AI_Technical_Report.pdf), which reports validation
 CER 0.2065 / WER 0.5618. Preserve each run's engine version and artifact paths
 when citing results. To compare new runs, evaluate the same crop IDs, reference
 transcripts and normalization policy, and pass their actual output directories

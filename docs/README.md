@@ -1,26 +1,23 @@
-# Mục lục tài liệu
+# Tài liệu dự án
 
-## Web và extraction hiện tại
+## Chạy và bàn giao ứng dụng
 
-- [WEB_DEMO.md](WEB_DEMO.md): setup local, OCR GPU, review và cấu hình.
-- [DOCKER_SUBMISSION.md](DOCKER_SUBMISSION.md): build/export image và bundle offline.
-- [QWEN_DEMO.md](QWEN_DEMO.md): CLI, batch và OCR cache.
-- [QWEN_GUARD_LAYOUT_REFINEMENT.md](QWEN_GUARD_LAYOUT_REFINEMENT.md): baseline/refined và evidence.
-- [MVP_WEB_REVIEW_20261115.md](MVP_WEB_REVIEW_20261115.md): review và các giới hạn MVP.
-- [DATA_SCHEMA.md](DATA_SCHEMA.md): manifest và schema dữ liệu.
+- [Docker Hub](DOCKER_HUB.md): người nhận pull và chạy image.
+- [Setup web](WEB_DEMO.md): môi trường local, GPU, review và cấu hình.
+- [Đóng gói Docker](DOCKER_SUBMISSION.md): build/push và bàn giao offline.
+- [CLI OCR → Qwen](QWEN_DEMO.md): xử lý ảnh, batch và tái sử dụng OCR.
+- [Chế độ trích xuất](QWEN_GUARD_LAYOUT_REFINEMENT.md): baseline/refined và bằng chứng.
+- [Báo cáo kỹ thuật](../reports/DocuCheck_AI_Technical_Report.pdf).
 - [Hướng dẫn phát triển](../CONTRIBUTING.md).
 
-## Nghiên cứu và bằng chứng lịch sử
+## Dữ liệu và tái lập nghiên cứu
 
-Các tài liệu dưới phục vụ tái lập nghiên cứu, không xác định engine mặc định của web.
+- [Schema dữ liệu](DATA_SCHEMA.md): manifest, nhãn, split và trạng thái dữ liệu.
+- [Pipeline nghiên cứu](PIPELINE.md): chuẩn bị dữ liệu, OCR và đánh giá.
+- [Audit annotation](ANNOTATION_AUDIT.md): quy trình kiểm tra nhãn.
+- [Protocol recognition](OCR_RECOGNITION_PROTOCOL.md): cách đo trên crop.
+- [Protocol PSM ban đầu](PSM_COMPARISON_PROTOCOL.md) và [bản hiệu chỉnh](PSM_CORRECTED_PROTOCOL.md): phân đoạn trang và sửa cách đọc transcript.
 
-- [PIPELINE.md](PIPELINE.md): chuẩn bị dataset và pipeline nghiên cứu.
-- [idea.md](idea.md): product brief ban đầu.
-- [ANNOTATION_AUDIT.md](ANNOTATION_AUDIT.md): protocol audit annotation.
-- [WEEK1_REPORT.md](WEEK1_REPORT.md), [WEEK2_HANDOFF.md](WEEK2_HANDOFF.md): báo cáo/bàn giao ban đầu.
-- [WEEK2_REPORT.md](WEEK2_REPORT.md), [WEEK2_RECOGNITION_PROTOCOL.md](WEEK2_RECOGNITION_PROTOCOL.md): benchmark recognition.
-- [GOAL3_OCR_BASELINE.md](GOAL3_OCR_BASELINE.md): baseline Tesseract.
-- [PSM_COMPARISON_PROTOCOL.md](PSM_COMPARISON_PROTOCOL.md), [PSM_CORRECTED_PROTOCOL.md](PSM_CORRECTED_PROTOCOL.md), [PSM_COMPARISON_REPORT.md](PSM_COMPARISON_REPORT.md): so sánh và hiệu chỉnh PSM.
-
-Giữ đường dẫn bằng chứng vì script benchmark/provenance đang tham chiếu.
-Không lưu prompt giao việc hoặc ghi chú tạm như tài liệu vận hành.
+Các protocol được giữ để script tái lập cấu hình và nguồn. Tesseract trong
+thí nghiệm nghiên cứu không phải OCR mặc định của web. Không lưu prompt giao
+việc, bàn giao tạm hoặc báo cáo tuần trong thư mục này.

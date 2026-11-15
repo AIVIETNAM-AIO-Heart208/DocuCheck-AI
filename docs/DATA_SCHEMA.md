@@ -112,6 +112,6 @@ successful empty predictions count as deletions. Duplicate manifest IDs,
 duplicate prediction IDs and unknown prediction IDs are rejected. Input SHA-256
 hashes link metrics to the manifest, predictions and runtime. Inference environment
 comes from runtime metadata; the evaluation machine is recorded separately.
-See the [Week 2 recognition protocol](WEEK2_RECOGNITION_PROTOCOL.md).
+See the [OCR recognition protocol](OCR_RECOGNITION_PROTOCOL.md).
 
 CER uses Unicode NFKC, casefolding and whitespace collapse while preserving accents and punctuation. WER uses whitespace-separated Vietnamese syllables; it is not linguistic word segmentation. Recognition alignment assigns a predicted word box to the smallest valid GT polygon containing its center, then sorts words by y and x. GT polygons have coarser line/region granularity than Tesseract word boxes, so one-to-one detection F1 is not meaningful for this annotation pairing.

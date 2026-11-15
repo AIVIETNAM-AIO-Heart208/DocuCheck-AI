@@ -1,5 +1,43 @@
 # Đóng gói nộp web demo GPU
 
+## Docker Hub: image chứa sẵn model
+
+Target **bundled** chứa ứng dụng, CUDA runtime và toàn bộ weights/config của
+PHOCR, VietOCR và Qwen tại /models. Người nhận không cần ZIP, tar hay model riêng.
+
+Publisher tạo repository Public `docucheck-ai` trên Docker Hub, rồi chạy tại gốc repo:
+
+```powershell
+docker login
+docker build --target bundled --build-context model_bundle=./models -t heart2082006/docucheck-ai .
+docker push heart2082006/docucheck-ai
+```
+
+Giữ cả `--target bundled` và `--build-context`. Build thường vẫn tạo runtime
+không chứa weights để tương thích Compose local cũ. Named context của BuildKit
+đưa model vào image mà không bỏ quy tắc ignore model/dataset trong source context.
+Chỉ file weights, config, manifest và notice được liệt kê được copy.
+
+Người nhận có NVIDIA GPU/driver và Docker hỗ trợ GPU, chạy:
+
+```powershell
+docker pull heart2082006/docucheck-ai
+docker run -d --name docucheck-ai --init --gpus all --cpus 4 --memory 10g -p 127.0.0.1:8000:8000 -v docucheck-data:/var/lib/docucheck -e EXTRACTION_MODE=refined -e GPU_POLICY=exclusive heart2082006/docucheck-ai
+```
+
+Mở http://localhost:8000. Không mount vào /models vì model đã có trong image.
+Windows dùng Docker Desktop Linux containers/WSL2. Repository private cần
+đăng nhập bằng tài khoản có quyền pull. Không ghi tag thì Docker dùng latest.
+
+Log: `docker logs -f docucheck-ai`. Dừng: `docker stop docucheck-ai`.
+Khởi động lại container đã có: `docker start docucheck-ai`.
+
+Target bundled mới được chuẩn bị, chưa build/push hoặc kiểm chứng inference
+trong lượt này. Runtime kiểm tra checksum bundle lúc startup. Model notice được
+đưa vào image; bảo đảm quyền phân phối weights khi xuất bản public.
+
+## Phân phối bằng image tar
+
 Docker đã build và kiểm tra startup/GPU preflight. Gói hiện tại tại submission/
 có docucheck-ai.tar, model bundle, checksum và source.zip. Test mới, accuracy và
 chạy lại gói trên máy khác chưa được xác minh. Xem BUILD_STATUS.md trong gói nộp.

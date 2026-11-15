@@ -14,7 +14,7 @@ CSV là nguồn trạng thái review hiện hành. annotation_sample.jsonl, audi
 | unreadable_text | 3 | 0 |
 | uncertain | 6 | 0 |
 
-Các nhóm chồng lấp. Sáu ảnh có phần chưa rõ khác với hai ảnh có kết luận tổng thể uncertain. Có ít nhất **19 ảnh có bằng chứng transcript nguồn khác ảnh** được ghi rõ trong notes; **năm ảnh chỉ sai transcript**, nên incorrect dù các cờ nhãn/hình học/thiếu đều no. Danh sách và phân tích đầy đủ nằm trong [WEEK1_REPORT.md](WEEK1_REPORT.md), không suy tỷ lệ này cho toàn dataset.
+Các nhóm chồng lấp. Sáu ảnh có phần chưa rõ khác với hai ảnh có kết luận tổng thể uncertain. Có ít nhất **19 ảnh có bằng chứng transcript nguồn khác ảnh** được ghi rõ trong notes; **năm ảnh chỉ sai transcript**, nên incorrect dù các cờ nhãn/hình học/thiếu đều no. Danh sách chi tiết nằm trong CSV review local nêu trên; không suy tỷ lệ này cho toàn dataset.
 
 ## Tái lập bộ review mà không ghi đè kết quả
 
